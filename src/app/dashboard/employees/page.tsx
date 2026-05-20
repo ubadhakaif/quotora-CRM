@@ -65,6 +65,48 @@ export default function EmployeesPage() {
     setFormBranchId('')
   }
 
+  const handleSaveEmployee = async () => {
+    if (!formName.trim() || !formEmail.trim() || !profile) return
+    setSaving(true)
+
+    try {
+      // 1. Check if the user exists in auth.users by calling our RPC function
+      const { data: userId, error: rpcError } = await supabase.rpc('get_user_id_by_email', {
+        p_email: formEmail.trim().toLowerCase(),
+      })
+
+      if (rpcError) throw rpcError
+
+      if (!userId) {
+        throw new Error(`No registered user found with email "${formEmail}". Please ask the employee to sign up first.`)
+      }
+
+      // 2. Insert/upsert the profile linked to the employee
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .upsert({
+          id: userId,
+          tenant_id: profile.tenant_id,
+          branch_id: formBranchId || null,
+          role: formRole,
+          name: formName.trim(),
+          email: formEmail.trim().toLowerCase(),
+          is_active: true,
+        })
+
+      if (profileError) throw profileError
+
+      addToast('Employee profile added successfully', 'success')
+      closePanel()
+      fetchData()
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Something went wrong'
+      addToast(message, 'error')
+    } finally {
+      setSaving(false)
+    }
+  }
+
   const filteredEmployees = employees.filter(e =>
     e.name.toLowerCase().includes(search.toLowerCase()) ||
     e.email.toLowerCase().includes(search.toLowerCase())
@@ -186,6 +228,7 @@ export default function EmployeesPage() {
               Cancel
             </button>
             <button
+              onClick={handleSaveEmployee}
               disabled={!formName.trim() || !formEmail.trim() || saving}
               className="bg-slate-900 text-white rounded-full px-8 py-4 flex items-center justify-start gap-3 hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed w-full md:w-auto"
             >

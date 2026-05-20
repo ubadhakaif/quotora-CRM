@@ -275,10 +275,14 @@ DROP POLICY IF EXISTS "profiles_select" ON profiles;
 CREATE POLICY "profiles_select" ON profiles FOR SELECT USING (
   tenant_id = get_user_tenant_id() OR id = auth.uid()
 );
--- Allow INSERT for onboarding (profile doesn't exist yet)
+-- Allow INSERT for onboarding (profile doesn't exist yet) or by dealer_admin within their tenant
 DROP POLICY IF EXISTS "profiles_insert" ON profiles;
 CREATE POLICY "profiles_insert" ON profiles FOR INSERT WITH CHECK (
-  id = auth.uid()
+  id = auth.uid() OR
+  (
+    (SELECT role FROM profiles WHERE id = auth.uid()) = 'dealer_admin' AND
+    tenant_id = (SELECT tenant_id FROM profiles WHERE id = auth.uid())
+  )
 );
 DROP POLICY IF EXISTS "profiles_update" ON profiles;
 CREATE POLICY "profiles_update" ON profiles FOR UPDATE USING (
@@ -388,4 +392,11 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE OR REPLACE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION handle_new_user();
+
+-- ─── Helper function to find a user's ID by email ───
+CREATE OR REPLACE FUNCTION get_user_id_by_email(p_email TEXT)
+RETURNS UUID AS $$
+  SELECT id FROM auth.users WHERE email = p_email LIMIT 1;
+$$ LANGUAGE sql SECURITY DEFINER;
+
 
