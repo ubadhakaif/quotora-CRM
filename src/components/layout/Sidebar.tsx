@@ -25,27 +25,22 @@ const navItems = [
   { href: '/dashboard/customers', label: 'Customers', icon: UserCircle },
 ]
 
-export function Sidebar() {
+interface SidebarProps {
+  isOpen: boolean
+  setIsOpen: (open: boolean) => void
+}
+
+export function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
   const pathname = usePathname()
   const { profile, signOut } = useAuth()
-  const [mobileOpen, setMobileOpen] = useState(false)
 
   return (
     <>
-      {/* Mobile hamburger (hidden on desktop) */}
-      <button
-        onClick={() => setMobileOpen(true)}
-        className="fixed top-5 left-5 z-50 md:hidden bg-white border border-slate-200 rounded-full p-3 text-slate-600 hover:bg-slate-50 transition-colors"
-        aria-label="Open menu"
-      >
-        <Menu size={20} />
-      </button>
-
       {/* Mobile overlay */}
-      {mobileOpen && (
+      {isOpen && (
         <div
-          className="fixed inset-0 bg-black/20 z-40 md:hidden"
-          onClick={() => setMobileOpen(false)}
+          className="fixed inset-0 bg-black/20 z-40 md:hidden animate-fade-in"
+          onClick={() => setIsOpen(false)}
         />
       )}
 
@@ -54,13 +49,13 @@ export function Sidebar() {
         className={`
           fixed top-0 left-0 z-50 h-full w-72 bg-white border-r border-slate-200 
           flex flex-col transition-transform duration-200
-          ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}
+          ${isOpen ? 'translate-x-0' : '-translate-x-full'}
           md:translate-x-0 md:static md:z-auto
         `}
       >
         {/* Close button (mobile only) */}
         <button
-          onClick={() => setMobileOpen(false)}
+          onClick={() => setIsOpen(false)}
           className="absolute top-5 right-5 md:hidden text-slate-400 hover:text-slate-600 transition-colors"
           aria-label="Close menu"
         >
@@ -93,7 +88,7 @@ export function Sidebar() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  onClick={() => setMobileOpen(false)}
+                  onClick={() => setIsOpen(false)}
                   className={`
                     flex items-center gap-3 px-5 py-3.5 rounded-full text-sm transition-all
                     ${
