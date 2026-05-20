@@ -46,7 +46,7 @@ export default function SignInPage() {
       </div>
 
       {/* Sign In Card */}
-      <div className="bg-white border border-slate-200 rounded-[3rem] p-8 md:p-10 space-y-6">
+      <div className="bg-white border border-slate-200 rounded-[2rem] p-8 md:p-10 space-y-6">
         <form onSubmit={handleSignIn} className="space-y-5">
           {/* Email */}
           <div className="space-y-2">

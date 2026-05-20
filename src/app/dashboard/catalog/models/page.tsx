@@ -4,8 +4,7 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { useToast } from '@/components/providers/ToastProvider'
-import { Plus, X, Car, Tag, Search, ArrowLeft } from 'lucide-react'
-import Link from 'next/link'
+import { Plus, X, Car, Tag, Search } from 'lucide-react'
 
 interface Category { id: string; name: string }
 interface Model {
@@ -13,7 +12,7 @@ interface Model {
   category_id: string | null; categories?: Category | null
 }
 
-export default function ModelsPage() {
+export default function ModelsTab() {
   const [models, setModels] = useState<Model[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
@@ -70,9 +69,6 @@ export default function ModelsPage() {
 
   return (
     <div className="space-y-6">
-      <Link href="/dashboard/catalog" className="hidden md:inline-flex items-center gap-2 text-sm text-slate-500 hover:text-slate-900 transition-colors">
-        <ArrowLeft size={16} /> Back to Catalog
-      </Link>
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
         <div className="relative flex-1">
           <Search size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -82,8 +78,9 @@ export default function ModelsPage() {
           {panelOpen?<X size={18}/>:<Plus size={18}/>} {panelOpen?'Close panel':'Add model'}
         </button>
       </div>
+
       {panelOpen && (
-        <div className="bg-white border border-slate-200 rounded-[3rem] p-8 md:p-10 space-y-5">
+        <div className="bg-white border border-slate-200 rounded-[2rem] p-8 md:p-10 space-y-5">
           <h3 className="text-lg text-slate-900 pl-2">{editing?'Edit model':'New model'}</h3>
           <div className="space-y-4">
             <div className="space-y-2">
@@ -119,10 +116,11 @@ export default function ModelsPage() {
           </div>
         </div>
       )}
+
       {loading ? (
-        <div className="space-y-4">{[1,2,3].map(i=><div key={i} className="skeleton h-20 rounded-[3rem]"/>)}</div>
+        <div className="space-y-4">{[1,2,3].map(i=><div key={i} className="skeleton h-20 rounded-[2rem]"/>)}</div>
       ) : filtered.length===0 ? <div/> : (
-        <div className="bg-white border border-slate-200 rounded-[3.5rem] overflow-hidden">
+        <div className="bg-white border border-slate-200 rounded-[2rem] overflow-hidden">
           <div className="divide-y divide-slate-100">
             {filtered.map(m=>(
               <button key={m.id} onClick={()=>openEdit(m)} className="w-full text-left p-4 md:p-8 px-6 md:px-12 hover:bg-slate-50 transition-colors flex items-center gap-4">

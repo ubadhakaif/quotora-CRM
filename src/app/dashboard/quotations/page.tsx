@@ -69,7 +69,7 @@ export default function QuotationsPage() {
         <button onClick={panelOpen?close:()=>setPanelOpen(true)} className="bg-slate-900 text-white rounded-full px-8 py-4 flex items-center justify-start gap-3 hover:bg-slate-800 transition-colors w-full md:w-auto">{panelOpen?<X size={18}/>:<Plus size={18}/>} {panelOpen?'Close panel':'New quotation'}</button>
       </div>
       {panelOpen && (
-        <div className="bg-white border border-slate-200 rounded-[3rem] p-8 md:p-10 space-y-5">
+        <div className="bg-white border border-slate-200 rounded-[2rem] p-8 md:p-10 space-y-5">
           <h3 className="text-lg text-slate-900 pl-2">New quotation</h3>
           <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -85,9 +85,9 @@ export default function QuotationsPage() {
         </div>
       )}
       {loading?(
-        <div className="space-y-4">{[1,2,3].map(i=><div key={i} className="skeleton h-20 rounded-[3rem]"/>)}</div>
+        <div className="space-y-4">{[1,2,3].map(i=><div key={i} className="skeleton h-20 rounded-[2rem]"/>)}</div>
       ):filtered.length===0?<div/>:(
-        <div className="bg-white border border-slate-200 rounded-[3.5rem] overflow-hidden">
+        <div className="bg-white border border-slate-200 rounded-[2rem] overflow-hidden">
           <div className="divide-y divide-slate-100">
             {filtered.map(q=>{
               const cust = q.customers&&typeof q.customers==='object'?q.customers.name:'—'

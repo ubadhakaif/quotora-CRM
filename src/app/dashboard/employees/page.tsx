@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { useToast } from '@/components/providers/ToastProvider'
-import { Plus, X, User, Mail, Search, Building2 } from 'lucide-react'
+import { Plus, X, User, Mail, Search, Building2, Lock, Eye, EyeOff } from 'lucide-react'
 
 interface Employee {
   id: string
@@ -28,6 +28,8 @@ export default function EmployeesPage() {
   const [search, setSearch] = useState('')
   const [formName, setFormName] = useState('')
   const [formEmail, setFormEmail] = useState('')
+  const [formPassword, setFormPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [formRole, setFormRole] = useState('employee')
   const [formBranchId, setFormBranchId] = useState('')
   const [saving, setSaving] = useState(false)
@@ -61,42 +63,40 @@ export default function EmployeesPage() {
     setPanelOpen(false)
     setFormName('')
     setFormEmail('')
+    setFormPassword('')
     setFormRole('employee')
     setFormBranchId('')
+    setShowPassword(false)
   }
 
   const handleSaveEmployee = async () => {
-    if (!formName.trim() || !formEmail.trim() || !profile) return
+    if (!formName.trim() || !formEmail.trim() || !formPassword.trim() || !profile) return
+    if (formPassword.length < 6) {
+      addToast('Password must be at least 6 characters', 'error')
+      return
+    }
     setSaving(true)
 
     try {
-      // 1. Check if the user exists in auth.users by calling our RPC function
-      const { data: userId, error: rpcError } = await supabase.rpc('get_user_id_by_email', {
-        p_email: formEmail.trim().toLowerCase(),
+      const res = await fetch('/api/employees/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: formEmail.trim().toLowerCase(),
+          password: formPassword,
+          name: formName.trim(),
+          role: formRole,
+          branch_id: formBranchId || null,
+        }),
       })
 
-      if (rpcError) throw rpcError
+      const data = await res.json()
 
-      if (!userId) {
-        throw new Error(`No registered user found with email "${formEmail}". Please ask the employee to sign up first.`)
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to create employee')
       }
 
-      // 2. Insert/upsert the profile linked to the employee
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .upsert({
-          id: userId,
-          tenant_id: profile.tenant_id,
-          branch_id: formBranchId || null,
-          role: formRole,
-          name: formName.trim(),
-          email: formEmail.trim().toLowerCase(),
-          is_active: true,
-        })
-
-      if (profileError) throw profileError
-
-      addToast('Employee profile added successfully', 'success')
+      addToast('Employee created successfully', 'success')
       closePanel()
       fetchData()
     } catch (err: unknown) {
@@ -149,12 +149,12 @@ export default function EmployeesPage() {
         </button>
       </div>
 
-      {/* Info note */}
+      {/* Add Employee Panel */}
       {panelOpen && (
-        <div className="bg-white border border-slate-200 rounded-[3rem] p-8 md:p-10 space-y-5">
+        <div className="bg-white border border-slate-200 rounded-[2rem] p-8 md:p-10 space-y-5">
           <h3 className="text-lg text-slate-900 pl-2">New employee</h3>
           <p className="text-sm text-slate-500 pl-2">
-            Employees must sign up themselves. Use this form to record their profile after they sign up.
+            Create a login account for the employee. They can sign in with this email and password.
           </p>
 
           <div className="space-y-4">
@@ -173,18 +173,42 @@ export default function EmployeesPage() {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label htmlFor="emp-email" className="text-sm text-slate-600 pl-4">Email</label>
-              <div className="relative">
-                <Mail size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input
-                  id="emp-email"
-                  type="email"
-                  value={formEmail}
-                  onChange={e => setFormEmail(e.target.value)}
-                  placeholder="employee@company.com"
-                  className="w-full rounded-full py-4 pl-14 pr-6 bg-slate-50 border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-slate-900 focus:bg-white transition-all outline-none"
-                />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label htmlFor="emp-email" className="text-sm text-slate-600 pl-4">Email</label>
+                <div className="relative">
+                  <Mail size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    id="emp-email"
+                    type="email"
+                    value={formEmail}
+                    onChange={e => setFormEmail(e.target.value)}
+                    placeholder="employee@company.com"
+                    className="w-full rounded-full py-4 pl-14 pr-6 bg-slate-50 border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-slate-900 focus:bg-white transition-all outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="emp-password" className="text-sm text-slate-600 pl-4">Password</label>
+                <div className="relative">
+                  <Lock size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    id="emp-password"
+                    type={showPassword ? 'text' : 'password'}
+                    value={formPassword}
+                    onChange={e => setFormPassword(e.target.value)}
+                    placeholder="Min. 6 characters"
+                    className="w-full rounded-full py-4 pl-14 pr-14 bg-slate-50 border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-slate-900 focus:bg-white transition-all outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -229,10 +253,10 @@ export default function EmployeesPage() {
             </button>
             <button
               onClick={handleSaveEmployee}
-              disabled={!formName.trim() || !formEmail.trim() || saving}
+              disabled={!formName.trim() || !formEmail.trim() || !formPassword.trim() || formPassword.length < 6 || saving}
               className="bg-slate-900 text-white rounded-full px-8 py-4 flex items-center justify-start gap-3 hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed w-full md:w-auto"
             >
-              {saving ? 'Saving...' : 'Add employee'}
+              {saving ? 'Creating...' : 'Create employee'}
             </button>
           </div>
         </div>
@@ -242,13 +266,13 @@ export default function EmployeesPage() {
       {loading ? (
         <div className="space-y-4">
           {[1, 2, 3].map(i => (
-            <div key={i} className="skeleton h-20 rounded-[3rem]" />
+            <div key={i} className="skeleton h-20 rounded-[2rem]" />
           ))}
         </div>
       ) : filteredEmployees.length === 0 ? (
         <div />
       ) : (
-        <div className="bg-white border border-slate-200 rounded-[3.5rem] overflow-hidden">
+        <div className="bg-white border border-slate-200 rounded-[2rem] overflow-hidden">
           <div className="divide-y divide-slate-100">
             {filteredEmployees.map(emp => (
               <div

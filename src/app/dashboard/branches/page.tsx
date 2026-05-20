@@ -143,7 +143,7 @@ export default function BranchesPage() {
 
       {/* Inline Panel */}
       {panelOpen && (
-        <div className="bg-white border border-slate-200 rounded-[3rem] p-8 md:p-10 space-y-5">
+        <div className="bg-white border border-slate-200 rounded-[2rem] p-8 md:p-10 space-y-5">
           <h3 className="text-lg text-slate-900 pl-2">
             {editingBranch ? 'Edit branch' : 'New branch'}
           </h3>
@@ -206,13 +206,13 @@ export default function BranchesPage() {
       {loading ? (
         <div className="space-y-4">
           {[1, 2, 3].map(i => (
-            <div key={i} className="skeleton h-20 rounded-[3rem]" />
+            <div key={i} className="skeleton h-20 rounded-[2rem]" />
           ))}
         </div>
       ) : filteredBranches.length === 0 ? (
         <div />
       ) : (
-        <div className="bg-white border border-slate-200 rounded-[3.5rem] overflow-hidden">
+        <div className="bg-white border border-slate-200 rounded-[2rem] overflow-hidden">
           <div className="divide-y divide-slate-100">
             {filteredBranches.map(branch => (
               <button

@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { useToast } from '@/components/providers/ToastProvider'
-import { Plus, X, Layers, Search, ArrowLeft, Fuel, Settings } from 'lucide-react'
-import Link from 'next/link'
+import { ImageUpload } from '@/components/ui/ImageUpload'
+import { Plus, X, Layers, Search, Fuel, Settings } from 'lucide-react'
 
 interface Model { id: string; name: string }
 interface FuelType { id: string; name: string }
@@ -19,7 +19,7 @@ interface Variant {
 
 const formatINR = (n: number) => new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR',maximumFractionDigits:0}).format(n)
 
-export default function VariantsPage() {
+export default function VariantsTab() {
   const [variants, setVariants] = useState<Variant[]>([])
   const [models, setModels] = useState<Model[]>([])
   const [fuels, setFuels] = useState<FuelType[]>([])
@@ -31,6 +31,7 @@ export default function VariantsPage() {
   const [fName, setFName] = useState(''); const [fModelId, setFModelId] = useState('')
   const [fPrice, setFPrice] = useState(''); const [fFuelId, setFFuelId] = useState('')
   const [fTransId, setFTransId] = useState(''); const [fOrder, setFOrder] = useState('0')
+  const [fImageUrl, setFImageUrl] = useState<string|null>(null)
   const [saving, setSaving] = useState(false)
   const [addFuel, setAddFuel] = useState(false); const [newFuel, setNewFuel] = useState('')
   const [addTrans, setAddTrans] = useState(false); const [newTrans, setNewTrans] = useState('')
@@ -51,13 +52,13 @@ export default function VariantsPage() {
   }
   useEffect(()=>{fetchAll()}, []) // eslint-disable-line
 
-  const openAdd = () => { setEditing(null);setFName('');setFModelId('');setFPrice('');setFFuelId('');setFTransId('');setFOrder('0');setPanelOpen(true) }
-  const openEdit = (v: Variant) => { setEditing(v);setFName(v.name);setFModelId(v.model_id);setFPrice(String(v.price));setFFuelId(v.fuel_type_id||'');setFTransId(v.transmission_type_id||'');setFOrder(String(v.variant_order));setPanelOpen(true) }
+  const openAdd = () => { setEditing(null);setFName('');setFModelId('');setFPrice('');setFFuelId('');setFTransId('');setFOrder('0');setFImageUrl(null);setPanelOpen(true) }
+  const openEdit = (v: Variant) => { setEditing(v);setFName(v.name);setFModelId(v.model_id);setFPrice(String(v.price));setFFuelId(v.fuel_type_id||'');setFTransId(v.transmission_type_id||'');setFOrder(String(v.variant_order));setFImageUrl(v.image_url);setPanelOpen(true) }
   const close = () => { setPanelOpen(false);setEditing(null) }
 
   const save = async () => {
     if(!fName.trim()||!fModelId) return; setSaving(true)
-    const p = { name:fName, model_id:fModelId, price:parseFloat(fPrice)||0, fuel_type_id:fFuelId||null, transmission_type_id:fTransId||null, variant_order:parseInt(fOrder)||0, tenant_id:profile?.tenant_id }
+    const p = { name:fName, model_id:fModelId, price:parseFloat(fPrice)||0, fuel_type_id:fFuelId||null, transmission_type_id:fTransId||null, variant_order:parseInt(fOrder)||0, image_url:fImageUrl, tenant_id:profile?.tenant_id }
     const {error} = editing ? await supabase.from('variants').update(p).eq('id',editing.id) : await supabase.from('variants').insert(p)
     if(error) addToast(error.message,'error')
     else { addToast(editing?'Updated':'Created','success');close();fetchAll() }
@@ -71,13 +72,12 @@ export default function VariantsPage() {
 
   return (
     <div className="space-y-6">
-      <Link href="/dashboard/catalog" className="hidden md:inline-flex items-center gap-2 text-sm text-slate-500 hover:text-slate-900 transition-colors"><ArrowLeft size={16}/> Back to Catalog</Link>
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
         <div className="relative flex-1"><Search size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400"/><input id="variant-search" type="text" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search variants..." className="w-full rounded-full py-4 pl-14 pr-8 bg-white border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-slate-900 transition-all outline-none"/></div>
         <button onClick={panelOpen?close:openAdd} className="bg-slate-900 text-white rounded-full px-8 py-4 flex items-center justify-start gap-3 hover:bg-slate-800 transition-colors w-full md:w-auto">{panelOpen?<X size={18}/>:<Plus size={18}/>} {panelOpen?'Close panel':'Add variant'}</button>
       </div>
       {panelOpen && (
-        <div className="bg-white border border-slate-200 rounded-[3rem] p-8 md:p-10 space-y-5">
+        <div className="bg-white border border-slate-200 rounded-[2rem] p-8 md:p-10 space-y-5">
           <h3 className="text-lg text-slate-900 pl-2">{editing?'Edit variant':'New variant'}</h3>
           <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -94,6 +94,7 @@ export default function VariantsPage() {
             </div>
             {addFuel&&<div className="flex gap-2"><input type="text" value={newFuel} onChange={e=>setNewFuel(e.target.value)} placeholder="e.g. Petrol, Diesel" className="flex-1 rounded-full py-3 px-5 bg-slate-50 border border-slate-200 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-900 focus:bg-white transition-all outline-none"/><button onClick={saveFuel} disabled={!newFuel.trim()} className="bg-slate-900 text-white rounded-full px-5 py-3 text-sm hover:bg-slate-800 disabled:opacity-50">Add</button></div>}
             {addTrans&&<div className="flex gap-2"><input type="text" value={newTrans} onChange={e=>setNewTrans(e.target.value)} placeholder="e.g. Manual, CVT" className="flex-1 rounded-full py-3 px-5 bg-slate-50 border border-slate-200 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-900 focus:bg-white transition-all outline-none"/><button onClick={saveTrans} disabled={!newTrans.trim()} className="bg-slate-900 text-white rounded-full px-5 py-3 text-sm hover:bg-slate-800 disabled:opacity-50">Add</button></div>}
+            <ImageUpload value={fImageUrl} onChange={setFImageUrl} folder="variants" />
           </div>
           <div className="flex flex-col sm:flex-row gap-3">
             <button onClick={close} className="bg-white border border-slate-200 text-slate-600 rounded-full p-4 px-8 hover:bg-slate-50 transition-colors flex-1 sm:flex-initial">Cancel</button>
@@ -102,13 +103,17 @@ export default function VariantsPage() {
         </div>
       )}
       {loading?(
-        <div className="space-y-4">{[1,2,3].map(i=><div key={i} className="skeleton h-20 rounded-[3rem]"/>)}</div>
+        <div className="space-y-4">{[1,2,3].map(i=><div key={i} className="skeleton h-20 rounded-[2rem]"/>)}</div>
       ):filtered.length===0?<div/>:(
-        <div className="bg-white border border-slate-200 rounded-[3.5rem] overflow-hidden">
+        <div className="bg-white border border-slate-200 rounded-[2rem] overflow-hidden">
           <div className="divide-y divide-slate-100">
             {filtered.map(v=>(
               <button key={v.id} onClick={()=>openEdit(v)} className="w-full text-left p-4 md:p-8 px-6 md:px-12 hover:bg-slate-50 transition-colors flex items-center gap-4">
-                <Layers size={18} className="text-slate-400 shrink-0"/>
+                {v.image_url ? (
+                  <img src={v.image_url} alt={v.name} className="w-10 h-10 rounded-xl object-cover shrink-0 border border-slate-200" />
+                ) : (
+                  <Layers size={18} className="text-slate-400 shrink-0"/>
+                )}
                 <div className="flex-1 min-w-0"><p className="text-slate-900 truncate">{v.name}</p><p className="text-sm text-slate-500 mt-0.5">{v.models&&typeof v.models==='object'&&'name' in v.models?(v.models as {name:string}).name:''}</p></div>
                 <span className="text-sm text-slate-700 shrink-0">{formatINR(v.price)}</span>
               </button>

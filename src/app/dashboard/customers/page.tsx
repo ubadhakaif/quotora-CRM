@@ -55,7 +55,7 @@ export default function CustomersPage() {
         <button onClick={panelOpen?close:openAdd} className="bg-slate-900 text-white rounded-full px-8 py-4 flex items-center justify-start gap-3 hover:bg-slate-800 transition-colors w-full md:w-auto">{panelOpen?<X size={18}/>:<Plus size={18}/>} {panelOpen?'Close panel':'Add customer'}</button>
       </div>
       {panelOpen && (
-        <div className="bg-white border border-slate-200 rounded-[3rem] p-8 md:p-10 space-y-5">
+        <div className="bg-white border border-slate-200 rounded-[2rem] p-8 md:p-10 space-y-5">
           <h3 className="text-lg text-slate-900 pl-2">{editing?'Edit customer':'New customer'}</h3>
           <div className="space-y-4">
             <div className="space-y-2"><label className="text-sm text-slate-600 pl-4">Full name</label><div className="relative"><UserCircle size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400"/><input type="text" value={fName} onChange={e=>setFName(e.target.value)} placeholder="Customer name" className="w-full rounded-full py-4 pl-14 pr-6 bg-slate-50 border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-slate-900 focus:bg-white transition-all outline-none"/></div></div>
@@ -72,9 +72,9 @@ export default function CustomersPage() {
         </div>
       )}
       {loading?(
-        <div className="space-y-4">{[1,2,3].map(i=><div key={i} className="skeleton h-20 rounded-[3rem]"/>)}</div>
+        <div className="space-y-4">{[1,2,3].map(i=><div key={i} className="skeleton h-20 rounded-[2rem]"/>)}</div>
       ):filtered.length===0?<div/>:(
-        <div className="bg-white border border-slate-200 rounded-[3.5rem] overflow-hidden">
+        <div className="bg-white border border-slate-200 rounded-[2rem] overflow-hidden">
           <div className="divide-y divide-slate-100">
             {filtered.map(c=>(
               <button key={c.id} onClick={()=>openEdit(c)} className="w-full text-left p-4 md:p-8 px-6 md:px-12 hover:bg-slate-50 transition-colors flex items-center gap-4">

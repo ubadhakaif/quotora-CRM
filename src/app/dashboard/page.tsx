@@ -43,10 +43,10 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="skeleton h-28 w-full rounded-[3rem]" />
+        <div className="skeleton h-28 w-full rounded-[2rem]" />
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[1, 2, 3, 4, 5].map(i => (
-            <div key={i} className="skeleton h-32 rounded-[3rem]" />
+            <div key={i} className="skeleton h-32 rounded-[2rem]" />
           ))}
         </div>
       </div>
@@ -56,7 +56,7 @@ export default function DashboardPage() {
   return (
     <div className="space-y-8">
       {/* Welcome Card */}
-      <div className="bg-white border border-slate-200 rounded-[3.5rem] p-8 md:p-12">
+      <div className="bg-white border border-slate-200 rounded-[2rem] p-8 md:p-12">
         <p className="text-slate-500 text-sm">Welcome back</p>
         <h2 className="text-2xl mt-1">
           <span style={{ color: '#4285F4' }}>{profile?.name}</span>
@@ -79,7 +79,7 @@ export default function DashboardPage() {
               <Link
                 key={link.href}
                 href={link.href}
-                className="group bg-white border border-slate-200 rounded-[3rem] p-8 md:p-10 flex flex-col gap-4 hover:border-slate-300 transition-all"
+                className="group bg-white border border-slate-200 rounded-[2rem] p-8 md:p-10 flex flex-col gap-4 hover:border-slate-300 transition-all"
               >
                 <Icon size={22} className="text-slate-500 group-hover:text-slate-900 transition-colors" />
                 <div className="space-y-1">
