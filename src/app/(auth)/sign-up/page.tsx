@@ -73,7 +73,7 @@ export default function SignUpPage() {
     setLoading(true)
 
     try {
-      // 1. Sign up the user
+      // 1. Sign up the user and pass onboarding data in user metadata
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: admin.email,
         password: admin.password,
@@ -81,6 +81,9 @@ export default function SignUpPage() {
           data: {
             name: admin.name,
             phone: admin.phone,
+            tenant_name: tenant.name,
+            branch_name: branch.name,
+            branch_address: branch.address,
           },
         },
       })
@@ -88,42 +91,13 @@ export default function SignUpPage() {
       if (authError) throw authError
       if (!authData.user) throw new Error('User creation failed')
 
-      // 2. Create tenant
-      const { data: tenantData, error: tenantError } = await supabase
-        .from('tenants')
-        .insert({ name: tenant.name })
-        .select('id')
-        .single()
-
-      if (tenantError) throw tenantError
-
-      // 3. Create HQ branch
-      const { error: branchError } = await supabase
-        .from('branches')
-        .insert({
-          tenant_id: tenantData.id,
-          name: branch.name,
-          address: branch.address,
-          is_hq: true,
-        })
-
-      if (branchError) throw branchError
-
-      // 4. Create profile
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert({
-          id: authData.user.id,
-          tenant_id: tenantData.id,
-          role: 'dealer_admin',
-          name: admin.name,
-          email: admin.email,
-        })
-
-      if (profileError) throw profileError
-
-      addToast('Account created successfully', 'success')
-      router.push('/dashboard')
+      if (authData.session) {
+        addToast('Account created successfully', 'success')
+        router.push('/dashboard')
+      } else {
+        addToast('Verification email sent! Please check your email to activate your account.', 'success')
+        router.push('/sign-in')
+      }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Something went wrong'
       addToast(message, 'error')

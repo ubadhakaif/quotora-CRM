@@ -240,37 +240,47 @@ RETURNS UUID AS $$
 $$ LANGUAGE sql SECURITY DEFINER STABLE;
 
 -- ─── TENANTS: users can only see their own tenant ───
+DROP POLICY IF EXISTS "tenants_select" ON tenants;
 CREATE POLICY "tenants_select" ON tenants FOR SELECT USING (
   id = get_user_tenant_id()
 );
 -- Allow INSERT for new signups (no profile yet, so we must allow)
+DROP POLICY IF EXISTS "tenants_insert" ON tenants;
 CREATE POLICY "tenants_insert" ON tenants FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "tenants_update" ON tenants;
 CREATE POLICY "tenants_update" ON tenants FOR UPDATE USING (
   id = get_user_tenant_id()
 );
 
 -- ─── BRANCHES: scoped to tenant ───
+DROP POLICY IF EXISTS "branches_select" ON branches;
 CREATE POLICY "branches_select" ON branches FOR SELECT USING (
   tenant_id = get_user_tenant_id()
 );
+DROP POLICY IF EXISTS "branches_insert" ON branches;
 CREATE POLICY "branches_insert" ON branches FOR INSERT WITH CHECK (
   tenant_id = get_user_tenant_id() OR NOT EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid())
 );
+DROP POLICY IF EXISTS "branches_update" ON branches;
 CREATE POLICY "branches_update" ON branches FOR UPDATE USING (
   tenant_id = get_user_tenant_id()
 );
+DROP POLICY IF EXISTS "branches_delete" ON branches;
 CREATE POLICY "branches_delete" ON branches FOR DELETE USING (
   tenant_id = get_user_tenant_id()
 );
 
 -- ─── PROFILES: users can see profiles in their tenant ───
+DROP POLICY IF EXISTS "profiles_select" ON profiles;
 CREATE POLICY "profiles_select" ON profiles FOR SELECT USING (
   tenant_id = get_user_tenant_id() OR id = auth.uid()
 );
 -- Allow INSERT for onboarding (profile doesn't exist yet)
+DROP POLICY IF EXISTS "profiles_insert" ON profiles;
 CREATE POLICY "profiles_insert" ON profiles FOR INSERT WITH CHECK (
   id = auth.uid()
 );
+DROP POLICY IF EXISTS "profiles_update" ON profiles;
 CREATE POLICY "profiles_update" ON profiles FOR UPDATE USING (
   tenant_id = get_user_tenant_id()
 );
@@ -287,19 +297,19 @@ BEGIN
     ])
   LOOP
     EXECUTE format(
-      'CREATE POLICY "%1$s_select" ON %1$I FOR SELECT USING (tenant_id = get_user_tenant_id())',
+      'DROP POLICY IF EXISTS "%1$s_select" ON %1$I; CREATE POLICY "%1$s_select" ON %1$I FOR SELECT USING (tenant_id = get_user_tenant_id())',
       tbl
     );
     EXECUTE format(
-      'CREATE POLICY "%1$s_insert" ON %1$I FOR INSERT WITH CHECK (tenant_id = get_user_tenant_id())',
+      'DROP POLICY IF EXISTS "%1$s_insert" ON %1$I; CREATE POLICY "%1$s_insert" ON %1$I FOR INSERT WITH CHECK (tenant_id = get_user_tenant_id())',
       tbl
     );
     EXECUTE format(
-      'CREATE POLICY "%1$s_update" ON %1$I FOR UPDATE USING (tenant_id = get_user_tenant_id())',
+      'DROP POLICY IF EXISTS "%1$s_update" ON %1$I; CREATE POLICY "%1$s_update" ON %1$I FOR UPDATE USING (tenant_id = get_user_tenant_id())',
       tbl
     );
     EXECUTE format(
-      'CREATE POLICY "%1$s_delete" ON %1$I FOR DELETE USING (tenant_id = get_user_tenant_id())',
+      'DROP POLICY IF EXISTS "%1$s_delete" ON %1$I; CREATE POLICY "%1$s_delete" ON %1$I FOR DELETE USING (tenant_id = get_user_tenant_id())',
       tbl
     );
   END LOOP;
@@ -307,23 +317,75 @@ END;
 $$;
 
 -- ─── VARIANT_ACCESSORIES: scoped via variant's tenant ───
+DROP POLICY IF EXISTS "variant_accessories_select" ON variant_accessories;
 CREATE POLICY "variant_accessories_select" ON variant_accessories FOR SELECT USING (
   EXISTS (SELECT 1 FROM variants WHERE variants.id = variant_accessories.variant_id AND variants.tenant_id = get_user_tenant_id())
 );
+DROP POLICY IF EXISTS "variant_accessories_insert" ON variant_accessories;
 CREATE POLICY "variant_accessories_insert" ON variant_accessories FOR INSERT WITH CHECK (
   EXISTS (SELECT 1 FROM variants WHERE variants.id = variant_accessories.variant_id AND variants.tenant_id = get_user_tenant_id())
 );
+DROP POLICY IF EXISTS "variant_accessories_delete" ON variant_accessories;
 CREATE POLICY "variant_accessories_delete" ON variant_accessories FOR DELETE USING (
   EXISTS (SELECT 1 FROM variants WHERE variants.id = variant_accessories.variant_id AND variants.tenant_id = get_user_tenant_id())
 );
 
 -- ─── QUOTATION_ACCESSORIES: scoped via quotation's tenant ───
+DROP POLICY IF EXISTS "quotation_accessories_select" ON quotation_accessories;
 CREATE POLICY "quotation_accessories_select" ON quotation_accessories FOR SELECT USING (
   EXISTS (SELECT 1 FROM quotations WHERE quotations.id = quotation_accessories.quotation_id AND quotations.tenant_id = get_user_tenant_id())
 );
+DROP POLICY IF EXISTS "quotation_accessories_insert" ON quotation_accessories;
 CREATE POLICY "quotation_accessories_insert" ON quotation_accessories FOR INSERT WITH CHECK (
   EXISTS (SELECT 1 FROM quotations WHERE quotations.id = quotation_accessories.quotation_id AND quotations.tenant_id = get_user_tenant_id())
 );
+DROP POLICY IF EXISTS "quotation_accessories_delete" ON quotation_accessories;
 CREATE POLICY "quotation_accessories_delete" ON quotation_accessories FOR DELETE USING (
   EXISTS (SELECT 1 FROM quotations WHERE quotations.id = quotation_accessories.quotation_id AND quotations.tenant_id = get_user_tenant_id())
 );
+
+-- ============================================================
+-- ONBOARDING TRIGGER (auth.users -> tenants, branches, profiles)
+-- ============================================================
+
+CREATE OR REPLACE FUNCTION handle_new_user()
+RETURNS TRIGGER AS $$
+DECLARE
+  v_tenant_id UUID;
+  v_branch_id UUID;
+  v_tenant_name TEXT;
+  v_branch_name TEXT;
+  v_branch_address TEXT;
+  v_name TEXT;
+  v_email TEXT;
+BEGIN
+  -- Extract metadata passed during signUp
+  v_tenant_name := COALESCE(new.raw_user_meta_data->>'tenant_name', 'My Dealership');
+  v_branch_name := COALESCE(new.raw_user_meta_data->>'branch_name', 'HQ Branch');
+  v_branch_address := COALESCE(new.raw_user_meta_data->>'branch_address', '');
+  v_name := COALESCE(new.raw_user_meta_data->>'name', 'Admin');
+  v_email := new.email;
+
+  -- 1. Create tenant
+  INSERT INTO public.tenants (name)
+  VALUES (v_tenant_name)
+  RETURNING id INTO v_tenant_id;
+
+  -- 2. Create HQ branch
+  INSERT INTO public.branches (tenant_id, name, address, is_hq)
+  VALUES (v_tenant_id, v_branch_name, v_branch_address, true)
+  RETURNING id INTO v_branch_id;
+
+  -- 3. Create profile linked to the user, tenant, and branch
+  INSERT INTO public.profiles (id, tenant_id, branch_id, role, name, email)
+  VALUES (new.id, v_tenant_id, v_branch_id, 'dealer_admin', v_name, v_email);
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Trigger to execute the function on user signup
+CREATE OR REPLACE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION handle_new_user();
+
