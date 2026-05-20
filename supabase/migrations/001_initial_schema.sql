@@ -363,12 +363,27 @@ DECLARE
   v_name TEXT;
   v_email TEXT;
 BEGIN
-  -- Extract metadata passed during signUp
+  v_name := COALESCE(new.raw_user_meta_data->>'name', 'User');
+  v_email := new.email;
+
+  -- Check if this is an employee creation (tenant_id provided in metadata)
+  IF new.raw_user_meta_data->>'tenant_id' IS NOT NULL THEN
+    INSERT INTO public.profiles (id, tenant_id, branch_id, role, name, email)
+    VALUES (
+      new.id, 
+      (new.raw_user_meta_data->>'tenant_id')::UUID, 
+      NULLIF(new.raw_user_meta_data->>'branch_id', '')::UUID, 
+      COALESCE(new.raw_user_meta_data->>'role', 'employee'), 
+      v_name, 
+      v_email
+    );
+    RETURN NEW;
+  END IF;
+
+  -- Otherwise, it's a new Dealership signup
   v_tenant_name := COALESCE(new.raw_user_meta_data->>'tenant_name', 'My Dealership');
   v_branch_name := COALESCE(new.raw_user_meta_data->>'branch_name', 'HQ Branch');
   v_branch_address := COALESCE(new.raw_user_meta_data->>'branch_address', '');
-  v_name := COALESCE(new.raw_user_meta_data->>'name', 'Admin');
-  v_email := new.email;
 
   -- 1. Create tenant
   INSERT INTO public.tenants (name)

@@ -37,11 +37,18 @@ export async function POST(request: Request) {
       { auth: { autoRefreshToken: false, persistSession: false } }
     )
 
+    // The database trigger "handle_new_user" will automatically create the profile row
+    // because we are passing "tenant_id" in the user_metadata.
     const { data: newUser, error: createError } = await adminSupabase.auth.admin.createUser({
       email,
       password,
       email_confirm: true,
-      user_metadata: { name },
+      user_metadata: { 
+        name,
+        tenant_id: callerProfile.tenant_id,
+        branch_id: branch_id || null,
+        role: role || 'employee'
+      },
     })
 
     if (createError) {
@@ -50,23 +57,6 @@ export async function POST(request: Request) {
 
     if (!newUser.user) {
       return NextResponse.json({ error: 'Failed to create user' }, { status: 500 })
-    }
-
-    // 4. Create the profile row for this employee
-    const { error: profileError } = await adminSupabase
-      .from('profiles')
-      .insert({
-        id: newUser.user.id,
-        tenant_id: callerProfile.tenant_id,
-        branch_id: branch_id || null,
-        role: role || 'employee',
-        name,
-        email,
-        is_active: true,
-      })
-
-    if (profileError) {
-      return NextResponse.json({ error: profileError.message }, { status: 500 })
     }
 
     return NextResponse.json({ success: true, user_id: newUser.user.id })
