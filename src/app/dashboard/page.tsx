@@ -65,27 +65,35 @@ export default function DashboardPage() {
 
       {/* Quick Links Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {quickLinks.map(link => {
-          const Icon = link.icon
-          return (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="group bg-white border border-slate-200 rounded-[3rem] p-8 md:p-10 flex flex-col gap-4 hover:border-slate-300 transition-all"
-            >
-              <Icon size={22} className="text-slate-500 group-hover:text-slate-900 transition-colors" />
-              <div className="space-y-1">
-                <p className="text-slate-900">{link.label}</p>
-                <p className="text-sm text-slate-500">{link.description}</p>
-              </div>
-              <div className="mt-auto pt-2">
-                <span className="inline-flex items-center gap-2 text-sm text-slate-400 group-hover:text-slate-900 transition-colors">
-                  Open <ArrowRight size={14} />
-                </span>
-              </div>
-            </Link>
-          )
-        })}
+        {quickLinks
+          .filter(link => {
+            if (!profile) return false
+            if (['/dashboard/branches', '/dashboard/employees'].includes(link.href)) {
+              return profile.role === 'dealer_admin'
+            }
+            return true
+          })
+          .map(link => {
+            const Icon = link.icon
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="group bg-white border border-slate-200 rounded-[3rem] p-8 md:p-10 flex flex-col gap-4 hover:border-slate-300 transition-all"
+              >
+                <Icon size={22} className="text-slate-500 group-hover:text-slate-900 transition-colors" />
+                <div className="space-y-1">
+                  <p className="text-slate-900">{link.label}</p>
+                  <p className="text-sm text-slate-500">{link.description}</p>
+                </div>
+                <div className="mt-auto pt-2">
+                  <span className="inline-flex items-center gap-2 text-sm text-slate-400 group-hover:text-slate-900 transition-colors">
+                    Open <ArrowRight size={14} />
+                  </span>
+                </div>
+              </Link>
+            )
+          })}
       </div>
     </div>
   )

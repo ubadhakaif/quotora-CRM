@@ -77,29 +77,37 @@ export function Sidebar() {
 
         {/* Nav */}
         <nav className="flex-1 px-4 space-y-1 overflow-y-auto">
-          {navItems.map(item => {
-            const Icon = item.icon
-            const isActive = pathname === item.href || 
-              (item.href !== '/dashboard' && pathname.startsWith(item.href))
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setMobileOpen(false)}
-                className={`
-                  flex items-center gap-3 px-5 py-3.5 rounded-full text-sm transition-all
-                  ${
-                    isActive
-                      ? 'bg-slate-900 text-white'
-                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                  }
-                `}
-              >
-                <Icon size={18} />
-                {item.label}
-              </Link>
-            )
-          })}
+          {navItems
+            .filter(item => {
+              if (!profile) return false
+              if (['/dashboard/branches', '/dashboard/employees'].includes(item.href)) {
+                return profile.role === 'dealer_admin'
+              }
+              return true
+            })
+            .map(item => {
+              const Icon = item.icon
+              const isActive = pathname === item.href || 
+                (item.href !== '/dashboard' && pathname.startsWith(item.href))
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setMobileOpen(false)}
+                  className={`
+                    flex items-center gap-3 px-5 py-3.5 rounded-full text-sm transition-all
+                    ${
+                      isActive
+                        ? 'bg-slate-900 text-white'
+                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                    }
+                  `}
+                >
+                  <Icon size={18} />
+                  {item.label}
+                </Link>
+              )
+            })}
         </nav>
 
         {/* Sign out */}
