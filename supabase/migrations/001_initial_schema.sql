@@ -399,4 +399,27 @@ RETURNS UUID AS $$
   SELECT id FROM auth.users WHERE email = p_email LIMIT 1;
 $$ LANGUAGE sql SECURITY DEFINER;
 
+-- ============================================================
+-- ─── 13. STORAGE BUCKETS AND POLICIES ───
+-- ============================================================
 
+-- Create the "images" bucket if it doesn't exist
+INSERT INTO storage.buckets (id, name, public) 
+VALUES ('images', 'images', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Storage policies for the "images" bucket
+-- Anyone can view the images (since it's a public bucket)
+DROP POLICY IF EXISTS "Images are publicly accessible" ON storage.objects;
+CREATE POLICY "Images are publicly accessible" ON storage.objects
+  FOR SELECT USING (bucket_id = 'images');
+
+-- Only authenticated users can upload images
+DROP POLICY IF EXISTS "Authenticated users can upload images" ON storage.objects;
+CREATE POLICY "Authenticated users can upload images" ON storage.objects
+  FOR INSERT TO authenticated WITH CHECK (bucket_id = 'images');
+
+-- Users can delete their own uploaded images (optional but good practice)
+DROP POLICY IF EXISTS "Users can update/delete their own images" ON storage.objects;
+CREATE POLICY "Users can update/delete their own images" ON storage.objects
+  FOR ALL TO authenticated USING (bucket_id = 'images' AND auth.uid() = owner) WITH CHECK (bucket_id = 'images' AND auth.uid() = owner);
