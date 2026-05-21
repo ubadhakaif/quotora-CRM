@@ -82,6 +82,15 @@ export default function SalesQuotationsPage() {
   const [bNotes, setBNotes] = useState('')
   const [discountThreshold, setDiscountThreshold] = useState<number>(5) // default 5%
   
+  // Dynamic statutory settings loaded from database
+  const [cgstRate, setCgstRate] = useState(14) // default 14%
+  const [sgstRate, setSgstRate] = useState(14) // default 14%
+  const [tcsThresholdSetting, setTcsThresholdSetting] = useState(1000000) // default 10L
+  const [tcsRateSetting, setTcsRateSetting] = useState(1) // default 1%
+  const [roadTaxRate, setRoadTaxRate] = useState(10) // default 10%
+  const [rtoFeeRate, setRtoFeeRate] = useState(2) // default 2%
+  const [insuranceRate, setInsuranceRate] = useState(4) // default 4%
+  
   // Loan / EMI parameters state
   const [includeLoan, setIncludeLoan] = useState(false)
   const [selectedPlanId, setSelectedPlanId] = useState('')
@@ -129,9 +138,7 @@ export default function SalesQuotationsPage() {
         .order('name'),
       supabase
         .from('dealership_settings')
-        .select('value')
-        .eq('key', 'discount_threshold')
-        .single(),
+        .select('key, value'),
       supabase
         .from('finance_plans')
         .select('*, finance_providers(id, name)')
@@ -151,9 +158,27 @@ export default function SalesQuotationsPage() {
       }
     }
     
-    if (settingsRes.data && typeof settingsRes.data.value === 'object') {
-      const val = (settingsRes.data.value as any)?.percentage || 5
-      setDiscountThreshold(Number(val))
+    if (settingsRes.data && Array.isArray(settingsRes.data)) {
+      const settingsMap: Record<string, any> = {}
+      settingsRes.data.forEach((item: any) => {
+        settingsMap[item.key] = item.value
+      })
+
+      // Parse discount threshold
+      if (settingsMap['quotation.max_auto_discount_percent'] !== undefined) {
+        setDiscountThreshold(Number(settingsMap['quotation.max_auto_discount_percent']))
+      } else if (settingsMap['discount_threshold']?.percentage !== undefined) {
+        setDiscountThreshold(Number(settingsMap['discount_threshold'].percentage))
+      }
+
+      // Parse tax settings
+      if (settingsMap['tax.cgst_percent'] !== undefined) setCgstRate(Number(settingsMap['tax.cgst_percent']))
+      if (settingsMap['tax.sgst_percent'] !== undefined) setSgstRate(Number(settingsMap['tax.sgst_percent']))
+      if (settingsMap['tax.tcs_threshold'] !== undefined) setTcsThresholdSetting(Number(settingsMap['tax.tcs_threshold']))
+      if (settingsMap['tax.tcs_percent'] !== undefined) setTcsRateSetting(Number(settingsMap['tax.tcs_percent']))
+      if (settingsMap['tax.road_tax_percent'] !== undefined) setRoadTaxRate(Number(settingsMap['tax.road_tax_percent']))
+      if (settingsMap['tax.rto_fee_percent'] !== undefined) setRtoFeeRate(Number(settingsMap['tax.rto_fee_percent']))
+      if (settingsMap['tax.insurance_percent'] !== undefined) setInsuranceRate(Number(settingsMap['tax.insurance_percent']))
     }
 
     setLoading(false)
@@ -168,11 +193,11 @@ export default function SalesQuotationsPage() {
   // Calculation Math
   const activeVariant = variants.find(v => v.id === bVariantId)
   const exShowroom = activeVariant ? Number(activeVariant.price) : 0
-  const gstTax = Math.round(exShowroom * 0.28) // 28% GST
-  const tcsTax = exShowroom >= 1000000 ? Math.round(exShowroom * 0.01) : 0 // 1% TCS if over 10 Lakhs
-  const roadTax = Math.round(exShowroom * 0.10) // 10% Road Tax / State Tax
-  const rtoFee = Math.round(exShowroom * 0.02) // 2% RTO Fee
-  const insuranceTax = Math.round(exShowroom * 0.04) // 4% Insurance
+  const gstTax = Math.round(exShowroom * ((cgstRate + sgstRate) / 100)) // CGST + SGST
+  const tcsTax = exShowroom >= tcsThresholdSetting ? Math.round(exShowroom * (tcsRateSetting / 100)) : 0
+  const roadTax = Math.round(exShowroom * (roadTaxRate / 100))
+  const rtoFee = Math.round(exShowroom * (rtoFeeRate / 100))
+  const insuranceTax = Math.round(exShowroom * (insuranceRate / 100))
   
   const selectedAccessories = accessories.filter(a => selectedAccIds.includes(a.id))
   const accessoriesTotal = selectedAccessories.reduce((acc, a) => acc + Number(a.price), 0)
@@ -729,29 +754,29 @@ export default function SalesQuotationsPage() {
                     </div>
 
                     <div className="flex justify-between pl-2 text-xs text-slate-500">
-                      <span>GST (28% Statutory Tax)</span>
+                      <span>GST ({cgstRate + sgstRate}% Dynamic Tax)</span>
                       <span>+ {fmtINR(gstTax)}</span>
                     </div>
 
                     {tcsTax > 0 && (
                       <div className="flex justify-between pl-2 text-xs text-slate-500">
-                        <span>TCS (1% Tax Collected at Source)</span>
+                        <span>TCS ({tcsRateSetting}% Tax Collected at Source)</span>
                         <span>+ {fmtINR(tcsTax)}</span>
                       </div>
                     )}
 
                     <div className="flex justify-between pl-2 text-xs text-slate-500">
-                      <span>Road Tax & State Charges (10%)</span>
+                      <span>Road Tax & State Charges ({roadTaxRate}%)</span>
                       <span>+ {fmtINR(roadTax)}</span>
                     </div>
 
                     <div className="flex justify-between pl-2 text-xs text-slate-500">
-                      <span>RTO & Registration Fees (2%)</span>
+                      <span>RTO & Registration Fees ({rtoFeeRate}%)</span>
                       <span>+ {fmtINR(rtoFee)}</span>
                     </div>
 
                     <div className="flex justify-between pl-2 text-xs text-slate-500">
-                      <span>Comprehensive Motor Insurance (4%)</span>
+                      <span>Comprehensive Motor Insurance ({insuranceRate}%)</span>
                       <span>+ {fmtINR(insuranceTax)}</span>
                     </div>
 

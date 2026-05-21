@@ -128,7 +128,7 @@ export default function SettingsPage() {
                 <label className="text-sm font-medium text-slate-700">CGST (%)</label>
                 <input
                   type="number"
-                  value={settings['tax.cgst_percent'] || ''}
+                  value={settings['tax.cgst_percent'] !== undefined ? settings['tax.cgst_percent'] : ''}
                   onChange={e => handleSettingChange('tax.cgst_percent', Number(e.target.value))}
                   placeholder="14"
                   className="w-full rounded-full py-4 px-6 bg-slate-50 border border-slate-200 text-slate-900 focus:border-slate-900 focus:bg-white transition-all outline-none"
@@ -138,7 +138,7 @@ export default function SettingsPage() {
                 <label className="text-sm font-medium text-slate-700">SGST (%)</label>
                 <input
                   type="number"
-                  value={settings['tax.sgst_percent'] || ''}
+                  value={settings['tax.sgst_percent'] !== undefined ? settings['tax.sgst_percent'] : ''}
                   onChange={e => handleSettingChange('tax.sgst_percent', Number(e.target.value))}
                   placeholder="14"
                   className="w-full rounded-full py-4 px-6 bg-slate-50 border border-slate-200 text-slate-900 focus:border-slate-900 focus:bg-white transition-all outline-none"
@@ -148,7 +148,7 @@ export default function SettingsPage() {
                 <label className="text-sm font-medium text-slate-700">TCS Threshold (₹)</label>
                 <input
                   type="number"
-                  value={settings['tax.tcs_threshold'] || ''}
+                  value={settings['tax.tcs_threshold'] !== undefined ? settings['tax.tcs_threshold'] : ''}
                   onChange={e => handleSettingChange('tax.tcs_threshold', Number(e.target.value))}
                   placeholder="1000000"
                   className="w-full rounded-full py-4 px-6 bg-slate-50 border border-slate-200 text-slate-900 focus:border-slate-900 focus:bg-white transition-all outline-none"
@@ -159,9 +159,42 @@ export default function SettingsPage() {
                 <input
                   type="number"
                   step="0.1"
-                  value={settings['tax.tcs_percent'] || ''}
+                  value={settings['tax.tcs_percent'] !== undefined ? settings['tax.tcs_percent'] : ''}
                   onChange={e => handleSettingChange('tax.tcs_percent', Number(e.target.value))}
                   placeholder="1"
+                  className="w-full rounded-full py-4 px-6 bg-slate-50 border border-slate-200 text-slate-900 focus:border-slate-900 focus:bg-white transition-all outline-none"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700">Road Tax & State Charges (%)</label>
+                <input
+                  type="number"
+                  step="0.1"
+                  value={settings['tax.road_tax_percent'] !== undefined ? settings['tax.road_tax_percent'] : ''}
+                  onChange={e => handleSettingChange('tax.road_tax_percent', Number(e.target.value))}
+                  placeholder="10"
+                  className="w-full rounded-full py-4 px-6 bg-slate-50 border border-slate-200 text-slate-900 focus:border-slate-900 focus:bg-white transition-all outline-none"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700">RTO & Registration Fees (%)</label>
+                <input
+                  type="number"
+                  step="0.1"
+                  value={settings['tax.rto_fee_percent'] !== undefined ? settings['tax.rto_fee_percent'] : ''}
+                  onChange={e => handleSettingChange('tax.rto_fee_percent', Number(e.target.value))}
+                  placeholder="2"
+                  className="w-full rounded-full py-4 px-6 bg-slate-50 border border-slate-200 text-slate-900 focus:border-slate-900 focus:bg-white transition-all outline-none"
+                />
+              </div>
+              <div className="space-y-2 col-span-1 sm:col-span-2">
+                <label className="text-sm font-medium text-slate-700">Comprehensive Vehicle Insurance (%)</label>
+                <input
+                  type="number"
+                  step="0.1"
+                  value={settings['tax.insurance_percent'] !== undefined ? settings['tax.insurance_percent'] : ''}
+                  onChange={e => handleSettingChange('tax.insurance_percent', Number(e.target.value))}
+                  placeholder="4"
                   className="w-full rounded-full py-4 px-6 bg-slate-50 border border-slate-200 text-slate-900 focus:border-slate-900 focus:bg-white transition-all outline-none"
                 />
               </div>
