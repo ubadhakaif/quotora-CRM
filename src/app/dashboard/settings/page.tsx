@@ -7,10 +7,10 @@ import { useToast } from '@/components/providers/ToastProvider'
 import { Settings, Save } from 'lucide-react'
 
 const TABS = [
-  { id: 'branding', label: 'Branding', desc: 'Dealership name, slogan, and public presence details.' },
-  { id: 'tax', label: 'Tax Configuration', desc: 'GST, TCS thresholds, state road taxes, and defaults.' },
-  { id: 'quotation', label: 'Quotation Rules', desc: 'Auto-approval caps, discount controls, and parameters.' },
-  { id: 'operations', label: 'Operations & Roster', desc: 'Branch operational hours, daily shift start/end times.' },
+  { id: 'branding', label: 'Branding' },
+  { id: 'tax', label: 'Tax Configuration' },
+  { id: 'quotation', label: 'Quotation Rules' },
+  { id: 'operations', label: 'Operations & Roster' },
 ]
 
 export default function SettingsPage() {
@@ -65,34 +65,35 @@ export default function SettingsPage() {
     setSaving(false)
   }
 
+  // Format time string (HH:MM) to IST display
+  const formatTimeIST = (timeStr: string) => {
+    if (!timeStr) return '--:--'
+    const [h, m] = timeStr.split(':').map(Number)
+    const period = h >= 12 ? 'PM' : 'AM'
+    const hour12 = h % 12 || 12
+    return `${hour12}:${String(m).padStart(2, '0')} ${period} IST`
+  }
+
   if (loading) {
     return <div className="skeleton h-64 w-full rounded-[2rem]" />
   }
 
   return (
     <div className="space-y-8">
-      {/* Quick Tiles Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Quick Tiles Grid — heading only */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {TABS.map(tab => (
           <button
             key={tab.id}
             type="button"
             onClick={() => setActiveTab(tab.id)}
-            className={`text-left p-6 rounded-[2rem] border transition-all cursor-pointer flex flex-col justify-between min-h-[140px] ${
+            className={`text-left px-6 py-5 rounded-[2rem] border transition-all cursor-pointer ${
               activeTab === tab.id
                 ? 'bg-slate-900 border-slate-900 text-white shadow-sm'
                 : 'bg-white border-slate-200 text-slate-800 hover:border-slate-300 hover:bg-slate-50/50'
             }`}
           >
-            <div>
-              <span className={`text-[10px] font-bold uppercase tracking-wider block mb-1 ${activeTab === tab.id ? 'text-slate-400' : 'text-slate-500'}`}>
-                Section
-              </span>
-              <h4 className="font-bold text-base leading-snug">{tab.label}</h4>
-            </div>
-            <p className={`text-xs mt-2 line-clamp-2 leading-relaxed ${activeTab === tab.id ? 'text-slate-300' : 'text-slate-400'}`}>
-              {tab.desc}
-            </p>
+            <h4 className="font-bold text-sm leading-snug">{tab.label}</h4>
           </button>
         ))}
       </div>
@@ -260,6 +261,9 @@ export default function SettingsPage() {
                   onChange={e => handleSettingChange('operations.shift_start', e.target.value)}
                   className="w-full rounded-full py-4 px-6 bg-slate-50 border border-slate-200 text-slate-900 focus:border-slate-900 focus:bg-white transition-all outline-none"
                 />
+                <p className="text-xs text-slate-500 pl-4">
+                  {formatTimeIST(settings['operations.shift_start'] || '09:00')}
+                </p>
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium text-slate-700">Shift End Time</label>
@@ -269,6 +273,9 @@ export default function SettingsPage() {
                   onChange={e => handleSettingChange('operations.shift_end', e.target.value)}
                   className="w-full rounded-full py-4 px-6 bg-slate-50 border border-slate-200 text-slate-900 focus:border-slate-900 focus:bg-white transition-all outline-none"
                 />
+                <p className="text-xs text-slate-500 pl-4">
+                  {formatTimeIST(settings['operations.shift_end'] || '18:00')}
+                </p>
               </div>
               <div className="space-y-2 sm:col-span-2">
                 <label className="text-sm font-medium text-slate-700">Roster Grace Period (Minutes)</label>
@@ -279,6 +286,22 @@ export default function SettingsPage() {
                   placeholder="15"
                   className="w-full rounded-full py-4 px-6 bg-slate-50 border border-slate-200 text-slate-900 focus:border-slate-900 focus:bg-white transition-all outline-none"
                 />
+              </div>
+              <div className="space-y-2 sm:col-span-2 pt-4 border-t border-slate-100">
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider pl-4">Dealership Registration Time (First-Time Sign-In)</label>
+                <div className="w-full rounded-full py-4 px-6 bg-slate-50/50 border border-slate-200 text-slate-800 font-semibold select-none">
+                  {profile?.created_at
+                    ? new Date(profile.created_at).toLocaleString('en-IN', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: true,
+                        timeZone: 'Asia/Kolkata',
+                      }) + ' IST'
+                    : 'N/A'}
+                </div>
               </div>
             </div>
           </div>

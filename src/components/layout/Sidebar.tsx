@@ -17,6 +17,9 @@ import {
   PhoneCall,
   Calculator,
   RefreshCw,
+  Clock,
+  CalendarDays,
+  Wrench,
 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -37,6 +40,9 @@ const iconMap: Record<string, React.ElementType> = {
   PhoneCall,
   Calculator,
   RefreshCw,
+  Clock,
+  CalendarDays,
+  Wrench,
 }
 
 interface SidebarProps {
