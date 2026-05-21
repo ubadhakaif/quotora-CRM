@@ -1,7 +1,7 @@
 'use client'
 
 import { useAuth } from '@/components/providers/AuthProvider'
-import { Building2, Users, Car, Landmark, BarChart3, Settings, ArrowRight, IndianRupee, Target, FileText } from 'lucide-react'
+import { Building2, Users, Car, Landmark, BarChart3, Settings, ArrowRight, IndianRupee, Target, FileText, Clock } from 'lucide-react'
 import Link from 'next/link'
 import { StatCard } from '@/components/ui/StatCard'
 import { createClient } from '@/lib/supabase/client'
@@ -31,6 +31,12 @@ const quickLinks = [
     label: 'Leads',
     description: 'Manage and assign customer leads',
     icon: Target,
+  },
+  {
+    href: '/dashboard/attendance',
+    label: 'Attendance',
+    description: 'Audit employee check-in logs',
+    icon: Clock,
   },
   {
     href: '/dashboard/finance',

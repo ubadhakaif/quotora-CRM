@@ -105,13 +105,23 @@ export default function SalesQuotationsPage() {
   const [loanDownPayment, setLoanDownPayment] = useState(0)
   const [loanTenure, setLoanTenure] = useState(60)
 
-  // Manual overrides for tax and insurance
-  const [customGst, setCustomGst] = useState<number | null>(null)
-  const [customTcs, setCustomTcs] = useState<number | null>(null)
-  const [customRoadTax, setCustomRoadTax] = useState<number | null>(null)
-  const [customRtoFee, setCustomRtoFee] = useState<number | null>(null)
-  const [customInsurance, setCustomInsurance] = useState<number | null>(null)
+  // Manual overrides for tax and insurance (now percentage values)
+  const [customGstPct, setCustomGstPct] = useState<number | null>(null)
+  const [customTcsPct, setCustomTcsPct] = useState<number | null>(null)
+  const [customRoadTaxPct, setCustomRoadTaxPct] = useState<number | null>(null)
+  const [customRtoFeePct, setCustomRtoFeePct] = useState<number | null>(null)
+  const [customInsurancePct, setCustomInsurancePct] = useState<number | null>(null)
   const [customOtherCharges, setCustomOtherCharges] = useState<number>(0)
+
+  // Exchange / Trade-In state
+  const [hasExchange, setHasExchange] = useState(false)
+  const [exchangeMake, setExchangeMake] = useState('')
+  const [exchangeModel, setExchangeModel] = useState('')
+  const [exchangeYear, setExchangeYear] = useState('')
+  const [exchangeKms, setExchangeKms] = useState('')
+  const [exchangeCondition, setExchangeCondition] = useState('good')
+  const [exchangeValuation, setExchangeValuation] = useState('')
+  const [exchangeNotes, setExchangeNotes] = useState('')
 
   // Previewing details state
   const [previewingQuote, setPreviewingQuote] = useState<Quotation | null>(null)
@@ -210,17 +220,17 @@ export default function SalesQuotationsPage() {
   const activeVariant = variants.find(v => v.id === bVariantId)
   const exShowroom = activeVariant ? Number(activeVariant.price) : 0
 
-  const defaultGst = Math.round(exShowroom * ((cgstRate + sgstRate) / 100))
-  const defaultTcs = exShowroom >= tcsThresholdSetting ? Math.round(exShowroom * (tcsRateSetting / 100)) : 0
-  const defaultRoadTax = Math.round(exShowroom * (roadTaxRate / 100))
-  const defaultRtoFee = Math.round(exShowroom * (rtoFeeRate / 100))
-  const defaultInsurance = Math.round(exShowroom * (insuranceRate / 100))
+  const gstPct = customGstPct !== null ? customGstPct : (cgstRate + sgstRate)
+  const tcsPct = customTcsPct !== null ? customTcsPct : tcsRateSetting
+  const roadTaxPct = customRoadTaxPct !== null ? customRoadTaxPct : roadTaxRate
+  const rtoPct = customRtoFeePct !== null ? customRtoFeePct : rtoFeeRate
+  const insurancePct = customInsurancePct !== null ? customInsurancePct : insuranceRate
 
-  const gstTax = customGst !== null ? customGst : defaultGst
-  const tcsTax = customTcs !== null ? customTcs : defaultTcs
-  const roadTax = customRoadTax !== null ? customRoadTax : defaultRoadTax
-  const rtoFee = customRtoFee !== null ? customRtoFee : defaultRtoFee
-  const insuranceTax = customInsurance !== null ? customInsurance : defaultInsurance
+  const gstTax = Math.round(exShowroom * (gstPct / 100))
+  const tcsTax = exShowroom >= tcsThresholdSetting ? Math.round(exShowroom * (tcsPct / 100)) : 0
+  const roadTax = Math.round(exShowroom * (roadTaxPct / 100))
+  const rtoFee = Math.round(exShowroom * (rtoPct / 100))
+  const insuranceTax = Math.round(exShowroom * (insurancePct / 100))
   const otherCharges = customOtherCharges
   
   const selectedAccessories = accessories.filter(a => selectedAccIds.includes(a.id))
@@ -238,17 +248,27 @@ export default function SalesQuotationsPage() {
 
   // Reset custom overrides when variant is changed
   useEffect(() => {
-    setCustomGst(null)
-    setCustomTcs(null)
-    setCustomRoadTax(null)
-    setCustomRtoFee(null)
-    setCustomInsurance(null)
+    setCustomGstPct(null)
+    setCustomTcsPct(null)
+    setCustomRoadTaxPct(null)
+    setCustomRtoFeePct(null)
+    setCustomInsurancePct(null)
     setCustomOtherCharges(0)
+    setHasExchange(false)
+    setExchangeMake('')
+    setExchangeModel('')
+    setExchangeYear('')
+    setExchangeKms('')
+    setExchangeValuation('')
+    setExchangeNotes('')
   }, [bVariantId])
 
-  const finalOnRoadPrice = discountMode === 'with_acc'
+  const exchangeValue = hasExchange && exchangeValuation ? Number(exchangeValuation) : 0
+  const finalPriceBeforeExchange = discountMode === 'with_acc'
     ? Math.max(0, subtotal - bDiscountAmt)
     : Math.max(0, vehicleSubtotal - bDiscountAmt) + accessoriesTotal
+
+  const finalOnRoadPrice = Math.max(0, finalPriceBeforeExchange - exchangeValue)
 
   // EMI Calculator output
   const activePlan = financePlans.find(p => p.id === selectedPlanId)
@@ -418,6 +438,38 @@ export default function SalesQuotationsPage() {
       addToast(error.message, 'error')
       setSaving(false)
       return
+    }
+
+    // Save exchange vehicle if toggled and filled
+    if (data && data[0] && hasExchange && exchangeMake.trim() && exchangeModel.trim()) {
+      const exchangeVal = exchangeValuation ? Number(exchangeValuation) : 0
+      const newExchange = {
+        tenant_id: profile.tenant_id,
+        quotation_id: data[0].id,
+        make: exchangeMake.trim(),
+        model: exchangeModel.trim(),
+        year: exchangeYear ? Number(exchangeYear) : null,
+        kms_driven: exchangeKms ? Number(exchangeKms) : null,
+        condition: exchangeCondition,
+        estimated_value: exchangeVal,
+        notes: exchangeNotes.trim() || null,
+      }
+
+      const { error: exchangeError } = await supabase.from('exchange_vehicles').insert(newExchange)
+      if (exchangeError) {
+        addToast(`Quotation saved but exchange vehicle failed: ${exchangeError.message}`, 'error')
+      } else {
+        // Create appraisal customer note
+        if (finalCustomerId) {
+          await supabase.from('customer_notes').insert({
+            tenant_id: profile.tenant_id,
+            customer_id: finalCustomerId,
+            created_by: profile.id,
+            content: `Trade-in exchange vehicle appraised and logged: ${exchangeMake.trim()} ${exchangeModel.trim()} (${exchangeYear || 'N/A'}). Valuation subtracted: ₹${exchangeVal.toLocaleString('en-IN')}`,
+            note_type: 'general'
+          })
+        }
+      }
     }
 
     // Save quotation accessories if any are selected
@@ -608,7 +660,7 @@ export default function SalesQuotationsPage() {
 
       {/* New Quotation Builder Panel */}
       {panelOpen && (
-        <div className="bg-white border border-slate-200 rounded-[2.5rem] p-8 md:p-10 space-y-6">
+        <div className="bg-white border border-slate-200 rounded-[2.5rem] p-5 md:p-6 space-y-4">
           <div>
             <h3 className="text-lg text-slate-900 pl-2">Step-by-Step On-Road Price Builder</h3>
             <p className="text-sm text-slate-500 pl-2 mt-1">Configure customer vehicle quote, add optional accessories, and calculate discount approvals.</p>
@@ -819,9 +871,8 @@ export default function SalesQuotationsPage() {
             {bVariantId && (
               <div className="space-y-6 pt-4 border-t border-slate-100">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                  
-                  {/* Pricing Breakdown Card */}
-                  <div className="lg:col-span-7 bg-slate-50 border border-slate-200 rounded-[2.5rem] p-6 md:p-8 space-y-4 text-sm text-slate-700">
+                         {/* Pricing Breakdown Card */}
+                  <div className="lg:col-span-7 bg-slate-50 border border-slate-200 rounded-[2.5rem] p-5 md:p-6 space-y-3 text-sm text-slate-700">
                     <h4 className="font-semibold text-slate-900 mb-2 pl-2">Quotation Pricing Breakdown</h4>
                     
                     <div className="flex justify-between pl-2">
@@ -829,79 +880,89 @@ export default function SalesQuotationsPage() {
                       <span className="font-medium text-slate-900">{fmtINR(exShowroom)}</span>
                     </div>
 
-                    <div className="flex justify-between items-center pl-2 text-xs text-slate-500">
-                      <span>GST (CGST + SGST: {cgstRate + sgstRate}%)</span>
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <span className="text-[10px] text-slate-400 font-medium">₹</span>
+                    <div className="flex justify-between items-center pl-2 text-xs text-slate-505">
+                      <span>GST (CGST + SGST)</span>
+                      <div className="flex items-center gap-2 shrink-0">
                         <input
                           type="number"
-                          value={customGst !== null ? customGst : ''}
-                          onChange={e => setCustomGst(e.target.value === '' ? null : Number(e.target.value))}
-                          placeholder={String(defaultGst)}
-                          className="w-24 text-right rounded-lg py-1 px-2 bg-white border border-slate-200 text-xs font-semibold text-slate-800 focus:border-slate-900 outline-none transition-all"
+                          step={0.1}
+                          value={customGstPct !== null ? customGstPct : ''}
+                          onChange={e => setCustomGstPct(e.target.value === '' ? null : Number(e.target.value))}
+                          placeholder={String(cgstRate + sgstRate)}
+                          className="w-16 text-right rounded-lg py-1 px-2 bg-white border border-slate-200 text-xs font-semibold text-slate-800 focus:border-slate-900 outline-none transition-all"
                         />
+                        <span className="text-[10px] text-slate-400 font-bold">%</span>
+                        <span className="text-[10px] text-slate-400 font-semibold w-24 text-right">({fmtINR(gstTax)})</span>
                       </div>
                     </div>
 
-                    <div className="flex justify-between items-center pl-2 text-xs text-slate-500">
-                      <span>TCS (Tax Collected at Source: {tcsRateSetting}%)</span>
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <span className="text-[10px] text-slate-400 font-medium">₹</span>
+                    <div className="flex justify-between items-center pl-2 text-xs text-slate-505">
+                      <span>TCS (Tax Collected at Source)</span>
+                      <div className="flex items-center gap-2 shrink-0">
                         <input
                           type="number"
-                          value={customTcs !== null ? customTcs : ''}
-                          onChange={e => setCustomTcs(e.target.value === '' ? null : Number(e.target.value))}
-                          placeholder={String(defaultTcs)}
-                          className="w-24 text-right rounded-lg py-1 px-2 bg-white border border-slate-200 text-xs font-semibold text-slate-800 focus:border-slate-900 outline-none transition-all"
+                          step={0.1}
+                          value={customTcsPct !== null ? customTcsPct : ''}
+                          onChange={e => setCustomTcsPct(e.target.value === '' ? null : Number(e.target.value))}
+                          placeholder={String(tcsRateSetting)}
+                          className="w-16 text-right rounded-lg py-1 px-2 bg-white border border-slate-200 text-xs font-semibold text-slate-800 focus:border-slate-900 outline-none transition-all"
                         />
+                        <span className="text-[10px] text-slate-400 font-bold">%</span>
+                        <span className="text-[10px] text-slate-400 font-semibold w-24 text-right">({fmtINR(tcsTax)})</span>
                       </div>
                     </div>
 
-                    <div className="flex justify-between items-center pl-2 text-xs text-slate-500">
-                      <span>Road Tax & State Surcharges ({roadTaxRate}%)</span>
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <span className="text-[10px] text-slate-400 font-medium">₹</span>
+                    <div className="flex justify-between items-center pl-2 text-xs text-slate-505">
+                      <span>Road Tax & State Surcharges</span>
+                      <div className="flex items-center gap-2 shrink-0">
                         <input
                           type="number"
-                          value={customRoadTax !== null ? customRoadTax : ''}
-                          onChange={e => setCustomRoadTax(e.target.value === '' ? null : Number(e.target.value))}
-                          placeholder={String(defaultRoadTax)}
-                          className="w-24 text-right rounded-lg py-1 px-2 bg-white border border-slate-200 text-xs font-semibold text-slate-800 focus:border-slate-900 outline-none transition-all"
+                          step={0.1}
+                          value={customRoadTaxPct !== null ? customRoadTaxPct : ''}
+                          onChange={e => setCustomRoadTaxPct(e.target.value === '' ? null : Number(e.target.value))}
+                          placeholder={String(roadTaxRate)}
+                          className="w-16 text-right rounded-lg py-1 px-2 bg-white border border-slate-200 text-xs font-semibold text-slate-800 focus:border-slate-900 outline-none transition-all"
                         />
+                        <span className="text-[10px] text-slate-400 font-bold">%</span>
+                        <span className="text-[10px] text-slate-400 font-semibold w-24 text-right">({fmtINR(roadTax)})</span>
                       </div>
                     </div>
 
-                    <div className="flex justify-between items-center pl-2 text-xs text-slate-500">
-                      <span>RTO & Registration Fees ({rtoFeeRate}%)</span>
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <span className="text-[10px] text-slate-400 font-medium">₹</span>
+                    <div className="flex justify-between items-center pl-2 text-xs text-slate-505">
+                      <span>RTO & Registration Fees</span>
+                      <div className="flex items-center gap-2 shrink-0">
                         <input
                           type="number"
-                          value={customRtoFee !== null ? customRtoFee : ''}
-                          onChange={e => setCustomRtoFee(e.target.value === '' ? null : Number(e.target.value))}
-                          placeholder={String(defaultRtoFee)}
-                          className="w-24 text-right rounded-lg py-1 px-2 bg-white border border-slate-200 text-xs font-semibold text-slate-800 focus:border-slate-900 outline-none transition-all"
+                          step={0.1}
+                          value={customRtoFeePct !== null ? customRtoFeePct : ''}
+                          onChange={e => setCustomRtoFeePct(e.target.value === '' ? null : Number(e.target.value))}
+                          placeholder={String(rtoFeeRate)}
+                          className="w-16 text-right rounded-lg py-1 px-2 bg-white border border-slate-200 text-xs font-semibold text-slate-800 focus:border-slate-900 outline-none transition-all"
                         />
+                        <span className="text-[10px] text-slate-400 font-bold">%</span>
+                        <span className="text-[10px] text-slate-400 font-semibold w-24 text-right">({fmtINR(rtoFee)})</span>
                       </div>
                     </div>
 
-                    <div className="flex justify-between items-center pl-2 text-xs text-slate-500">
-                      <span>Comprehensive Motor Insurance ({insuranceRate}%)</span>
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <span className="text-[10px] text-slate-400 font-medium">₹</span>
+                    <div className="flex justify-between items-center pl-2 text-xs text-slate-505">
+                      <span>Comprehensive Motor Insurance</span>
+                      <div className="flex items-center gap-2 shrink-0">
                         <input
                           type="number"
-                          value={customInsurance !== null ? customInsurance : ''}
-                          onChange={e => setCustomInsurance(e.target.value === '' ? null : Number(e.target.value))}
-                          placeholder={String(defaultInsurance)}
-                          className="w-24 text-right rounded-lg py-1 px-2 bg-white border border-slate-200 text-xs font-semibold text-slate-800 focus:border-slate-900 outline-none transition-all"
+                          step={0.1}
+                          value={customInsurancePct !== null ? customInsurancePct : ''}
+                          onChange={e => setCustomInsurancePct(e.target.value === '' ? null : Number(e.target.value))}
+                          placeholder={String(insuranceRate)}
+                          className="w-16 text-right rounded-lg py-1 px-2 bg-white border border-slate-200 text-xs font-semibold text-slate-800 focus:border-slate-900 outline-none transition-all"
                         />
+                        <span className="text-[10px] text-slate-400 font-bold">%</span>
+                        <span className="text-[10px] text-slate-400 font-semibold w-24 text-right">({fmtINR(insuranceTax)})</span>
                       </div>
                     </div>
 
-                    <div className="flex justify-between items-center pl-2 text-xs text-slate-500">
+                    <div className="flex justify-between items-center pl-2 text-xs text-slate-505">
                       <span>Other Handling & Miscellaneous Charges</span>
-                      <div className="flex items-center gap-1.5 shrink-0">
+                      <div className="flex items-center gap-2 shrink-0">
                         <span className="text-[10px] text-slate-400 font-medium">₹</span>
                         <input
                           type="number"
@@ -925,7 +986,7 @@ export default function SalesQuotationsPage() {
                   </div>
 
                   {/* Discount Options and Input */}
-                  <div className="lg:col-span-5 space-y-5 bg-white border border-slate-200 rounded-[2.5rem] p-6 md:p-8">
+                  <div className="lg:col-span-5 space-y-4 bg-white border border-slate-200 rounded-[2.5rem] p-5 md:p-6">
                     <h4 className="font-semibold text-slate-900 pl-2">Step 4: Discount & Valuations</h4>
                     
                     {/* Discount Calculation Mode Selector */}
@@ -996,15 +1057,125 @@ export default function SalesQuotationsPage() {
                       </div>
                     )}
 
-                    <div className="bg-slate-900 text-white rounded-[2rem] p-5 text-center">
-                      <p className="text-xs text-slate-400">Final On-Road price offer</p>
-                      <p className="text-2xl font-bold mt-1 text-white">{fmtINR(finalOnRoadPrice)}</p>
+                    {/* Trade-In Exchange Vehicle Sub-Form */}
+                    <div className="pt-3 border-t border-slate-100 space-y-3">
+                      <div className="flex items-center justify-between pl-2">
+                        <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                          🚗 Trade-In Exchange Vehicle
+                        </label>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={hasExchange}
+                            onChange={e => setHasExchange(e.target.checked)}
+                            className="sr-only peer"
+                          />
+                          <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-slate-950"></div>
+                        </label>
+                      </div>
+
+                      {hasExchange && (
+                        <div className="space-y-3 bg-slate-50 p-4 rounded-3xl border border-slate-200/60 text-xs">
+                          <div className="grid grid-cols-2 gap-2.5">
+                            <div className="space-y-1">
+                              <label className="text-[10px] text-slate-500 pl-2 font-bold uppercase">Make / Brand</label>
+                              <input
+                                type="text"
+                                value={exchangeMake}
+                                onChange={e => setExchangeMake(e.target.value)}
+                                placeholder="Maruti Suzuki, Honda"
+                                className="w-full rounded-full py-2 px-3.5 bg-white border border-slate-200 outline-none text-slate-800 focus:border-slate-950 text-xs animate-fade-in"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-[10px] text-slate-500 pl-2 font-bold uppercase">Model</label>
+                              <input
+                                type="text"
+                                value={exchangeModel}
+                                onChange={e => setExchangeModel(e.target.value)}
+                                placeholder="Swift, City"
+                                className="w-full rounded-full py-2 px-3.5 bg-white border border-slate-200 outline-none text-slate-800 focus:border-slate-950 text-xs"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-2.5">
+                            <div className="space-y-1">
+                              <label className="text-[10px] text-slate-500 pl-2 font-bold uppercase">Mfg Year</label>
+                              <input
+                                type="number"
+                                value={exchangeYear}
+                                onChange={e => setExchangeYear(e.target.value)}
+                                placeholder="e.g. 2018"
+                                className="w-full rounded-full py-2 px-3.5 bg-white border border-slate-200 outline-none text-slate-800 focus:border-slate-950 text-xs"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-[10px] text-slate-500 pl-2 font-bold uppercase">KMs Driven</label>
+                              <input
+                                type="number"
+                                value={exchangeKms}
+                                onChange={e => setExchangeKms(e.target.value)}
+                                placeholder="e.g. 50000"
+                                className="w-full rounded-full py-2 px-3.5 bg-white border border-slate-200 outline-none text-slate-800 focus:border-slate-950 text-xs"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-2.5">
+                            <div className="space-y-1">
+                              <label className="text-[10px] text-slate-500 pl-2 font-bold uppercase">Condition</label>
+                              <select
+                                value={exchangeCondition}
+                                onChange={e => setExchangeCondition(e.target.value)}
+                                className="w-full rounded-full py-2 px-3 bg-white border border-slate-200 outline-none text-slate-850 focus:border-slate-950 text-xs"
+                              >
+                                <option value="excellent">Excellent</option>
+                                <option value="good">Good</option>
+                                <option value="fair">Fair</option>
+                                <option value="poor">Poor</option>
+                              </select>
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-[10px] text-slate-500 pl-2 font-bold uppercase">Valuation (INR)</label>
+                              <input
+                                type="number"
+                                value={exchangeValuation}
+                                onChange={e => setExchangeValuation(e.target.value)}
+                                placeholder="e.g. 250000"
+                                className="w-full rounded-full py-2 px-3.5 bg-white border border-slate-200 outline-none text-slate-800 focus:border-slate-955 text-xs font-bold"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="space-y-1">
+                            <label className="text-[10px] text-slate-500 pl-2 font-bold uppercase">Appraisal Notes</label>
+                            <textarea
+                              value={exchangeNotes}
+                              onChange={e => setExchangeNotes(e.target.value)}
+                              placeholder="Structural or paint remarks..."
+                              rows={2}
+                              className="w-full rounded-2xl py-2 px-3 bg-white border border-slate-200 outline-none text-slate-800 focus:border-slate-950 text-xs resize-none"
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="bg-slate-900 text-white rounded-[2rem] p-5 text-center space-y-1.5">
+                      <p className="text-xs text-slate-400">Final Net On-Road Price</p>
+                      <p className="text-2xl font-bold text-white">{fmtINR(finalOnRoadPrice)}</p>
+                      {exchangeValue > 0 && (
+                        <p className="text-[10px] text-emerald-400 font-semibold uppercase tracking-wider">
+                          (Net of {fmtINR(exchangeValue)} Trade-In)
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
 
                 {/* Step 5: Integrated Finance & Loan Planner */}
-                <div className="bg-white border border-slate-200 rounded-[2.5rem] p-6 md:p-8 space-y-6">
+                <div className="bg-white border border-slate-200 rounded-[2.5rem] p-5 md:p-6 space-y-4">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-slate-50 text-slate-500 flex items-center justify-center border border-slate-100">

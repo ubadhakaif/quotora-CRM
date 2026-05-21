@@ -11,6 +11,7 @@ interface Profile {
   role: 'dealer_admin' | 'branch_manager' | 'employee'
   name: string
   email: string
+  avatar_url?: string | null
 }
 
 interface AuthContextType {

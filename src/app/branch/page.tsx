@@ -1,7 +1,7 @@
 'use client'
 
 import { useAuth } from '@/components/providers/AuthProvider'
-import { Users, Target, FileText, PhoneCall, BarChart3, ArrowRight, TrendingUp } from 'lucide-react'
+import { Users, Target, FileText, PhoneCall, BarChart3, ArrowRight, TrendingUp, Clock, LogIn, LogOut } from 'lucide-react'
 import Link from 'next/link'
 import { StatCard } from '@/components/ui/StatCard'
 import { createClient } from '@/lib/supabase/client'
@@ -33,6 +33,12 @@ const quickLinks = [
     icon: PhoneCall,
   },
   {
+    href: '/branch/attendance',
+    label: 'Attendance Manager',
+    description: 'Monitor branch team check-in and working logs',
+    icon: Clock,
+  },
+  {
     href: '/branch/analytics',
     label: 'Analytics',
     description: 'Branch performance metrics',
@@ -49,6 +55,9 @@ export default function BranchDashboardPage() {
     revenueThisMonth: 0,
   })
   const [statsLoading, setStatsLoading] = useState(true)
+  
+  const [attendance, setAttendance] = useState<any>(null)
+  const [attLoading, setAttLoading] = useState(true)
 
   useEffect(() => {
     async function fetchStats() {
@@ -78,10 +87,80 @@ export default function BranchDashboardPage() {
       setStatsLoading(false)
     }
 
+    async function fetchAttendance() {
+      if (!profile?.id) return
+      setAttLoading(true)
+      const supabase = createClient()
+      const todayStr = new Date().toISOString().split('T')[0]
+      const { data, error } = await supabase
+        .from('employee_attendance')
+        .select('*')
+        .eq('profile_id', profile.id)
+        .eq('date', todayStr)
+        .maybeSingle()
+
+      if (data) {
+        setAttendance(data)
+      } else {
+        setAttendance(null)
+      }
+      setAttLoading(false)
+    }
+
     if (!loading && profile) {
       fetchStats()
+      fetchAttendance()
     }
   }, [profile, loading])
+
+  const handleCheckIn = async () => {
+    if (!profile) return
+    setAttLoading(true)
+    const supabase = createClient()
+    const todayStr = new Date().toISOString().split('T')[0]
+    
+    const newEntry = {
+      tenant_id: profile.tenant_id,
+      branch_id: profile.branch_id,
+      profile_id: profile.id,
+      date: todayStr,
+      check_in: new Date().toISOString(),
+      status: 'present'
+    }
+
+    const { data, error } = await supabase
+      .from('employee_attendance')
+      .insert(newEntry)
+      .select()
+      .single()
+
+    if (error) {
+      console.error(error.message)
+    } else {
+      setAttendance(data)
+    }
+    setAttLoading(false)
+  }
+
+  const handleCheckOut = async () => {
+    if (!profile || !attendance?.id) return
+    setAttLoading(true)
+    const supabase = createClient()
+    
+    const { data, error } = await supabase
+      .from('employee_attendance')
+      .update({ check_out: new Date().toISOString() })
+      .eq('id', attendance.id)
+      .select()
+      .single()
+
+    if (error) {
+      console.error(error.message)
+    } else {
+      setAttendance(data)
+    }
+    setAttLoading(false)
+  }
 
   if (loading) {
     return (
@@ -98,11 +177,88 @@ export default function BranchDashboardPage() {
 
   return (
     <div className="space-y-8">
-      <div className="bg-white border border-slate-200 rounded-[2rem] p-8 md:p-12">
-        <p className="text-slate-500 text-sm">Welcome back</p>
-        <h2 className="text-2xl mt-1">
-          <span style={{ color: '#4285F4' }}>{profile?.name}</span>
-        </h2>
+      {/* Top Section: Welcome & Attendance check-in/out */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        {/* Welcome Card */}
+        <div className="lg:col-span-7 bg-white border border-slate-200 rounded-[2rem] p-8 md:p-12 flex flex-col justify-center">
+          <p className="text-slate-500 text-sm">Welcome back</p>
+          <h2 className="text-3xl mt-1 font-bold text-slate-950">
+            <span style={{ color: '#4285F4' }}>{profile?.name}</span>
+          </h2>
+          <p className="text-slate-400 text-xs mt-1.5 font-semibold uppercase tracking-wider">
+            {profile?.role === 'branch_manager' ? 'Branch Manager' : profile?.role}
+          </p>
+        </div>
+
+        {/* Attendance Card */}
+        <div className="lg:col-span-5 bg-white border border-slate-200 rounded-[2rem] p-8 md:p-10 flex flex-col justify-between space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="font-bold text-slate-900 flex items-center gap-2">
+              <Clock className="text-slate-400" size={18} /> Today's Attendance
+            </h3>
+            {attLoading ? (
+              <span className="text-xs text-slate-400">Loading...</span>
+            ) : attendance ? (
+              attendance.check_out ? (
+                <span className="text-[10px] uppercase font-bold tracking-wider px-3 py-1 bg-slate-100 text-slate-500 rounded-full border border-slate-200">
+                  Completed 🏁
+                </span>
+              ) : (
+                <span className="text-[10px] uppercase font-bold tracking-wider px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full border border-emerald-250">
+                  Checked In 🟢
+                </span>
+              )
+            ) : (
+              <span className="text-[10px] uppercase font-bold tracking-wider px-3 py-1 bg-amber-50 text-amber-700 rounded-full border border-amber-250">
+                Not Checked In ⚪
+              </span>
+            )}
+          </div>
+
+          <div className="text-xs text-slate-500 pl-1">
+            {attLoading ? (
+              <div className="h-6 w-32 skeleton rounded-md" />
+            ) : attendance ? (
+              <div className="space-y-1">
+                <p>Checked In: <span className="font-bold text-slate-800">{new Date(attendance.check_in).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span></p>
+                {attendance.check_out && (
+                  <p>Checked Out: <span className="font-bold text-slate-800">{new Date(attendance.check_out).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span></p>
+                )}
+              </div>
+            ) : (
+              <p>You have not checked in today yet. Please check in to record your logs.</p>
+            )}
+          </div>
+
+          <div>
+            {attLoading ? (
+              <div className="h-12 w-full skeleton rounded-full" />
+            ) : attendance ? (
+              !attendance.check_out ? (
+                <button
+                  onClick={handleCheckOut}
+                  className="w-full bg-slate-900 text-white font-semibold rounded-full py-3 flex items-center justify-center gap-2 hover:bg-slate-800 transition-all border border-slate-200 cursor-pointer"
+                >
+                  <LogOut size={16} /> Check-Out for Today
+                </button>
+              ) : (
+                <button
+                  disabled
+                  className="w-full bg-slate-50 text-slate-400 font-semibold rounded-full py-3 flex items-center justify-center gap-2 border border-slate-200 cursor-not-allowed text-xs"
+                >
+                  Shift Completed
+                </button>
+              )
+            ) : (
+              <button
+                onClick={handleCheckIn}
+                className="w-full bg-slate-950 text-white font-semibold rounded-full py-3 flex items-center justify-center gap-2 hover:bg-slate-800 transition-all border border-slate-200 cursor-pointer"
+              >
+                <LogIn size={16} /> Check-In Now
+              </button>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Stats Grid */}

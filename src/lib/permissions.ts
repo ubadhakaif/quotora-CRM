@@ -117,6 +117,7 @@ export const DEALER_ADMIN_NAV: NavItem[] = [
   { href: '/dashboard/employees', label: 'Employees', icon: 'Users' },
   { href: '/dashboard/catalog', label: 'Catalog', icon: 'Car' },
   { href: '/dashboard/leads', label: 'Leads', icon: 'Target' },
+  { href: '/dashboard/attendance', label: 'Attendance', icon: 'Clock' },
   { href: '/dashboard/finance', label: 'Finance', icon: 'Landmark' },
   { href: '/dashboard/reports', label: 'Reports', icon: 'BarChart3' },
   { href: '/dashboard/settings', label: 'Settings', icon: 'Settings' },
@@ -126,6 +127,7 @@ export const BRANCH_MANAGER_NAV: NavItem[] = [
   { href: '/branch', label: 'Dashboard', icon: 'LayoutDashboard' },
   { href: '/branch/employees', label: 'Employees', icon: 'Users' },
   { href: '/branch/leads', label: 'Leads', icon: 'Target' },
+  { href: '/branch/attendance', label: 'Attendance', icon: 'Clock' },
   { href: '/branch/quotations', label: 'Quotations', icon: 'FileText' },
   { href: '/branch/follow-ups', label: 'Follow-ups', icon: 'PhoneCall' },
   { href: '/branch/analytics', label: 'Analytics', icon: 'BarChart3' },
@@ -134,9 +136,8 @@ export const BRANCH_MANAGER_NAV: NavItem[] = [
 export const SALES_EXECUTIVE_NAV: NavItem[] = [
   { href: '/sales', label: 'Dashboard', icon: 'LayoutDashboard' },
   { href: '/sales/quotations', label: 'Quotations', icon: 'FileText' },
-  { href: '/sales/emi', label: 'EMI Calculator', icon: 'Calculator' },
+  { href: '/sales/attendance', label: 'Attendance', icon: 'Clock' },
   { href: '/sales/follow-ups', label: 'Follow-ups', icon: 'PhoneCall' },
-  { href: '/sales/exchange', label: 'Exchange', icon: 'RefreshCw' },
 ]
 
 // ─── Per-Portal Route Titles ───
@@ -149,24 +150,28 @@ export const DEALER_ADMIN_ROUTE_TITLES: Record<string, string> = {
   '/dashboard/catalog/variants': 'Variants',
   '/dashboard/catalog/accessories': 'Accessories',
   '/dashboard/leads': 'Leads',
+  '/dashboard/attendance': 'Attendance',
   '/dashboard/finance': 'Finance',
   '/dashboard/reports': 'Reports',
   '/dashboard/settings': 'Settings',
+  '/dashboard/profile': 'Profile',
 }
 
 export const BRANCH_MANAGER_ROUTE_TITLES: Record<string, string> = {
   '/branch': 'Dashboard',
   '/branch/employees': 'Employees',
   '/branch/leads': 'Leads',
+  '/branch/attendance': 'Attendance',
   '/branch/quotations': 'Quotations',
   '/branch/follow-ups': 'Follow-ups',
   '/branch/analytics': 'Analytics',
+  '/branch/profile': 'Profile',
 }
 
 export const SALES_EXECUTIVE_ROUTE_TITLES: Record<string, string> = {
   '/sales': 'Dashboard',
   '/sales/quotations': 'Quotations',
-  '/sales/emi': 'EMI Calculator',
+  '/sales/attendance': 'Attendance',
   '/sales/follow-ups': 'Follow-ups',
-  '/sales/exchange': 'Exchange',
+  '/sales/profile': 'Profile',
 }
