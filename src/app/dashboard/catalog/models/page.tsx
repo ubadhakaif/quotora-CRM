@@ -5,11 +5,13 @@ import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { useToast } from '@/components/providers/ToastProvider'
 import { Plus, X, Car, Tag, Search } from 'lucide-react'
+import { ImageUpload } from '@/components/ui/ImageUpload'
 
 interface Category { id: string; name: string }
 interface Model {
   id: string; name: string; description: string | null
   category_id: string | null; categories?: Category | null
+  image_url?: string | null
 }
 
 export default function ModelsTab() {
@@ -23,6 +25,7 @@ export default function ModelsTab() {
   const [name, setName] = useState('')
   const [desc, setDesc] = useState('')
   const [catId, setCatId] = useState('')
+  const [imageUrl, setImageUrl] = useState('')
   const [newCat, setNewCat] = useState('')
   const [saving, setSaving] = useState(false)
   const { profile } = useAuth()
@@ -42,17 +45,23 @@ export default function ModelsTab() {
 
   useEffect(() => { fetch() }, []) // eslint-disable-line
 
-  const openAdd = () => { setEditing(null); setName(''); setDesc(''); setCatId(''); setPanelOpen(true) }
-  const openEdit = (m: Model) => { setEditing(m); setName(m.name); setDesc(m.description||''); setCatId(m.category_id||''); setPanelOpen(true) }
+  const openAdd = () => { setEditing(null); setName(''); setDesc(''); setCatId(''); setImageUrl(''); setPanelOpen(true) }
+  const openEdit = (m: Model) => { setEditing(m); setName(m.name); setDesc(m.description||''); setCatId(m.category_id||''); setImageUrl(m.image_url||''); setPanelOpen(true) }
   const close = () => { setPanelOpen(false); setEditing(null) }
 
   const save = async () => {
     if (!name.trim()) return; setSaving(true)
-    const p = { name, description: desc||null, category_id: catId||null, tenant_id: profile?.tenant_id }
+    const p = { name, description: desc||null, category_id: catId||null, image_url: imageUrl||null, tenant_id: profile?.tenant_id }
     const { error } = editing
       ? await supabase.from('models').update(p).eq('id', editing.id)
       : await supabase.from('models').insert(p)
-    if (error) addToast(error.message,'error')
+    if (error) {
+      if (error.code === '42703') {
+        addToast('Please apply the 006_models_image.sql migration in your Supabase SQL editor to enable model images.','error')
+      } else {
+        addToast(error.message,'error')
+      }
+    }
     else { addToast(editing?'Updated':'Created','success'); close(); fetch() }
     setSaving(false)
   }
@@ -109,6 +118,7 @@ export default function ModelsTab() {
                 <button onClick={addCat} disabled={!newCat.trim()} className="bg-slate-900 text-white rounded-full px-5 py-3 text-sm hover:bg-slate-800 transition-colors disabled:opacity-50">Add</button>
               </div>
             )}
+            <ImageUpload value={imageUrl} onChange={url => setImageUrl(url || '')} folder="models" />
           </div>
           <div className="flex flex-col sm:flex-row gap-3">
             <button onClick={close} className="bg-white border border-slate-200 text-slate-600 rounded-full p-4 px-8 flex items-center justify-start gap-3 hover:bg-slate-50 transition-colors flex-1 sm:flex-initial">Cancel</button>
@@ -124,7 +134,11 @@ export default function ModelsTab() {
           <div className="divide-y divide-slate-100">
             {filtered.map(m=>(
               <button key={m.id} onClick={()=>openEdit(m)} className="w-full text-left p-4 md:p-8 px-6 md:px-12 hover:bg-slate-50 transition-colors flex items-center gap-4">
-                <Car size={18} className="text-slate-400 shrink-0" />
+                {m.image_url ? (
+                  <img src={m.image_url} alt={m.name} className="w-12 h-8 rounded-lg object-cover shrink-0 border border-slate-200" />
+                ) : (
+                  <Car size={18} className="text-slate-400 shrink-0" />
+                )}
                 <div className="flex-1 min-w-0"><p className="text-slate-900 truncate">{m.name}</p>{m.description&&<p className="text-sm text-slate-500 truncate mt-0.5">{m.description}</p>}</div>
                 {getCat(m)&&<span className="text-xs bg-slate-100 text-slate-600 rounded-full px-3 py-1 shrink-0">{getCat(m)}</span>}
               </button>

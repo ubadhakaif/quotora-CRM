@@ -135,14 +135,14 @@ export default function SalesAttendancePage() {
                   <div>
                     <p className="text-xs text-slate-400">Check-In</p>
                     <p className="font-semibold text-slate-800">
-                      {new Date(record.check_in).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {new Date(record.check_in).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' })}
                     </p>
                   </div>
                   <div>
                     <p className="text-xs text-slate-400">Check-Out</p>
                     <p className="font-semibold text-slate-800">
                       {record.check_out
-                        ? new Date(record.check_out).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                        ? new Date(record.check_out).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' })
                         : 'Active'}
                     </p>
                   </div>

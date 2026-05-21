@@ -126,6 +126,7 @@ export const DEALER_ADMIN_NAV: NavItem[] = [
 export const BRANCH_MANAGER_NAV: NavItem[] = [
   { href: '/branch', label: 'Dashboard', icon: 'LayoutDashboard' },
   { href: '/branch/employees', label: 'Employees', icon: 'Users' },
+  { href: '/branch/models', label: 'Models', icon: 'Car' },
   { href: '/branch/leads', label: 'Leads', icon: 'Target' },
   { href: '/branch/attendance', label: 'Attendance', icon: 'Clock' },
   { href: '/branch/quotations', label: 'Quotations', icon: 'FileText' },
@@ -136,6 +137,7 @@ export const BRANCH_MANAGER_NAV: NavItem[] = [
 export const SALES_EXECUTIVE_NAV: NavItem[] = [
   { href: '/sales', label: 'Dashboard', icon: 'LayoutDashboard' },
   { href: '/sales/quotations', label: 'Quotations', icon: 'FileText' },
+  { href: '/sales/models', label: 'Models', icon: 'Car' },
   { href: '/sales/attendance', label: 'Attendance', icon: 'Clock' },
   { href: '/sales/follow-ups', label: 'Follow-ups', icon: 'PhoneCall' },
 ]
@@ -160,6 +162,7 @@ export const DEALER_ADMIN_ROUTE_TITLES: Record<string, string> = {
 export const BRANCH_MANAGER_ROUTE_TITLES: Record<string, string> = {
   '/branch': 'Dashboard',
   '/branch/employees': 'Employees',
+  '/branch/models': 'Vehicle Models',
   '/branch/leads': 'Leads',
   '/branch/attendance': 'Attendance',
   '/branch/quotations': 'Quotations',
@@ -171,6 +174,7 @@ export const BRANCH_MANAGER_ROUTE_TITLES: Record<string, string> = {
 export const SALES_EXECUTIVE_ROUTE_TITLES: Record<string, string> = {
   '/sales': 'Dashboard',
   '/sales/quotations': 'Quotations',
+  '/sales/models': 'Vehicle Models',
   '/sales/attendance': 'Attendance',
   '/sales/follow-ups': 'Follow-ups',
   '/sales/profile': 'Profile',

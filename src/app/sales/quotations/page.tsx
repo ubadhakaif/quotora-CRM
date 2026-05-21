@@ -704,7 +704,7 @@ export default function SalesQuotationsPage() {
                   </select>
                 </div>
               ) : (
-                <div className="space-y-4 bg-slate-50/50 p-6 rounded-[2rem] border border-slate-200/60">
+                <div className="space-y-4 py-2">
                   <div className="space-y-2">
                     <label className="text-xs text-slate-500 pl-4 font-medium">Customer Name *</label>
                     <input
@@ -774,42 +774,47 @@ export default function SalesQuotationsPage() {
             </div>
 
             {/* Step 2: Vehicle Model & Variant */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm text-slate-600 pl-4">Step 2a: Vehicle Model</label>
-                <select
-                  value={bModelId}
-                  onChange={e => {
-                    setBModelId(e.target.value)
-                    setBVariantId('')
-                  }}
-                  className="w-full rounded-full py-4 px-6 bg-slate-50 border border-slate-200 text-slate-900 focus:border-slate-900 focus:bg-white transition-all outline-none appearance-none"
-                >
-                  <option value="">-- Select Model --</option>
-                  {models.map(m => (
-                    <option key={m.id} value={m.id}>{m.name}</option>
-                  ))}
-                </select>
+            <div className="space-y-4 pt-4 border-t border-slate-100">
+              <div className="border-b border-slate-100 pb-2">
+                <label className="text-sm font-semibold text-slate-900 pl-2">Step 2: Vehicle Model & Variant</label>
               </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-xs text-slate-500 pl-4">Vehicle Model</label>
+                  <select
+                    value={bModelId}
+                    onChange={e => {
+                      setBModelId(e.target.value)
+                      setBVariantId('')
+                    }}
+                    className="w-full rounded-full py-4 px-6 bg-slate-50 border border-slate-200 text-slate-900 focus:border-slate-900 focus:bg-white transition-all outline-none appearance-none"
+                  >
+                    <option value="">-- Select Model --</option>
+                    {models.map(m => (
+                      <option key={m.id} value={m.id}>{m.name}</option>
+                    ))}
+                  </select>
+                </div>
 
-              <div className="space-y-2">
-                <label className="text-sm text-slate-600 pl-4">Step 2b: Model Variant Price</label>
-                <select
-                  value={bVariantId}
-                  onChange={e => setBVariantId(e.target.value)}
-                  disabled={!bModelId}
-                  className="w-full rounded-full py-4 px-6 bg-slate-50 border border-slate-200 text-slate-900 focus:border-slate-900 focus:bg-white transition-all outline-none appearance-none disabled:opacity-50"
-                >
-                  <option value="">-- Choose Variant --</option>
-                  {filteredVariants.map(v => (
-                    <option key={v.id} value={v.id}>{v.name} ({fmtINR(v.price)})</option>
-                  ))}
-                </select>
+                <div className="space-y-2">
+                  <label className="text-xs text-slate-500 pl-4">Model Variant Price</label>
+                  <select
+                    value={bVariantId}
+                    onChange={e => setBVariantId(e.target.value)}
+                    disabled={!bModelId}
+                    className="w-full rounded-full py-4 px-6 bg-slate-50 border border-slate-200 text-slate-900 focus:border-slate-900 focus:bg-white transition-all outline-none appearance-none disabled:opacity-50"
+                  >
+                    <option value="">-- Choose Variant --</option>
+                    {filteredVariants.map(v => (
+                      <option key={v.id} value={v.id}>{v.name} ({fmtINR(v.price)})</option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
 
             {activeVariant && (
-              <div className="bg-slate-50 border border-slate-200 rounded-[2rem] p-5 flex flex-col sm:flex-row gap-5 items-center">
+              <div className="flex flex-col sm:flex-row gap-5 items-center py-2">
                 {activeVariant.image_url ? (
                   <img
                     src={activeVariant.image_url}
@@ -844,9 +849,11 @@ export default function SalesQuotationsPage() {
 
             {/* Step 3: Optional Accessories */}
             {accessories.length > 0 && bVariantId && (
-              <div className="space-y-3 pt-2">
-                <label className="text-sm font-medium text-slate-900 pl-2">Step 3: Optional Value-Added Accessories</label>
-                <div className="bg-slate-50 rounded-2xl border border-slate-200 p-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              <div className="space-y-3 pt-4 border-t border-slate-100">
+                <div className="border-b border-slate-100 pb-2">
+                  <label className="text-sm font-semibold text-slate-900 pl-2">Step 3: Optional Value-Added Accessories</label>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 py-2">
                   {accessories.map(acc => {
                     const isChecked = selectedAccIds.includes(acc.id)
                     return (
@@ -870,10 +877,13 @@ export default function SalesQuotationsPage() {
             {/* Step 4 & 5: Pricing breakdown, Discount modes, and Loan Configurator */}
             {bVariantId && (
               <div className="space-y-6 pt-4 border-t border-slate-100">
+                <div className="border-b border-slate-100 pb-2">
+                  <label className="text-sm font-semibold text-slate-900 pl-2">Step 4: Pricing Breakdown, Discount & Valuations</label>
+                </div>
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                         {/* Pricing Breakdown Card */}
-                  <div className="lg:col-span-7 bg-slate-50 border border-slate-200 rounded-[2.5rem] p-5 md:p-6 space-y-3 text-sm text-slate-700">
-                    <h4 className="font-semibold text-slate-900 mb-2 pl-2">Quotation Pricing Breakdown</h4>
+                  {/* Pricing Breakdown Card */}
+                  <div className="lg:col-span-7 space-y-3 text-sm text-slate-700">
+                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider pl-2 mb-2">Quotation Pricing Breakdown</h4>
                     
                     <div className="flex justify-between pl-2">
                       <span>Ex-Showroom Base Price</span>
@@ -986,8 +996,8 @@ export default function SalesQuotationsPage() {
                   </div>
 
                   {/* Discount Options and Input */}
-                  <div className="lg:col-span-5 space-y-4 bg-white border border-slate-200 rounded-[2.5rem] p-5 md:p-6">
-                    <h4 className="font-semibold text-slate-900 pl-2">Step 4: Discount & Valuations</h4>
+                  <div className="lg:col-span-5 space-y-4">
+                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider pl-2 mb-2">Discount & Valuations</h4>
                     
                     {/* Discount Calculation Mode Selector */}
                     <div className="space-y-2">
@@ -1175,17 +1185,9 @@ export default function SalesQuotationsPage() {
                 </div>
 
                 {/* Step 5: Integrated Finance & Loan Planner */}
-                <div className="bg-white border border-slate-200 rounded-[2.5rem] p-5 md:p-6 space-y-4">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-slate-50 text-slate-500 flex items-center justify-center border border-slate-100">
-                        <Landmark size={18} />
-                      </div>
-                      <div>
-                        <h4 className="text-sm font-semibold text-slate-800">Step 5: Integrated Finance & Loan Planner</h4>
-                        <p className="text-[11px] text-slate-500">Configure EMI installment projections and downpayment limits</p>
-                      </div>
-                    </div>
+                <div className="space-y-4 pt-4 border-t border-slate-100">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-2">
+                    <label className="text-sm font-semibold text-slate-900 pl-2">Step 5: Integrated Finance & Loan Planner</label>
                     
                     <label className="flex items-center gap-2 cursor-pointer select-none">
                       <input
@@ -1279,7 +1281,7 @@ export default function SalesQuotationsPage() {
                         </div>
 
                         {/* Sufficiency notice check */}
-                        <div className="bg-slate-50 rounded-2xl p-4 border border-slate-150 flex items-start gap-3 text-xs leading-relaxed text-slate-600">
+                        <div className="py-3 flex items-start gap-3 text-xs leading-relaxed text-slate-600">
                           <Calculator size={18} className="text-slate-500 shrink-0 mt-0.5" />
                           <div>
                             <p className="font-semibold text-slate-800">Minimum plan requirements</p>
@@ -1296,34 +1298,34 @@ export default function SalesQuotationsPage() {
                       </div>
 
                       {/* Right: EMI Output Breakdown */}
-                      <div className="lg:col-span-5 bg-slate-900 text-white rounded-[2rem] p-6 space-y-4">
+                      <div className="lg:col-span-5 space-y-4 p-2">
                         <div>
                           <span className="text-xs text-slate-400">Monthly Outgoing Payment</span>
-                          <h3 className="text-2xl font-light tracking-tight text-white mt-0.5">{fmtINR(loanMetrics.monthlyEMI)}/mo</h3>
+                          <h3 className="text-2xl font-light tracking-tight text-slate-950 mt-0.5">{fmtINR(loanMetrics.monthlyEMI)}/mo</h3>
                           <p className="text-[10px] text-slate-400">
                             Interest applied: {activePlan?.interest_rate || 0}% per annum
                           </p>
                         </div>
 
-                        <div className="border-t border-slate-800 pt-4 space-y-2 text-xs">
+                        <div className="border-t border-slate-100 pt-4 space-y-2 text-xs text-slate-700">
                           <div className="flex justify-between">
-                            <span className="text-slate-400">Net Loan Principal</span>
-                            <span className="font-semibold">{fmtINR(loanMetrics.loanAmount)}</span>
+                            <span className="text-slate-450">Net Loan Principal</span>
+                            <span className="font-semibold text-slate-900">{fmtINR(loanMetrics.loanAmount)}</span>
                           </div>
 
                           <div className="flex justify-between">
-                            <span className="text-slate-400">Processing Fee ({activePlan?.processing_fee_percent || 0}%)</span>
-                            <span className="font-semibold">{fmtINR(loanMetrics.processingFee)}</span>
+                            <span className="text-slate-450">Processing Fee ({activePlan?.processing_fee_percent || 0}%)</span>
+                            <span className="font-semibold text-slate-900">{fmtINR(loanMetrics.processingFee)}</span>
                           </div>
 
                           <div className="flex justify-between">
-                            <span className="text-slate-400">Total Interest Payable</span>
-                            <span className="font-semibold">{fmtINR(loanMetrics.totalInterest)}</span>
+                            <span className="text-slate-450">Total Interest Payable</span>
+                            <span className="font-semibold text-slate-900">{fmtINR(loanMetrics.totalInterest)}</span>
                           </div>
 
-                          <div className="border-t border-slate-800 pt-3 flex justify-between text-sm font-bold text-white">
+                          <div className="border-t border-slate-100 pt-3 flex justify-between text-sm font-bold text-slate-950">
                             <span>Overall Loan Cost</span>
-                            <span className="text-base text-white">{fmtINR(loanMetrics.totalPayable)}</span>
+                            <span className="text-base text-slate-950">{fmtINR(loanMetrics.totalPayable)}</span>
                           </div>
                         </div>
                       </div>

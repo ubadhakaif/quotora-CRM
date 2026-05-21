@@ -317,14 +317,14 @@ export default function DealerAdminAttendancePage() {
                       <div>
                         <p className="text-slate-400 font-medium">Check-In</p>
                         <p className="font-semibold text-slate-800">
-                          {new Date(log.check_in).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          {new Date(log.check_in).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' })}
                         </p>
                       </div>
                       <div>
                         <p className="text-slate-400 font-medium">Check-Out</p>
                         <p className="font-semibold text-slate-800">
                           {log.check_out
-                            ? new Date(log.check_out).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                            ? new Date(log.check_out).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' })
                             : 'Active'}
                         </p>
                       </div>

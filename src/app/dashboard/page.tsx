@@ -112,10 +112,10 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-8">
-      <div className="p-2">
-        <p className="text-slate-500 text-sm">Welcome back,</p>
-        <h2 className="text-3xl mt-1 font-bold text-slate-950">
-          {profile?.name ? profile.name.split(' ')[0] : ''}
+      <div className="p-2 py-6">
+        <p className="text-slate-500 text-xl font-medium">Welcome back,</p>
+        <h2 className="text-5xl md:text-6xl font-black mt-2 tracking-tight">
+          <span style={{ color: '#4285F4' }}>{profile?.name ? profile.name.split(' ')[0] : ''}</span>
         </h2>
       </div>
 

@@ -177,14 +177,11 @@ export default function SalesDashboardPage() {
       {/* Top Section: Welcome & Attendance check-in/out */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         {/* Welcome Card */}
-        <div className="lg:col-span-7 flex flex-col justify-center p-2">
-          <p className="text-slate-500 text-sm">Welcome back,</p>
-          <h2 className="text-3xl mt-1 font-bold text-slate-950">
-            {profile?.name ? profile.name.split(' ')[0] : ''}
+        <div className="lg:col-span-7 flex flex-col justify-center p-2 py-6">
+          <p className="text-slate-500 text-xl font-medium">Welcome back,</p>
+          <h2 className="text-5xl md:text-6xl font-black mt-2 tracking-tight">
+            <span style={{ color: '#4285F4' }}>{profile?.name ? profile.name.split(' ')[0] : ''}</span>
           </h2>
-          <p className="text-slate-400 text-xs mt-1 font-medium text-slate-500">
-            {profile?.role === 'employee' ? 'Sales executive' : profile?.role === 'branch_manager' ? 'Branch manager' : 'Dealer admin'}
-          </p>
         </div>
 
         {/* Attendance Card */}
@@ -193,19 +190,34 @@ export default function SalesDashboardPage() {
             <h3 className="font-bold text-slate-900 text-sm">
               Attendance
             </h3>
+            {attendance && (
+              <span className={`text-[9px] uppercase tracking-wider font-extrabold px-2.5 py-0.5 rounded-full border ${
+                attendance.status === 'half_day'
+                  ? 'bg-slate-50 text-slate-500 border-slate-200'
+                  : (new Date(attendance.check_in).getHours() * 60 + new Date(attendance.check_in).getMinutes() > 555)
+                    ? 'bg-slate-900 text-white border-slate-900 font-bold'
+                    : 'bg-slate-100 text-slate-900 border-slate-300 font-semibold'
+              }`}>
+                {attendance.status === 'half_day'
+                  ? 'Half Day'
+                  : (new Date(attendance.check_in).getHours() * 60 + new Date(attendance.check_in).getMinutes() > 555)
+                    ? 'Late'
+                    : 'On Time'}
+              </span>
+            )}
           </div>
 
           <div className="flex items-center gap-8 text-xs">
             <div>
               <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider block mb-0.5">Check-in</span>
               <span className="text-sm font-semibold text-slate-800">
-                {attendance ? new Date(attendance.check_in).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}
+                {attendance ? new Date(attendance.check_in).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' }) : '--:--'}
               </span>
             </div>
             <div>
               <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider block mb-0.5">Check-out</span>
               <span className="text-sm font-semibold text-slate-800">
-                {attendance?.check_out ? new Date(attendance.check_out).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}
+                {attendance?.check_out ? new Date(attendance.check_out).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' }) : '--:--'}
               </span>
             </div>
           </div>
