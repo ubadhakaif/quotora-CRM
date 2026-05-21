@@ -54,7 +54,7 @@ export default function AdminLeavePage() {
     setLoading(true)
     const { data, error } = await supabase
       .from('leave_requests')
-      .select('*, profiles(name, email), branches(name)')
+      .select('*, profiles!profile_id(name, email), branches(name)')
       .order('created_at', { ascending: false })
 
     if (error) {

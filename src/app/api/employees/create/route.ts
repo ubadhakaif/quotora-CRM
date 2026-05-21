@@ -12,7 +12,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { data: callerProfile } = await serverSupabase
+    // 2. Use Admin API (service_role) to bypass RLS and verify the caller's role
+    const adminSupabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    )
+
+    const { data: callerProfile } = await adminSupabase
       .from('profiles')
       .select('tenant_id, role')
       .eq('id', user.id)
@@ -22,20 +29,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Forbidden: Only dealer admins can create employees' }, { status: 403 })
     }
 
-    // 2. Parse request body
+    // 3. Parse request body
     const body = await request.json()
     const { email, password, name, role, branch_id } = body
 
     if (!email || !password || !name) {
       return NextResponse.json({ error: 'Email, password, and name are required' }, { status: 400 })
     }
-
-    // 3. Use Admin API (service_role) to create the user
-    const adminSupabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      { auth: { autoRefreshToken: false, persistSession: false } }
-    )
 
     // The database trigger "handle_new_user" will automatically create the profile row
     // because we are passing "tenant_id" in the user_metadata.

@@ -60,7 +60,7 @@ export default function BranchLeavePage() {
     setLoading(true)
     const { data, error } = await supabase
       .from('leave_requests')
-      .select('*, profiles(name, email)')
+      .select('*, profiles!profile_id(name, email)')
       .order('created_at', { ascending: false })
 
     if (error) {
