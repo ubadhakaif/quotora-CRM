@@ -18,6 +18,7 @@ interface LeaveRequest {
   reviewed_at: string | null
   created_at: string
   profiles?: { name: string; email: string } | null
+  reviewer?: { name: string } | null
 }
 
 const LEAVE_TYPE_LABELS: Record<string, string> = {
@@ -60,7 +61,7 @@ export default function BranchLeavePage() {
     setLoading(true)
     const { data, error } = await supabase
       .from('leave_requests')
-      .select('*, profiles!profile_id(name, email)')
+      .select('*, profiles!profile_id(name, email), reviewer:profiles!reviewed_by(name)')
       .order('created_at', { ascending: false })
 
     if (error) {
@@ -317,6 +318,14 @@ export default function BranchLeavePage() {
                         {' '}({getDays(r.start_date, r.end_date)} day{getDays(r.start_date, r.end_date) > 1 ? 's' : ''})
                       </span>
                     </div>
+                    {r.reviewer && (
+                      <div>
+                        <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider block mb-0.5">
+                          {r.status === 'approved' ? 'Approved by' : r.status === 'rejected' ? 'Rejected by' : 'Reviewed by'}
+                         </span>
+                        <span className="text-slate-800 font-semibold">{r.reviewer.name}</span>
+                      </div>
+                    )}
                   </div>
                   {r.reason && (
                     <p className="text-xs text-slate-600 bg-slate-50 rounded-[1.5rem] p-4 border border-slate-100">
@@ -389,6 +398,14 @@ function LeaveCard({ request: r, profileName, getDays, isMine, onCancel, actionL
             {new Date(r.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
           </span>
         </div>
+        {r.reviewer && (
+          <div>
+            <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider block mb-0.5">
+              {r.status === 'approved' ? 'Approved by' : r.status === 'rejected' ? 'Rejected by' : 'Reviewed by'}
+            </span>
+            <span className="text-slate-800 font-semibold">{r.reviewer.name}</span>
+          </div>
+        )}
       </div>
       {r.reason && (
         <p className="text-xs text-slate-600 bg-slate-50 rounded-[1.5rem] p-4 border border-slate-100">{r.reason}</p>

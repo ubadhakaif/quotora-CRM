@@ -10,7 +10,7 @@ const TABS = [
   { id: 'branding', label: 'Branding' },
   { id: 'tax', label: 'Tax Configuration' },
   { id: 'quotation', label: 'Quotation Rules' },
-  { id: 'operations', label: 'Operations & Roster' },
+  { id: 'operations', label: 'Operations' },
 ]
 
 export default function SettingsPage() {
@@ -250,32 +250,26 @@ export default function SettingsPage() {
         {activeTab === 'operations' && (
           <div className="space-y-6 max-w-2xl">
             <h3 className="text-xl font-semibold text-slate-900 flex items-center gap-2">
-              <Settings size={20} className="text-slate-400" /> Operations & Attendance
+              <Settings size={20} className="text-slate-400" /> Operations
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">Shift Start Time</label>
+                <label className="text-sm font-medium text-slate-700">Shift Start Time (IST)</label>
                 <input
                   type="time"
                   value={settings['operations.shift_start'] || '09:00'}
                   onChange={e => handleSettingChange('operations.shift_start', e.target.value)}
                   className="w-full rounded-full py-4 px-6 bg-slate-50 border border-slate-200 text-slate-900 focus:border-slate-900 focus:bg-white transition-all outline-none"
                 />
-                <p className="text-xs text-slate-500 pl-4">
-                  {formatTimeIST(settings['operations.shift_start'] || '09:00')}
-                </p>
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">Shift End Time</label>
+                <label className="text-sm font-medium text-slate-700">Shift End Time (IST)</label>
                 <input
                   type="time"
                   value={settings['operations.shift_end'] || '18:00'}
                   onChange={e => handleSettingChange('operations.shift_end', e.target.value)}
                   className="w-full rounded-full py-4 px-6 bg-slate-50 border border-slate-200 text-slate-900 focus:border-slate-900 focus:bg-white transition-all outline-none"
                 />
-                <p className="text-xs text-slate-500 pl-4">
-                  {formatTimeIST(settings['operations.shift_end'] || '18:00')}
-                </p>
               </div>
               <div className="space-y-2 sm:col-span-2">
                 <label className="text-sm font-medium text-slate-700">Roster Grace Period (Minutes)</label>
@@ -286,22 +280,6 @@ export default function SettingsPage() {
                   placeholder="15"
                   className="w-full rounded-full py-4 px-6 bg-slate-50 border border-slate-200 text-slate-900 focus:border-slate-900 focus:bg-white transition-all outline-none"
                 />
-              </div>
-              <div className="space-y-2 sm:col-span-2 pt-4 border-t border-slate-100">
-                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider pl-4">Dealership Registration Time (First-Time Sign-In)</label>
-                <div className="w-full rounded-full py-4 px-6 bg-slate-50/50 border border-slate-200 text-slate-800 font-semibold select-none">
-                  {profile?.created_at
-                    ? new Date(profile.created_at).toLocaleString('en-IN', {
-                        day: 'numeric',
-                        month: 'long',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        hour12: true,
-                        timeZone: 'Asia/Kolkata',
-                      }) + ' IST'
-                    : 'N/A'}
-                </div>
               </div>
             </div>
           </div>

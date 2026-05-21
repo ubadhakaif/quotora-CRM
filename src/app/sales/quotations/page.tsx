@@ -6,6 +6,7 @@ import { useAuth } from '@/components/providers/AuthProvider'
 import { useToast } from '@/components/providers/ToastProvider'
 import { Plus, X, FileText, Search, CheckCircle, XCircle, ArrowRight, DollarSign, Percent, PlusCircle, Trash2, Printer, Landmark, Calculator, Car } from 'lucide-react'
 import { StatCard } from '@/components/ui/StatCard'
+import { ImageUpload } from '@/components/ui/ImageUpload'
 import { calculateEMI, isDownPaymentSufficient } from '@/lib/emi'
 
 interface Model { id: string; name: string }
@@ -81,6 +82,7 @@ export default function SalesQuotationsPage() {
   const [newCustEmail, setNewCustEmail] = useState('')
   const [newCustSource, setNewCustSource] = useState('walk-in')
   const [newCustStatus, setNewCustStatus] = useState('new')
+  const [newCustAddress, setNewCustAddress] = useState('')
   const [bModelId, setBModelId] = useState('')
   const [bVariantId, setBVariantId] = useState('')
   const [selectedAccIds, setSelectedAccIds] = useState<string[]>([])
@@ -89,6 +91,20 @@ export default function SalesQuotationsPage() {
   const [bDiscountPct, setBDiscountPct] = useState<number>(0)
   const [bNotes, setBNotes] = useState('')
   const [discountThreshold, setDiscountThreshold] = useState<number>(5) // default 5%
+
+  // Likely Purchase, Mode of Purchase, and document attachments state
+  const [likelyPurchase, setLikelyPurchase] = useState<'first_time' | 'additional' | 'replacement'>('first_time')
+  const [exchangeImages, setExchangeImages] = useState<string[]>([])
+  const [exchangeRcCopy, setExchangeRcCopy] = useState<string | null>(null)
+  const [exchangeInsurance, setExchangeInsurance] = useState<string | null>(null)
+  const [exchangeNoc, setExchangeNoc] = useState<string | null>(null)
+
+  const [modeOfPurchase, setModeOfPurchase] = useState<'cash' | 'loan' | 'other'>('cash')
+  const [modeOfPurchaseOtherText, setModeOfPurchaseOtherText] = useState('')
+  const [loanAadharFront, setLoanAadharFront] = useState<string | null>(null)
+  const [loanAadharBack, setLoanAadharBack] = useState<string | null>(null)
+  const [loanPanFront, setLoanPanFront] = useState<string | null>(null)
+  const [loanPanBack, setLoanPanBack] = useState<string | null>(null)
   
   // Dynamic statutory settings loaded from database
   const [cgstRate, setCgstRate] = useState(14) // default 14%
@@ -263,6 +279,20 @@ export default function SalesQuotationsPage() {
     setExchangeNotes('')
   }, [bVariantId])
 
+  // Auto-toggle hasExchange when likelyPurchase is replacement
+  useEffect(() => {
+    if (likelyPurchase === 'replacement') {
+      setHasExchange(true)
+    }
+  }, [likelyPurchase])
+
+  // Auto-toggle includeLoan when modeOfPurchase is loan
+  useEffect(() => {
+    if (modeOfPurchase === 'loan') {
+      setIncludeLoan(true)
+    }
+  }, [modeOfPurchase])
+
   const exchangeValue = hasExchange && exchangeValuation ? Number(exchangeValuation) : 0
   const finalPriceBeforeExchange = discountMode === 'with_acc'
     ? Math.max(0, subtotal - bDiscountAmt)
@@ -302,6 +332,7 @@ export default function SalesQuotationsPage() {
     setNewCustEmail('')
     setNewCustSource('walk-in')
     setNewCustStatus('new')
+    setNewCustAddress('')
     setBModelId('')
     setBVariantId('')
     setSelectedAccIds([])
@@ -311,6 +342,20 @@ export default function SalesQuotationsPage() {
     setBNotes('')
     setIncludeLoan(false)
     setLoanTenure(60)
+    
+    // Reset likely purchase, mode of purchase and uploads
+    setLikelyPurchase('first_time')
+    setExchangeImages([])
+    setExchangeRcCopy(null)
+    setExchangeInsurance(null)
+    setExchangeNoc(null)
+    setModeOfPurchase('cash')
+    setModeOfPurchaseOtherText('')
+    setLoanAadharFront(null)
+    setLoanAadharBack(null)
+    setLoanPanFront(null)
+    setLoanPanBack(null)
+    
     setPanelOpen(true)
     setPreviewingQuote(null)
   }
@@ -343,6 +388,89 @@ export default function SalesQuotationsPage() {
     if (!bVariantId || !profile) return
     setSaving(true)
 
+    // 1. Mobile Number (10 digits) validation
+    if (customerMode === 'new') {
+      const cleanedPhone = newCustPhone.replace(/\D/g, '')
+      if (cleanedPhone.length !== 10) {
+        addToast('Customer Mobile Number must be exactly 10 digits.', 'error')
+        setSaving(false)
+        return
+      }
+    }
+
+    // 2. Replacement/Exchange validations
+    if (likelyPurchase === 'replacement') {
+      if (exchangeImages.length < 4) {
+        addToast('Please upload at least 4 images of the vehicle for exchange/replacement.', 'error')
+        setSaving(false)
+        return
+      }
+      if (!exchangeRcCopy) {
+        addToast('Please upload a copy of the RC.', 'error')
+        setSaving(false)
+        return
+      }
+      if (!exchangeInsurance) {
+        addToast('Please upload a copy of the Insurance.', 'error')
+        setSaving(false)
+        return
+      }
+      if (!exchangeNoc) {
+        addToast('Please upload a copy of the NOC.', 'error')
+        setSaving(false)
+        return
+      }
+      if (!exchangeMake.trim() || !exchangeModel.trim() || !exchangeValuation) {
+        addToast('Please enter the exchange vehicle make, model, and valuation details.', 'error')
+        setSaving(false)
+        return
+      }
+    }
+
+    // 3. Mode of purchase validation
+    if (modeOfPurchase === 'loan') {
+      if (!loanAadharFront || !loanAadharBack) {
+        addToast('Please upload both front and back sides of the Aadhar Card.', 'error')
+        setSaving(false)
+        return
+      }
+      if (!loanPanFront || !loanPanBack) {
+        addToast('Please upload both front and back sides of the PAN Card.', 'error')
+        setSaving(false)
+        return
+      }
+    } else if (modeOfPurchase === 'other' && !modeOfPurchaseOtherText.trim()) {
+      addToast('Please specify the details for other purchase mode.', 'error')
+      setSaving(false)
+      return
+    }
+
+    // 4. Capture GPS Coordinates
+    let lat: number | null = null
+    let lng: number | null = null
+    try {
+      const pos = await new Promise<GeolocationPosition | null>((resolve) => {
+        if (!navigator.geolocation) {
+          resolve(null)
+          return
+        }
+        navigator.geolocation.getCurrentPosition(
+          (position) => resolve(position),
+          (err) => {
+            console.warn('Geolocation error:', err)
+            resolve(null)
+          },
+          { enableHighAccuracy: true, timeout: 4000 }
+        )
+      })
+      if (pos) {
+        lat = pos.coords.latitude
+        lng = pos.coords.longitude
+      }
+    } catch (err) {
+      console.warn('Failed to capture GPS:', err)
+    }
+
     let finalCustomerId = bCustomerId
 
     if (customerMode === 'new') {
@@ -352,6 +480,7 @@ export default function SalesQuotationsPage() {
         name: newCustName.trim(),
         phone: newCustPhone.trim() || null,
         email: newCustEmail.trim() || null,
+        address: newCustAddress.trim() || null,
         source: newCustSource,
         lead_status: newCustStatus,
         assigned_to: profile.id,
@@ -402,6 +531,22 @@ export default function SalesQuotationsPage() {
       status: finalStatus,
       created_by: profile.id,
       notes: bNotes.trim() || null,
+      
+      // New columns from migrations
+      likely_purchase: likelyPurchase,
+      exchange_images: likelyPurchase === 'replacement' ? exchangeImages : [],
+      exchange_rc_copy: likelyPurchase === 'replacement' ? exchangeRcCopy : null,
+      exchange_insurance: likelyPurchase === 'replacement' ? exchangeInsurance : null,
+      exchange_noc: likelyPurchase === 'replacement' ? exchangeNoc : null,
+      mode_of_purchase: modeOfPurchase,
+      mode_of_purchase_other: modeOfPurchase === 'other' ? modeOfPurchaseOtherText.trim() : null,
+      loan_aadhar_front: modeOfPurchase === 'loan' ? loanAadharFront : null,
+      loan_aadhar_back: modeOfPurchase === 'loan' ? loanAadharBack : null,
+      loan_pan_front: modeOfPurchase === 'loan' ? loanPanFront : null,
+      loan_pan_back: modeOfPurchase === 'loan' ? loanPanBack : null,
+      latitude: lat,
+      longitude: lng,
+
       tax_breakdown: {
         ex_showroom: exShowroom,
         gst: gstTax,
@@ -726,6 +871,11 @@ export default function SalesQuotationsPage() {
                         placeholder="e.g. +91 99999 88888"
                         className="w-full rounded-full py-3.5 px-6 bg-white border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-slate-900 outline-none text-sm"
                       />
+                      {newCustPhone && newCustPhone.replace(/\D/g, '').length !== 10 && (
+                        <p className="text-rose-500 text-xs pl-4 mt-1 font-semibold animate-fade-in">
+                          Mobile number must be exactly 10 digits.
+                        </p>
+                      )}
                     </div>
 
                     <div className="space-y-2">
@@ -738,6 +888,17 @@ export default function SalesQuotationsPage() {
                         className="w-full rounded-full py-3.5 px-6 bg-white border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-slate-900 outline-none text-sm"
                       />
                     </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs text-slate-500 pl-4 font-medium">Address / Location</label>
+                    <input
+                      type="text"
+                      value={newCustAddress}
+                      onChange={e => setNewCustAddress(e.target.value)}
+                      placeholder="e.g. 123 Main St, City, State"
+                      className="w-full rounded-full py-3.5 px-6 bg-white border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-slate-900 outline-none text-sm"
+                    />
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1077,6 +1238,7 @@ export default function SalesQuotationsPage() {
                           <input
                             type="checkbox"
                             checked={hasExchange}
+                            disabled={likelyPurchase === 'replacement'}
                             onChange={e => setHasExchange(e.target.checked)}
                             className="sr-only peer"
                           />
@@ -1332,6 +1494,177 @@ export default function SalesQuotationsPage() {
 
                     </div>
                   )}
+                </div>
+
+                {/* Step 6: Purchase Profile & Document Requirements */}
+                <div className="space-y-4 pt-4 border-t border-slate-100">
+                  <div className="border-b border-slate-100 pb-2">
+                    <label className="text-sm font-semibold text-slate-900 pl-2">Step 6: Purchase Profile & Document Requirements</label>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Likely Purchase */}
+                    <div className="space-y-2">
+                      <label className="text-xs text-slate-500 pl-4 font-medium">Likely Purchase Type</label>
+                      <select
+                        value={likelyPurchase}
+                        onChange={e => setLikelyPurchase(e.target.value as any)}
+                        className="w-full rounded-full py-3.5 px-5 bg-slate-50 border border-slate-200 text-sm text-slate-900 focus:border-slate-900 focus:bg-white outline-none appearance-none"
+                      >
+                        <option value="first_time">First Time Purchase</option>
+                        <option value="additional">Additional Purchase</option>
+                        <option value="replacement">Replacement / Exchange</option>
+                      </select>
+                    </div>
+
+                    {/* Mode of Purchase */}
+                    <div className="space-y-2">
+                      <label className="text-xs text-slate-500 pl-4 font-medium">Mode of Purchase</label>
+                      <select
+                        value={modeOfPurchase}
+                        onChange={e => setModeOfPurchase(e.target.value as any)}
+                        className="w-full rounded-full py-3.5 px-5 bg-slate-50 border border-slate-200 text-sm text-slate-900 focus:border-slate-900 focus:bg-white outline-none appearance-none"
+                      >
+                        <option value="cash">Cash Payment</option>
+                        <option value="loan">Finance / Loan</option>
+                        <option value="other">Other Payment Mode</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Conditional: Mode of Purchase === 'other' */}
+                  {modeOfPurchase === 'other' && (
+                    <div className="space-y-2 pt-2">
+                      <label className="text-xs text-slate-500 pl-4 font-medium">Specify Other Purchase Mode Details *</label>
+                      <input
+                        type="text"
+                        value={modeOfPurchaseOtherText}
+                        onChange={e => setModeOfPurchaseOtherText(e.target.value)}
+                        placeholder="e.g. Demand Draft, Corporate Sponsorship, etc."
+                        className="w-full rounded-full py-3.5 px-6 bg-white border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-slate-900 outline-none text-sm"
+                      />
+                    </div>
+                  )}
+
+                  {/* Conditional: Mode of Purchase === 'loan' - Aadhar and PAN uploads */}
+                  {modeOfPurchase === 'loan' && (
+                    <div className="space-y-4 pt-2">
+                      <div className="bg-slate-50 rounded-3xl p-5 border border-slate-200/60 space-y-4">
+                        <p className="text-xs font-semibold text-slate-700 uppercase tracking-wider pl-2">
+                          Required Finance Documents (Aadhar & PAN Cards)
+                        </p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <ImageUpload
+                            value={loanAadharFront}
+                            folder="documents"
+                            onChange={setLoanAadharFront}
+                          />
+                          <div className="text-xs text-slate-500 pt-8 pl-2">Aadhar Card Front Side *</div>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <ImageUpload
+                            value={loanAadharBack}
+                            folder="documents"
+                            onChange={setLoanAadharBack}
+                          />
+                          <div className="text-xs text-slate-500 pt-8 pl-2">Aadhar Card Back Side *</div>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <ImageUpload
+                            value={loanPanFront}
+                            folder="documents"
+                            onChange={setLoanPanFront}
+                          />
+                          <div className="text-xs text-slate-500 pt-8 pl-2">PAN Card Front Side *</div>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <ImageUpload
+                            value={loanPanBack}
+                            folder="documents"
+                            onChange={setLoanPanBack}
+                          />
+                          <div className="text-xs text-slate-500 pt-8 pl-2">PAN Card Back Side *</div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Conditional: Likely Purchase === 'replacement' - 4+ photos, RC, Insurance, NOC */}
+                  {likelyPurchase === 'replacement' && (
+                    <div className="space-y-4 pt-2">
+                      <div className="bg-slate-50 rounded-3xl p-5 border border-slate-200/60 space-y-4">
+                        <p className="text-xs font-semibold text-slate-700 uppercase tracking-wider pl-2">
+                          Required Exchange Documents & Photos
+                        </p>
+                        
+                        {/* Vehicle Photos */}
+                        <div className="space-y-2 pl-2">
+                          <label className="text-xs font-medium text-slate-600">Vehicle Photos (At least 4 required) *</label>
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-2">
+                            {exchangeImages.map((imgUrl, idx) => (
+                              <div key={idx} className="relative inline-block w-24 h-24">
+                                <img
+                                  src={imgUrl}
+                                  alt={`Vehicle ${idx + 1}`}
+                                  className="w-24 h-24 rounded-2xl object-cover border border-slate-200"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => setExchangeImages(prev => prev.filter((_, i) => i !== idx))}
+                                  className="absolute -top-2 -right-2 bg-slate-900 text-white rounded-full p-1 hover:bg-slate-700 transition-colors"
+                                >
+                                  <X size={12} />
+                                </button>
+                              </div>
+                            ))}
+                            {exchangeImages.length < 6 && (
+                              <ImageUpload
+                                value={null}
+                                folder="exchange"
+                                onChange={(url) => {
+                                  if (url) {
+                                    setExchangeImages(prev => [...prev, url])
+                                  }
+                                }}
+                              />
+                            )}
+                          </div>
+                          <p className="text-[10px] text-slate-500 mt-1">
+                            Uploaded: {exchangeImages.length} {exchangeImages.length < 4 ? `(need ${4 - exchangeImages.length} more)` : '(Minimum requirement met)'}
+                          </p>
+                        </div>
+
+                        {/* Document Uploads */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                          <ImageUpload
+                            value={exchangeRcCopy}
+                            folder="exchange"
+                            onChange={setExchangeRcCopy}
+                          />
+                          <div className="text-xs text-slate-500 pt-8 pl-2">RC Copy (Registration Certificate) *</div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <ImageUpload
+                            value={exchangeInsurance}
+                            folder="exchange"
+                            onChange={setExchangeInsurance}
+                          />
+                          <div className="text-xs text-slate-500 pt-8 pl-2">Insurance Copy *</div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <ImageUpload
+                            value={exchangeNoc}
+                            folder="exchange"
+                            onChange={setExchangeNoc}
+                          />
+                          <div className="text-xs text-slate-500 pt-8 pl-2">NOC (No Objection Certificate) *</div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                 </div>
               </div>
             )}

@@ -128,22 +128,48 @@ export default function ModelsTab() {
       )}
 
       {loading ? (
-        <div className="space-y-4">{[1,2,3].map(i=><div key={i} className="skeleton h-20 rounded-[2rem]"/>)}</div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[1,2,3].map(i=><div key={i} className="skeleton h-64 rounded-[3rem]"/>)}
+        </div>
       ) : filtered.length===0 ? <div/> : (
-        <div className="bg-white border border-slate-200 rounded-[2rem] overflow-hidden">
-          <div className="divide-y divide-slate-100">
-            {filtered.map(m=>(
-              <button key={m.id} onClick={()=>openEdit(m)} className="w-full text-left p-4 md:p-8 px-6 md:px-12 hover:bg-slate-50 transition-colors flex items-center gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filtered.map(m=>(
+            <button
+              key={m.id}
+              onClick={()=>openEdit(m)}
+              className="bg-white border border-slate-200 rounded-[3rem] overflow-hidden hover:border-slate-300 transition-all flex flex-col h-full group cursor-pointer text-left outline-none"
+            >
+              {/* Product Image Area */}
+              <div className="relative h-48 w-full bg-slate-50 flex items-center justify-center overflow-hidden border-b border-slate-100">
                 {m.image_url ? (
-                  <img src={m.image_url} alt={m.name} className="w-12 h-8 rounded-lg object-cover shrink-0 border border-slate-200" />
+                  <img
+                    src={m.image_url}
+                    alt={m.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ease-out"
+                  />
                 ) : (
-                  <Car size={18} className="text-slate-400 shrink-0" />
+                  <Car size={36} className="text-slate-300 group-hover:scale-110 transition-transform duration-300 ease-out" />
                 )}
-                <div className="flex-1 min-w-0"><p className="text-slate-900 truncate">{m.name}</p>{m.description&&<p className="text-sm text-slate-500 truncate mt-0.5">{m.description}</p>}</div>
-                {getCat(m)&&<span className="text-xs bg-slate-100 text-slate-600 rounded-full px-3 py-1 shrink-0">{getCat(m)}</span>}
-              </button>
-            ))}
-          </div>
+                {getCat(m) && (
+                  <span className="absolute top-4 right-4 text-[10px] bg-white/90 backdrop-blur-sm text-slate-600 border border-slate-200 rounded-full px-3 py-1 font-semibold tracking-wide uppercase select-none">
+                    {getCat(m)}
+                  </span>
+                )}
+              </div>
+
+              {/* Product Content Details */}
+              <div className="p-6 flex-grow flex flex-col justify-between space-y-4">
+                <div className="space-y-1.5">
+                  <h4 className="text-slate-900 font-bold text-base leading-snug group-hover:text-slate-950 transition-colors">
+                    {m.name}
+                  </h4>
+                  <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">
+                    {m.description || 'No description provided.'}
+                  </p>
+                </div>
+              </div>
+            </button>
+          ))}
         </div>
       )}
     </div>

@@ -87,9 +87,6 @@ export function Sidebar({ isOpen, setIsOpen, navItems, portalName }: SidebarProp
         {/* Brand */}
         <div className="p-8 pb-4">
           <h2 className="text-xl text-slate-900">{portalName}</h2>
-          {profile && (
-            <p className="text-sm text-slate-500 mt-1 truncate">{profile.name}</p>
-          )}
         </div>
 
         {/* Nav */}

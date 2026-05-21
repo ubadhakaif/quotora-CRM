@@ -84,23 +84,51 @@ export default function AccessoriesTab() {
         </div>
       )}
       {loading?(
-        <div className="space-y-4">{[1,2,3].map(i=><div key={i} className="skeleton h-20 rounded-[2rem]"/>)}</div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {[1,2,3].map(i=><div key={i} className="skeleton h-56 rounded-[2.5rem]"/>)}
+        </div>
       ):filtered.length===0?<div/>:(
-        <div className="bg-white border border-slate-200 rounded-[2rem] overflow-hidden">
-          <div className="divide-y divide-slate-100">
-            {filtered.map(a=>(
-              <button key={a.id} onClick={()=>openEdit(a)} className="w-full text-left p-4 md:p-8 px-6 md:px-12 hover:bg-slate-50 transition-colors flex items-center gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {filtered.map(a=>(
+            <button
+              key={a.id}
+              onClick={()=>openEdit(a)}
+              className="bg-white border border-slate-200 rounded-[2.5rem] overflow-hidden hover:border-slate-300 transition-all flex flex-col h-full group cursor-pointer text-left outline-none"
+            >
+              {/* Aspect Square image wrapper */}
+              <div className="relative aspect-square w-full bg-slate-50 flex items-center justify-center overflow-hidden border-b border-slate-100">
                 {a.image_url ? (
-                  <img src={a.image_url} alt={a.name} className="w-10 h-10 rounded-xl object-cover shrink-0 border border-slate-200" />
+                  <img
+                    src={a.image_url}
+                    alt={a.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ease-out"
+                  />
                 ) : (
-                  <Wrench size={18} className="text-slate-400 shrink-0"/>
+                  <Wrench size={32} className="text-slate-300 group-hover:scale-110 transition-transform duration-300 ease-out" />
                 )}
-                <div className="flex-1 min-w-0"><p className="text-slate-900 truncate">{a.name}</p></div>
-                {getType(a)&&<span className="text-xs bg-slate-100 text-slate-600 rounded-full px-3 py-1 shrink-0">{getType(a)}</span>}
-                <span className="text-sm text-slate-700 shrink-0">{formatINR(a.price)}</span>
-              </button>
-            ))}
-          </div>
+                
+                {getType(a) && (
+                  <span className="absolute top-4 left-4 text-[10px] bg-white/90 backdrop-blur-sm text-slate-600 border border-slate-200 rounded-full px-3 py-1 font-semibold tracking-wide uppercase select-none">
+                    {getType(a)}
+                  </span>
+                )}
+              </div>
+
+              {/* Accessories Details */}
+              <div className="p-5 flex-grow flex flex-col justify-between space-y-3">
+                <div className="space-y-1">
+                  <h4 className="text-slate-900 font-bold text-sm leading-snug group-hover:text-slate-950 transition-colors line-clamp-2">
+                    {a.name}
+                  </h4>
+                </div>
+
+                <div className="pt-2.5 border-t border-slate-100 flex items-center justify-between">
+                  <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Price</span>
+                  <span className="text-sm font-bold text-slate-950">{formatINR(a.price)}</span>
+                </div>
+              </div>
+            </button>
+          ))}
         </div>
       )}
     </div>

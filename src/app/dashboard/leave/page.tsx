@@ -20,6 +20,7 @@ interface LeaveRequest {
   created_at: string
   profiles?: { name: string; email: string } | null
   branches?: { name: string } | null
+  reviewer?: { name: string } | null
 }
 
 const LEAVE_TYPE_LABELS: Record<string, string> = {
@@ -54,7 +55,7 @@ export default function AdminLeavePage() {
     setLoading(true)
     const { data, error } = await supabase
       .from('leave_requests')
-      .select('*, profiles!profile_id(name, email), branches(name)')
+      .select('*, profiles!profile_id(name, email), reviewer:profiles!reviewed_by(name), branches(name)')
       .order('created_at', { ascending: false })
 
     if (error) {
@@ -238,6 +239,14 @@ export default function AdminLeavePage() {
                     {new Date(r.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                   </span>
                 </div>
+                {r.reviewer && (
+                  <div>
+                    <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider block mb-0.5">
+                      {r.status === 'approved' ? 'Approved by' : r.status === 'rejected' ? 'Rejected by' : 'Reviewed by'}
+                    </span>
+                    <span className="text-slate-800 font-semibold">{r.reviewer.name}</span>
+                  </div>
+                )}
               </div>
 
               {r.reason && (

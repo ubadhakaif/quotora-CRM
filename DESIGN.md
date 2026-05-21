@@ -57,3 +57,7 @@ Whenever an AI agent is working in this repository, it MUST adhere strictly to t
 ## 6. Database Schema Directives
 1. **Schema Management**: All database schemas, RLS policies, and structural SQL MUST be meticulously recorded in the `/supabase` folder (e.g., `supabase/migrations/` or `supabase/schema/`).
 2. **Documentation**: Never mutate database structure without documenting the source SQL in this directory.
+
+## 7. AI Workflow & State Synchronization
+1. **Mandatory Pre-Flight Read**: Before implementing any design changes or writing any component code, every AI agent MUST read all files in the `.ai-context/` directory (`todo.md`, `architecture.md`, `state.md`).
+2. **Synchronize State**: Once any styling or feature implementation is complete, the AI agent MUST update the task lists and current status in `.ai-context/` (`todo.md`, `architecture.md`, `state.md`) immediately.

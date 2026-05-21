@@ -98,22 +98,55 @@ export default function VariantsTab() {
         </div>
       )}
       {loading?(
-        <div className="space-y-4">{[1,2,3].map(i=><div key={i} className="skeleton h-20 rounded-[2rem]"/>)}</div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[1,2,3].map(i=><div key={i} className="skeleton h-60 rounded-[3rem]"/>)}
+        </div>
       ):filtered.length===0?<div/>:(
-        <div className="bg-white border border-slate-200 rounded-[2rem] overflow-hidden">
-          <div className="divide-y divide-slate-100">
-            {filtered.map(v=>(
-              <button key={v.id} onClick={()=>openEdit(v)} className="w-full text-left p-4 md:p-8 px-6 md:px-12 hover:bg-slate-50 transition-colors flex items-center gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filtered.map(v=>(
+            <button
+              key={v.id}
+              onClick={()=>openEdit(v)}
+              className="bg-white border border-slate-200 rounded-[3rem] overflow-hidden hover:border-slate-300 transition-all flex flex-col h-full group cursor-pointer text-left outline-none"
+            >
+              {/* Image & Badges area */}
+              <div className="relative h-44 w-full bg-slate-50 flex items-center justify-center overflow-hidden border-b border-slate-100">
                 {v.image_url ? (
-                  <img src={v.image_url} alt={v.name} className="w-10 h-10 rounded-xl object-cover shrink-0 border border-slate-200" />
+                  <img
+                    src={v.image_url}
+                    alt={v.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ease-out"
+                  />
                 ) : (
-                  <Layers size={18} className="text-slate-400 shrink-0"/>
+                  <Layers size={32} className="text-slate-300 group-hover:scale-110 transition-transform duration-300 ease-out" />
                 )}
-                <div className="flex-1 min-w-0"><p className="text-slate-900 truncate">{v.name}</p><p className="text-sm text-slate-500 mt-0.5">{v.models&&typeof v.models==='object'&&'name' in v.models?(v.models as {name:string}).name:''}</p></div>
-                <span className="text-sm text-slate-700 shrink-0">{formatINR(v.price)}</span>
-              </button>
-            ))}
-          </div>
+                
+                {v.models && typeof v.models === 'object' && 'name' in v.models && (
+                  <span className="absolute top-4 left-4 text-[10px] bg-white/90 backdrop-blur-sm text-slate-600 border border-slate-200 rounded-full px-3 py-1 font-semibold tracking-wide uppercase select-none">
+                    {(v.models as { name: string }).name}
+                  </span>
+                )}
+
+                <span className="absolute top-4 right-4 text-[10px] bg-slate-900 text-white rounded-full px-2.5 py-1 font-semibold select-none">
+                  Pos #{v.variant_order}
+                </span>
+              </div>
+
+              {/* Text & Price details */}
+              <div className="p-6 flex-grow flex flex-col justify-between space-y-4">
+                <div className="space-y-1">
+                  <h4 className="text-slate-900 font-bold text-base leading-snug group-hover:text-slate-950 transition-colors">
+                    {v.name}
+                  </h4>
+                </div>
+                
+                <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+                  <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Base Price</span>
+                  <span className="text-base font-bold text-slate-950">{formatINR(v.price)}</span>
+                </div>
+              </div>
+            </button>
+          ))}
         </div>
       )}
     </div>
