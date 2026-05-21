@@ -195,10 +195,6 @@ export function ProfilePage() {
 
           <div className="space-y-1 text-center sm:text-left flex-1">
             <h4 className="font-semibold text-slate-800 text-sm">Profile Picture</h4>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              Upload a custom profile photo (JPEG, PNG, WebP). 
-              Our system will automatically resize and optimize it for low bandwidth usage.
-            </p>
             {compressing && (
               <p className="text-[10px] text-slate-500 flex items-center gap-1.5 justify-center sm:justify-start">
                 <RefreshCw size={10} className="animate-spin" /> Processing image...

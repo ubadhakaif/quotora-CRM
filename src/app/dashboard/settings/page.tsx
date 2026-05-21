@@ -7,9 +7,10 @@ import { useToast } from '@/components/providers/ToastProvider'
 import { Settings, Save } from 'lucide-react'
 
 const TABS = [
-  { id: 'branding', label: 'Branding' },
-  { id: 'tax', label: 'Tax Configuration' },
-  { id: 'quotation', label: 'Quotation Rules' },
+  { id: 'branding', label: 'Branding', desc: 'Dealership name, slogan, and public presence details.' },
+  { id: 'tax', label: 'Tax Configuration', desc: 'GST, TCS thresholds, state road taxes, and defaults.' },
+  { id: 'quotation', label: 'Quotation Rules', desc: 'Auto-approval caps, discount controls, and parameters.' },
+  { id: 'operations', label: 'Operations & Roster', desc: 'Branch operational hours, daily shift start/end times.' },
 ]
 
 export default function SettingsPage() {
@@ -69,20 +70,29 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Tabs */}
-      <div className="flex overflow-x-auto hide-scrollbar gap-2 pb-2">
+    <div className="space-y-8">
+      {/* Quick Tiles Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {TABS.map(tab => (
           <button
             key={tab.id}
+            type="button"
             onClick={() => setActiveTab(tab.id)}
-            className={`whitespace-nowrap rounded-full px-6 py-3 text-sm font-medium transition-colors ${
+            className={`text-left p-6 rounded-[2rem] border transition-all cursor-pointer flex flex-col justify-between min-h-[140px] ${
               activeTab === tab.id
-                ? 'bg-slate-900 text-white'
-                : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                ? 'bg-slate-900 border-slate-900 text-white shadow-sm'
+                : 'bg-white border-slate-200 text-slate-800 hover:border-slate-300 hover:bg-slate-50/50'
             }`}
           >
-            {tab.label}
+            <div>
+              <span className={`text-[10px] font-bold uppercase tracking-wider block mb-1 ${activeTab === tab.id ? 'text-slate-400' : 'text-slate-500'}`}>
+                Section
+              </span>
+              <h4 className="font-bold text-base leading-snug">{tab.label}</h4>
+            </div>
+            <p className={`text-xs mt-2 line-clamp-2 leading-relaxed ${activeTab === tab.id ? 'text-slate-300' : 'text-slate-400'}`}>
+              {tab.desc}
+            </p>
           </button>
         ))}
       </div>
@@ -90,7 +100,7 @@ export default function SettingsPage() {
       <div className="bg-white border border-slate-200 rounded-[2rem] p-8 md:p-12 space-y-8">
         {activeTab === 'branding' && (
           <div className="space-y-6 max-w-2xl">
-            <h3 className="text-xl font-medium text-slate-900 flex items-center gap-2">
+            <h3 className="text-xl font-semibold text-slate-900 flex items-center gap-2">
               <Settings size={20} className="text-slate-400" /> Branding
             </h3>
             <div className="space-y-4">
@@ -120,7 +130,7 @@ export default function SettingsPage() {
 
         {activeTab === 'tax' && (
           <div className="space-y-6 max-w-2xl">
-            <h3 className="text-xl font-medium text-slate-900 flex items-center gap-2">
+            <h3 className="text-xl font-semibold text-slate-900 flex items-center gap-2">
               <Settings size={20} className="text-slate-400" /> Tax Configuration
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -204,7 +214,7 @@ export default function SettingsPage() {
 
         {activeTab === 'quotation' && (
           <div className="space-y-6 max-w-2xl">
-            <h3 className="text-xl font-medium text-slate-900 flex items-center gap-2">
+            <h3 className="text-xl font-semibold text-slate-900 flex items-center gap-2">
               <Settings size={20} className="text-slate-400" /> Quotation Rules
             </h3>
             <div className="space-y-4">
@@ -236,11 +246,49 @@ export default function SettingsPage() {
           </div>
         )}
 
+        {activeTab === 'operations' && (
+          <div className="space-y-6 max-w-2xl">
+            <h3 className="text-xl font-semibold text-slate-900 flex items-center gap-2">
+              <Settings size={20} className="text-slate-400" /> Operations & Attendance
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700">Shift Start Time</label>
+                <input
+                  type="time"
+                  value={settings['operations.shift_start'] || '09:00'}
+                  onChange={e => handleSettingChange('operations.shift_start', e.target.value)}
+                  className="w-full rounded-full py-4 px-6 bg-slate-50 border border-slate-200 text-slate-900 focus:border-slate-900 focus:bg-white transition-all outline-none"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700">Shift End Time</label>
+                <input
+                  type="time"
+                  value={settings['operations.shift_end'] || '18:00'}
+                  onChange={e => handleSettingChange('operations.shift_end', e.target.value)}
+                  className="w-full rounded-full py-4 px-6 bg-slate-50 border border-slate-200 text-slate-900 focus:border-slate-900 focus:bg-white transition-all outline-none"
+                />
+              </div>
+              <div className="space-y-2 sm:col-span-2">
+                <label className="text-sm font-medium text-slate-700">Roster Grace Period (Minutes)</label>
+                <input
+                  type="number"
+                  value={settings['operations.grace_period'] !== undefined ? settings['operations.grace_period'] : '15'}
+                  onChange={e => handleSettingChange('operations.grace_period', Number(e.target.value))}
+                  placeholder="15"
+                  className="w-full rounded-full py-4 px-6 bg-slate-50 border border-slate-200 text-slate-900 focus:border-slate-900 focus:bg-white transition-all outline-none"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="pt-6 border-t border-slate-100 flex justify-end">
           <button
             onClick={handleSave}
             disabled={saving}
-            className="bg-slate-900 text-white rounded-full px-8 py-4 flex items-center gap-3 hover:bg-slate-800 transition-colors disabled:opacity-50 w-full sm:w-auto justify-center"
+            className="bg-slate-900 text-white rounded-full px-8 py-4 flex items-center gap-3 hover:bg-slate-800 transition-colors disabled:opacity-50 w-full sm:w-auto justify-center cursor-pointer font-semibold text-sm"
           >
             {saving ? 'Saving...' : <><Save size={18} /> Save Settings</>}
           </button>

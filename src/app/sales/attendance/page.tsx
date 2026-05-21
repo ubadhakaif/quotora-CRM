@@ -60,23 +60,15 @@ export default function SalesAttendancePage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-4">
-        <Link
-          href="/sales"
-          className="p-2.5 rounded-full border border-slate-200 bg-white text-slate-500 hover:text-slate-900 transition-colors"
-        >
-          <ArrowLeft size={16} />
-        </Link>
-        <div>
-          <h2 className="text-xl font-bold text-slate-950">My Attendance Logs</h2>
-          <p className="text-xs text-slate-500">View and track your daily check-in history and work duration.</p>
-        </div>
+      <div>
+        <h2 className="text-xl font-bold text-slate-950">My Attendance Logs</h2>
+        <p className="text-xs text-slate-500">View and track your daily check-in history and work duration.</p>
       </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white border border-slate-200 rounded-[2rem] p-6 md:p-8 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+          <div className="w-12 h-12 rounded-full bg-slate-50 text-slate-700 flex items-center justify-center shrink-0 border border-slate-100">
             <Calendar size={20} />
           </div>
           <div>
@@ -86,7 +78,7 @@ export default function SalesAttendancePage() {
         </div>
 
         <div className="bg-white border border-slate-200 rounded-[2rem] p-6 md:p-8 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+          <div className="w-12 h-12 rounded-full bg-slate-50 text-slate-700 flex items-center justify-center shrink-0 border border-slate-100">
             <Award size={20} />
           </div>
           <div>
@@ -96,7 +88,7 @@ export default function SalesAttendancePage() {
         </div>
 
         <div className="bg-white border border-slate-200 rounded-[2rem] p-6 md:p-8 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+          <div className="w-12 h-12 rounded-full bg-slate-50 text-slate-700 flex items-center justify-center shrink-0 border border-slate-100">
             <Hourglass size={20} />
           </div>
           <div>

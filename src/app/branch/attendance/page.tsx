@@ -129,17 +129,9 @@ export default function BranchAttendancePage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <Link
-            href="/branch"
-            className="p-2.5 rounded-full border border-slate-200 bg-white text-slate-500 hover:text-slate-900 transition-colors"
-          >
-            <ArrowLeft size={16} />
-          </Link>
-          <div>
-            <h2 className="text-xl font-bold text-slate-950">Attendance Desk</h2>
-            <p className="text-xs text-slate-500">Track and manage branch employee rosters and work hours.</p>
-          </div>
+        <div>
+          <h2 className="text-xl font-bold text-slate-950">Attendance Desk</h2>
+          <p className="text-xs text-slate-500">Track and manage branch employee rosters and work hours.</p>
         </div>
 
         {/* Tab Controls */}

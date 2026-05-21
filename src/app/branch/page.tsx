@@ -180,71 +180,54 @@ export default function BranchDashboardPage() {
       {/* Top Section: Welcome & Attendance check-in/out */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         {/* Welcome Card */}
-        <div className="lg:col-span-7 bg-white border border-slate-200 rounded-[2rem] p-8 md:p-12 flex flex-col justify-center">
-          <p className="text-slate-500 text-sm">Welcome back</p>
+        <div className="lg:col-span-7 flex flex-col justify-center p-2">
+          <p className="text-slate-500 text-sm">Welcome back,</p>
           <h2 className="text-3xl mt-1 font-bold text-slate-950">
-            <span style={{ color: '#4285F4' }}>{profile?.name}</span>
+            {profile?.name ? profile.name.split(' ')[0] : ''}
           </h2>
-          <p className="text-slate-400 text-xs mt-1.5 font-semibold uppercase tracking-wider">
-            {profile?.role === 'branch_manager' ? 'Branch Manager' : profile?.role}
+          <p className="text-slate-400 text-xs mt-1 font-medium text-slate-500">
+            {profile?.role === 'branch_manager' ? 'Branch manager' : profile?.role === 'employee' ? 'Sales executive' : 'Dealer admin'}
           </p>
         </div>
 
         {/* Attendance Card */}
-        <div className="lg:col-span-5 bg-white border border-slate-200 rounded-[2rem] p-8 md:p-10 flex flex-col justify-between space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="font-bold text-slate-900 flex items-center gap-2">
-              <Clock className="text-slate-400" size={18} /> Today's Attendance
+        <div className="lg:col-span-5 bg-white border border-slate-200 rounded-[2rem] p-6 flex flex-col justify-between space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+            <h3 className="font-bold text-slate-900 text-sm">
+              Attendance
             </h3>
-            {attLoading ? (
-              <span className="text-xs text-slate-400">Loading...</span>
-            ) : attendance ? (
-              attendance.check_out ? (
-                <span className="text-[10px] uppercase font-bold tracking-wider px-3 py-1 bg-slate-100 text-slate-500 rounded-full border border-slate-200">
-                  Completed 🏁
-                </span>
-              ) : (
-                <span className="text-[10px] uppercase font-bold tracking-wider px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full border border-emerald-250">
-                  Checked In 🟢
-                </span>
-              )
-            ) : (
-              <span className="text-[10px] uppercase font-bold tracking-wider px-3 py-1 bg-amber-50 text-amber-700 rounded-full border border-amber-250">
-                Not Checked In ⚪
-              </span>
-            )}
           </div>
 
-          <div className="text-xs text-slate-500 pl-1">
-            {attLoading ? (
-              <div className="h-6 w-32 skeleton rounded-md" />
-            ) : attendance ? (
-              <div className="space-y-1">
-                <p>Checked In: <span className="font-bold text-slate-800">{new Date(attendance.check_in).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span></p>
-                {attendance.check_out && (
-                  <p>Checked Out: <span className="font-bold text-slate-800">{new Date(attendance.check_out).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span></p>
-                )}
-              </div>
-            ) : (
-              <p>You have not checked in today yet. Please check in to record your logs.</p>
-            )}
+          <div className="flex items-center gap-8 text-xs">
+            <div>
+              <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider block mb-0.5">Check-in</span>
+              <span className="text-sm font-semibold text-slate-800">
+                {attendance ? new Date(attendance.check_in).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}
+              </span>
+            </div>
+            <div>
+              <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider block mb-0.5">Check-out</span>
+              <span className="text-sm font-semibold text-slate-800">
+                {attendance?.check_out ? new Date(attendance.check_out).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}
+              </span>
+            </div>
           </div>
 
           <div>
             {attLoading ? (
-              <div className="h-12 w-full skeleton rounded-full" />
+              <div className="h-11 w-full skeleton rounded-full" />
             ) : attendance ? (
               !attendance.check_out ? (
                 <button
                   onClick={handleCheckOut}
-                  className="w-full bg-slate-900 text-white font-semibold rounded-full py-3 flex items-center justify-center gap-2 hover:bg-slate-800 transition-all border border-slate-200 cursor-pointer"
+                  className="w-full bg-slate-900 text-white font-medium rounded-full py-2.5 text-xs hover:bg-slate-800 transition-all cursor-pointer"
                 >
-                  <LogOut size={16} /> Check-Out for Today
+                  Check-Out for Today
                 </button>
               ) : (
                 <button
                   disabled
-                  className="w-full bg-slate-50 text-slate-400 font-semibold rounded-full py-3 flex items-center justify-center gap-2 border border-slate-200 cursor-not-allowed text-xs"
+                  className="w-full bg-slate-50 text-slate-400 font-medium rounded-full py-2.5 text-xs border border-slate-200 cursor-not-allowed"
                 >
                   Shift Completed
                 </button>
@@ -252,9 +235,9 @@ export default function BranchDashboardPage() {
             ) : (
               <button
                 onClick={handleCheckIn}
-                className="w-full bg-slate-950 text-white font-semibold rounded-full py-3 flex items-center justify-center gap-2 hover:bg-slate-800 transition-all border border-slate-200 cursor-pointer"
+                className="w-full bg-slate-900 text-white font-medium rounded-full py-2.5 text-xs hover:bg-slate-800 transition-all cursor-pointer"
               >
-                <LogIn size={16} /> Check-In Now
+                Check-In for Today
               </button>
             )}
           </div>
