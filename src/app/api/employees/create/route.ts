@@ -59,7 +59,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Failed to create user' }, { status: 500 })
     }
 
-    return NextResponse.json({ success: true, user_id: newUser.user.id })
+    return NextResponse.json({ 
+      success: true, 
+      user_id: newUser.user.id,
+      user: {
+        id: newUser.user.id
+      }
+    })
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Internal server error'
     return NextResponse.json({ error: message }, { status: 500 })

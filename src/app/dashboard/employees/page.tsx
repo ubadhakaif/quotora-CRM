@@ -159,8 +159,9 @@ export default function EmployeesPage() {
         if (!res.ok) throw new Error(data.error || 'Failed to create employee')
         
         // If we set permissions, we should update the newly created profile
-        if (Object.keys(formPermissions).length > 0) {
-          await supabase.from('profiles').update({ permissions: formPermissions }).eq('id', data.user.id)
+        const createdUserId = data.user?.id || data.user_id
+        if (createdUserId && Object.keys(formPermissions).length > 0) {
+          await supabase.from('profiles').update({ permissions: formPermissions }).eq('id', createdUserId)
         }
 
         addToast('Employee created successfully', 'success')
