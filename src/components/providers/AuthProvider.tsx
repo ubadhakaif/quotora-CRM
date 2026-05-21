@@ -110,7 +110,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(initialSession?.user ?? null)
         
         if (initialSession?.user) {
-          await fetchProfile(initialSession.user.id)
+          fetchProfile(initialSession.user.id)
         } else {
           fetchedUserIds.current = null
           setProfile(null)
@@ -133,7 +133,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setSession(newSession)
           setUser(newSession?.user ?? null)
           if (newSession?.user) {
-            await fetchProfile(newSession.user.id)
+            fetchProfile(newSession.user.id)
           } else {
             fetchedUserIds.current = null
             setProfile(null)
