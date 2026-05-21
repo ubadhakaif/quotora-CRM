@@ -25,15 +25,21 @@ export async function GET(
       return NextResponse.json({ error: `Quotation not found: ${error?.message || ''}` }, { status: 404 })
     }
 
-    const exShowroom = Number(quote.variants?.price) || 0
-    const gst = Math.round(exShowroom * 0.28)
-    const rto = Math.round(exShowroom * 0.10)
-    const insurance = Math.round(exShowroom * 0.03)
-    const tcs = exShowroom > 1000000 ? Math.round(exShowroom * 0.01) : 0
+    const breakdown = (quote.tax_breakdown as any) || {}
+    const exShowroom = Number(breakdown.ex_showroom || quote.variants?.price || 0)
+    
+    const isLegacy = !breakdown.ex_showroom
+    const gst = isLegacy ? Math.round(exShowroom * 0.28) : Number(breakdown.gst || 0)
+    const tcs = isLegacy ? (exShowroom >= 1000000 ? Math.round(exShowroom * 0.01) : 0) : Number(breakdown.tcs || 0)
+    const roadTax = isLegacy ? Math.round(exShowroom * 0.10) : Number(breakdown.road_tax || 0)
+    const rtoFee = isLegacy ? Math.round(exShowroom * 0.02) : Number(breakdown.rto_fee || 0)
+    const insurance = isLegacy ? Math.round(exShowroom * 0.03) : Number(breakdown.insurance || 0)
     
     const accs = quote.quotation_accessories || []
-    const accessoriesTotal = accs.reduce((sum: number, item: any) => sum + (Number(item.price) || 0), 0)
-    const subtotal = exShowroom + gst + rto + insurance + tcs + accessoriesTotal
+    const accessoriesTotal = isLegacy
+      ? accs.reduce((sum: number, item: any) => sum + (Number(item.price) || 0), 0)
+      : Number(breakdown.accessories || 0)
+      
     const finalPrice = Math.round(quote.total_price)
 
     // Build absolute high-fidelity HTML printing document template
@@ -233,20 +239,24 @@ export async function GET(
               <td>GST Statutory Tax (28%)</td>
               <td class="text-right">+ ${gst.toLocaleString('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 })}</td>
             </tr>
-            <tr>
-              <td>RTO Road Tax Registration (10%)</td>
-              <td class="text-right">+ ${rto.toLocaleString('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 })}</td>
-            </tr>
-            <tr>
-              <td>Comprehensive Vehicle Insurance (3%)</td>
-              <td class="text-right">+ ${insurance.toLocaleString('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 })}</td>
-            </tr>
             ${tcs > 0 ? `
             <tr>
               <td>Tax Collected at Source (TCS 1%)</td>
               <td class="text-right">+ ${tcs.toLocaleString('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 })}</td>
             </tr>
             ` : ''}
+            <tr>
+              <td>Road Tax & State Charges (10%)</td>
+              <td class="text-right">+ ${roadTax.toLocaleString('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 })}</td>
+            </tr>
+            <tr>
+              <td>RTO & Registration Fees (2%)</td>
+              <td class="text-right">+ ${rtoFee.toLocaleString('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 })}</td>
+            </tr>
+            <tr>
+              <td>Comprehensive Motor Insurance (4%)</td>
+              <td class="text-right">+ ${insurance.toLocaleString('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 })}</td>
+            </tr>
             ${accs.length > 0 ? `
             <tr>
               <td class="font-semibold">Optional Accessories Included:
@@ -261,7 +271,9 @@ export async function GET(
             ` : ''}
             ${quote.discount_amount > 0 ? `
             <tr class="discount-text">
-              <td>Dealership Concession Discount Applied (${quote.discount_percent}%)</td>
+              <td>Dealership Concession Discount Applied (${quote.discount_percent}%) ${
+                breakdown.discount_base_option === 'with_acc' ? '(With Accessories)' : '(Without Accessories)'
+              }</td>
               <td class="text-right">- ${Number(quote.discount_amount).toLocaleString('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 })}</td>
             </tr>
             ` : ''}
@@ -271,6 +283,32 @@ export async function GET(
             </tr>
           </tbody>
         </table>
+
+        ${breakdown.finance?.include_loan ? `
+        <div style="margin-top: 30px;">
+          <div class="section-title" style="font-weight: 700;">Integrated Finance & Loan Option</div>
+          <div class="details-card" style="padding: 0; overflow: hidden; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
+            <table style="margin: 0; font-size: 12px; width: 100%;">
+              <tr style="background-color: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                <td style="padding: 12px; font-weight: 600; color: #475569; border-bottom: 1px solid #e2e8f0;">Loan Tenure</td>
+                <td style="padding: 12px; font-weight: 600; color: #475569; border-bottom: 1px solid #e2e8f0;">Interest Rate (P.A.)</td>
+                <td style="padding: 12px; font-weight: 600; color: #475569; border-bottom: 1px solid #e2e8f0;">Downpayment Paid</td>
+                <td style="padding: 12px; font-weight: 600; color: #475569; border-bottom: 1px solid #e2e8f0;">Monthly Installment (EMI)</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #e2e8f0;">
+                <td style="padding: 12px; color: #0f172a; font-weight: 600; border-bottom: 1px solid #e2e8f0;">${breakdown.finance.tenure_months} Months</td>
+                <td style="padding: 12px; color: #0f172a; border-bottom: 1px solid #e2e8f0;">${breakdown.finance.interest_rate}%</td>
+                <td style="padding: 12px; color: #0f172a; border-bottom: 1px solid #e2e8f0;">${Number(breakdown.finance.down_payment).toLocaleString('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 })}</td>
+                <td style="padding: 12px; color: #16a34a; font-weight: 700; font-size: 14px; border-bottom: 1px solid #e2e8f0;">${Number(breakdown.finance.monthly_emi).toLocaleString('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 })}/mo</td>
+              </tr>
+              <tr style="background-color: #fafafa; font-size: 11px;">
+                <td colspan="2" style="padding: 10px 12px; color: #64748b; border: none;">Processing Fee (${breakdown.finance.processing_fee > 0 ? 'Applied' : 'Nil'}): <strong>${Number(breakdown.finance.processing_fee || 0).toLocaleString('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 })}</strong></td>
+                <td colspan="2" style="padding: 10px 12px; color: #64748b; text-align: right; border: none;">Total Interest Payable: <strong>${Number(breakdown.finance.total_interest || 0).toLocaleString('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 })}</strong></td>
+              </tr>
+            </table>
+          </div>
+        </div>
+        ` : ''}
 
         ${quote.notes ? `
         <div style="margin-top: 30px;">

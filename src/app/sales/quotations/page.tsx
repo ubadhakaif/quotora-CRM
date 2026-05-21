@@ -4,13 +4,25 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { useToast } from '@/components/providers/ToastProvider'
-import { Plus, X, FileText, Search, CheckCircle, XCircle, ArrowRight, DollarSign, Percent, PlusCircle, Trash2, Printer } from 'lucide-react'
+import { Plus, X, FileText, Search, CheckCircle, XCircle, ArrowRight, DollarSign, Percent, PlusCircle, Trash2, Printer, Landmark, Calculator } from 'lucide-react'
 import { StatCard } from '@/components/ui/StatCard'
+import { calculateEMI, isDownPaymentSufficient } from '@/lib/emi'
 
 interface Model { id: string; name: string }
 interface Variant { id: string; name: string; price: number; model_id: string }
 interface Accessory { id: string; name: string; price: number }
 interface Customer { id: string; name: string; phone: string | null }
+interface FinancePlan {
+  id: string
+  provider_id: string
+  name: string
+  min_tenure_months: number
+  max_tenure_months: number
+  interest_rate: number
+  processing_fee_percent: number
+  min_down_payment_percent: number
+  finance_providers?: { id: string; name: string } | null
+}
 interface Quotation {
   id: string
   status: string
@@ -46,6 +58,7 @@ export default function SalesQuotationsPage() {
   const [models, setModels] = useState<Model[]>([])
   const [variants, setVariants] = useState<Variant[]>([])
   const [accessories, setAccessories] = useState<Accessory[]>([])
+  const [financePlans, setFinancePlans] = useState<FinancePlan[]>([])
   
   const [loading, setLoading] = useState(true)
   const [panelOpen, setPanelOpen] = useState(false)
@@ -63,10 +76,17 @@ export default function SalesQuotationsPage() {
   const [bModelId, setBModelId] = useState('')
   const [bVariantId, setBVariantId] = useState('')
   const [selectedAccIds, setSelectedAccIds] = useState<string[]>([])
+  const [discountMode, setDiscountMode] = useState<'with_acc' | 'without_acc'>('without_acc')
   const [bDiscountAmt, setBDiscountAmt] = useState<number>(0)
   const [bDiscountPct, setBDiscountPct] = useState<number>(0)
   const [bNotes, setBNotes] = useState('')
   const [discountThreshold, setDiscountThreshold] = useState<number>(5) // default 5%
+  
+  // Loan / EMI parameters state
+  const [includeLoan, setIncludeLoan] = useState(false)
+  const [selectedPlanId, setSelectedPlanId] = useState('')
+  const [loanDownPayment, setLoanDownPayment] = useState(0)
+  const [loanTenure, setLoanTenure] = useState(60)
 
   // Previewing details state
   const [previewingQuote, setPreviewingQuote] = useState<Quotation | null>(null)
@@ -79,7 +99,7 @@ export default function SalesQuotationsPage() {
     if (!profile?.id) return
     setLoading(true)
     
-    const [quotesRes, customersRes, modelsRes, variantsRes, accRes, settingsRes] = await Promise.all([
+    const [quotesRes, customersRes, modelsRes, variantsRes, accRes, settingsRes, plansRes] = await Promise.all([
       supabase
         .from('quotations')
         .select('*, customers(name, phone), variants(name, price, models(name)), quotation_accessories(id, accessories(name, price))')
@@ -111,7 +131,12 @@ export default function SalesQuotationsPage() {
         .from('dealership_settings')
         .select('value')
         .eq('key', 'discount_threshold')
-        .single()
+        .single(),
+      supabase
+        .from('finance_plans')
+        .select('*, finance_providers(id, name)')
+        .eq('is_active', true)
+        .order('interest_rate')
     ])
 
     if (quotesRes.data) setQuotes(quotesRes.data as any[])
@@ -119,6 +144,12 @@ export default function SalesQuotationsPage() {
     if (modelsRes.data) setModels(modelsRes.data)
     if (variantsRes.data) setVariants(variantsRes.data as Variant[])
     if (accRes.data) setAccessories(accRes.data as Accessory[])
+    if (plansRes.data) {
+      setFinancePlans(plansRes.data as any[])
+      if (plansRes.data.length > 0) {
+        setSelectedPlanId(plansRes.data[0].id)
+      }
+    }
     
     if (settingsRes.data && typeof settingsRes.data.value === 'object') {
       const val = (settingsRes.data.value as any)?.percentage || 5
@@ -137,15 +168,45 @@ export default function SalesQuotationsPage() {
   // Calculation Math
   const activeVariant = variants.find(v => v.id === bVariantId)
   const exShowroom = activeVariant ? Number(activeVariant.price) : 0
-  const gstTax = exShowroom * 0.28 // 28% GST
-  const rtoTax = exShowroom * 0.10 // 10% RTO
-  const insuranceTax = exShowroom * 0.03 // 3% Insurance
+  const gstTax = Math.round(exShowroom * 0.28) // 28% GST
+  const tcsTax = exShowroom >= 1000000 ? Math.round(exShowroom * 0.01) : 0 // 1% TCS if over 10 Lakhs
+  const roadTax = Math.round(exShowroom * 0.10) // 10% Road Tax / State Tax
+  const rtoFee = Math.round(exShowroom * 0.02) // 2% RTO Fee
+  const insuranceTax = Math.round(exShowroom * 0.04) // 4% Insurance
   
   const selectedAccessories = accessories.filter(a => selectedAccIds.includes(a.id))
   const accessoriesTotal = selectedAccessories.reduce((acc, a) => acc + Number(a.price), 0)
   
-  const subtotal = exShowroom + gstTax + rtoTax + insuranceTax + accessoriesTotal
-  const finalOnRoadPrice = Math.max(0, subtotal - bDiscountAmt)
+  const vehicleSubtotal = exShowroom + gstTax + tcsTax + roadTax + rtoFee + insuranceTax
+  const subtotal = vehicleSubtotal + accessoriesTotal
+
+  const finalOnRoadPrice = discountMode === 'with_acc'
+    ? Math.max(0, subtotal - bDiscountAmt)
+    : Math.max(0, vehicleSubtotal - bDiscountAmt) + accessoriesTotal
+
+  // EMI Calculator output
+  const activePlan = financePlans.find(p => p.id === selectedPlanId)
+  const loanMetrics = calculateEMI(
+    finalOnRoadPrice,
+    loanDownPayment,
+    activePlan ? Number(activePlan.interest_rate) : 0,
+    loanTenure,
+    activePlan ? Number(activePlan.processing_fee_percent) : 0
+  )
+  const dpCheck = isDownPaymentSufficient(
+    finalOnRoadPrice,
+    loanDownPayment,
+    activePlan ? Number(activePlan.min_down_payment_percent) : 0
+  )
+
+  // Auto sync downpayment to 20% of on road price when variant changes
+  useEffect(() => {
+    if (finalOnRoadPrice > 0) {
+      setLoanDownPayment(Math.round(finalOnRoadPrice * 0.20))
+    } else {
+      setLoanDownPayment(0)
+    }
+  }, [bVariantId])
 
   const handleOpenAdd = () => {
     setBCustomerId('')
@@ -158,9 +219,12 @@ export default function SalesQuotationsPage() {
     setBModelId('')
     setBVariantId('')
     setSelectedAccIds([])
+    setDiscountMode('without_acc')
     setBDiscountAmt(0)
     setBDiscountPct(0)
     setBNotes('')
+    setIncludeLoan(false)
+    setLoanTenure(60)
     setPanelOpen(true)
     setPreviewingQuote(null)
   }
@@ -255,9 +319,26 @@ export default function SalesQuotationsPage() {
       tax_breakdown: {
         ex_showroom: exShowroom,
         gst: gstTax,
-        rto: rtoTax,
+        tcs: tcsTax,
+        road_tax: roadTax,
+        rto_fee: rtoFee,
         insurance: insuranceTax,
-        accessories: accessoriesTotal
+        accessories: accessoriesTotal,
+        discount_base_option: discountMode,
+        finance: includeLoan ? {
+          include_loan: true,
+          provider_id: activePlan ? activePlan.provider_id : null,
+          plan_id: selectedPlanId,
+          interest_rate: activePlan ? Number(activePlan.interest_rate) : 0,
+          down_payment: loanDownPayment,
+          tenure_months: loanTenure,
+          monthly_emi: loanMetrics.monthlyEMI,
+          total_interest: loanMetrics.totalInterest,
+          processing_fee: loanMetrics.processingFee,
+          total_payable: loanMetrics.totalPayable
+        } : {
+          include_loan: false
+        }
       }
     }
 
@@ -633,93 +714,294 @@ export default function SalesQuotationsPage() {
               </div>
             )}
 
-            {/* Step 4: Price breakdown & Discount input */}
+            {/* Step 4 & 5: Pricing breakdown, Discount modes, and Loan Configurator */}
             {bVariantId && (
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pt-4 border-t border-slate-100 items-start">
-                
-                {/* Math values */}
-                <div className="lg:col-span-7 bg-slate-50 border border-slate-200 rounded-[2rem] p-6 space-y-4 text-sm text-slate-700">
-                  <h4 className="font-semibold text-slate-900 mb-2">Quotation Pricing Breakdown</h4>
+              <div className="space-y-6 pt-4 border-t border-slate-100">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
                   
-                  <div className="flex justify-between">
-                    <span>Ex-Showroom Base Price</span>
-                    <span className="font-medium text-slate-900">{fmtINR(exShowroom)}</span>
+                  {/* Pricing Breakdown Card */}
+                  <div className="lg:col-span-7 bg-slate-50 border border-slate-200 rounded-[2.5rem] p-6 md:p-8 space-y-4 text-sm text-slate-700">
+                    <h4 className="font-semibold text-slate-900 mb-2 pl-2">Quotation Pricing Breakdown</h4>
+                    
+                    <div className="flex justify-between pl-2">
+                      <span>Ex-Showroom Base Price</span>
+                      <span className="font-medium text-slate-900">{fmtINR(exShowroom)}</span>
+                    </div>
+
+                    <div className="flex justify-between pl-2 text-xs text-slate-500">
+                      <span>GST (28% Statutory Tax)</span>
+                      <span>+ {fmtINR(gstTax)}</span>
+                    </div>
+
+                    {tcsTax > 0 && (
+                      <div className="flex justify-between pl-2 text-xs text-slate-500">
+                        <span>TCS (1% Tax Collected at Source)</span>
+                        <span>+ {fmtINR(tcsTax)}</span>
+                      </div>
+                    )}
+
+                    <div className="flex justify-between pl-2 text-xs text-slate-500">
+                      <span>Road Tax & State Charges (10%)</span>
+                      <span>+ {fmtINR(roadTax)}</span>
+                    </div>
+
+                    <div className="flex justify-between pl-2 text-xs text-slate-500">
+                      <span>RTO & Registration Fees (2%)</span>
+                      <span>+ {fmtINR(rtoFee)}</span>
+                    </div>
+
+                    <div className="flex justify-between pl-2 text-xs text-slate-500">
+                      <span>Comprehensive Motor Insurance (4%)</span>
+                      <span>+ {fmtINR(insuranceTax)}</span>
+                    </div>
+
+                    <div className="flex justify-between pl-2 text-xs text-slate-500">
+                      <span>Value-Added Accessories Total</span>
+                      <span>+ {fmtINR(accessoriesTotal)}</span>
+                    </div>
+
+                    <div className="border-t border-slate-200 pt-3 flex justify-between font-semibold text-slate-950 pl-2">
+                      <span>Subtotal On-Road (before discount)</span>
+                      <span>{fmtINR(subtotal)}</span>
+                    </div>
                   </div>
 
-                  <div className="flex justify-between text-xs text-slate-500">
-                    <span>GST (28% Statutory Tax)</span>
-                    <span>+ {fmtINR(gstTax)}</span>
-                  </div>
+                  {/* Discount Options and Input */}
+                  <div className="lg:col-span-5 space-y-5 bg-white border border-slate-200 rounded-[2.5rem] p-6 md:p-8">
+                    <h4 className="font-semibold text-slate-900 pl-2">Step 4: Discount & Valuations</h4>
+                    
+                    {/* Discount Calculation Mode Selector */}
+                    <div className="space-y-2">
+                      <label className="text-xs text-slate-500 pl-4">Discount Base Application</label>
+                      <div className="grid grid-cols-2 gap-2 bg-slate-100 p-1 rounded-full border border-slate-200">
+                        <button
+                          type="button"
+                          onClick={() => setDiscountMode('without_acc')}
+                          className={`rounded-full py-2 px-3 text-xs font-semibold transition-all ${
+                            discountMode === 'without_acc'
+                              ? 'bg-slate-900 text-white shadow-sm'
+                              : 'text-slate-600 hover:text-slate-900'
+                          }`}
+                        >
+                          Without Accessories
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDiscountMode('with_acc')}
+                          className={`rounded-full py-2 px-3 text-xs font-semibold transition-all ${
+                            discountMode === 'with_acc'
+                              ? 'bg-slate-900 text-white shadow-sm'
+                              : 'text-slate-600 hover:text-slate-900'
+                          }`}
+                        >
+                          With Accessories
+                        </button>
+                      </div>
+                    </div>
 
-                  <div className="flex justify-between text-xs text-slate-500">
-                    <span>RTO registration charges (10% Road Tax)</span>
-                    <span>+ {fmtINR(rtoTax)}</span>
-                  </div>
+                    {/* Inputs */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-2">
+                        <label className="text-xs text-slate-500 pl-4">Discount (%)</label>
+                        <div className="relative">
+                          <Percent size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                          <input
+                            type="number"
+                            step={0.1}
+                            value={bDiscountPct || ''}
+                            onChange={e => handleDiscountPctChange(Number(e.target.value))}
+                            placeholder="e.g. 3"
+                            className="w-full rounded-full py-3 pl-10 pr-4 bg-slate-50 border border-slate-200 text-sm outline-none focus:border-slate-900 focus:bg-white"
+                          />
+                        </div>
+                      </div>
 
-                  <div className="flex justify-between text-xs text-slate-500">
-                    <span>Third Party Insurance (3%)</span>
-                    <span>+ {fmtINR(insuranceTax)}</span>
-                  </div>
+                      <div className="space-y-2">
+                        <label className="text-xs text-slate-500 pl-4">Discount (INR)</label>
+                        <div className="relative">
+                          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-semibold">₹</span>
+                          <input
+                            type="number"
+                            value={bDiscountAmt || ''}
+                            onChange={e => handleDiscountAmtChange(Number(e.target.value))}
+                            placeholder="e.g. 50000"
+                            className="w-full rounded-full py-3 pl-10 pr-4 bg-slate-50 border border-slate-200 text-sm outline-none focus:border-slate-900 focus:bg-white"
+                          />
+                        </div>
+                      </div>
+                    </div>
 
-                  <div className="flex justify-between text-xs text-slate-500">
-                    <span>Selected Accessories Total</span>
-                    <span>+ {fmtINR(accessoriesTotal)}</span>
-                  </div>
+                    {bDiscountPct > discountThreshold && (
+                      <div className="bg-amber-50 text-amber-800 text-xs rounded-2xl p-4 border border-amber-200 leading-normal">
+                        ⚠️ Discount rate of <strong>{bDiscountPct}%</strong> exceeds the standard threshold of {discountThreshold}%. 
+                        This quote will be locked in <strong>Draft status</strong> pending Branch Manager approval.
+                      </div>
+                    )}
 
-                  <div className="border-t border-slate-200 pt-3 flex justify-between font-semibold text-slate-950">
-                    <span>Subtotal On-Road (before discount)</span>
-                    <span>{fmtINR(subtotal)}</span>
+                    <div className="bg-slate-900 text-white rounded-[2rem] p-5 text-center">
+                      <p className="text-xs text-slate-400">Final On-Road price offer</p>
+                      <p className="text-2xl font-bold mt-1 text-white">{fmtINR(finalOnRoadPrice)}</p>
+                    </div>
                   </div>
                 </div>
 
-                {/* Discount inputs */}
-                <div className="lg:col-span-5 space-y-4">
-                  <h4 className="font-semibold text-slate-900 pl-2">Step 4: Discount & Valuations</h4>
-                  
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-2">
-                      <label className="text-xs text-slate-500 pl-4">Discount (%)</label>
-                      <div className="relative">
-                        <Percent size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                        <input
-                          type="number"
-                          step={0.1}
-                          value={bDiscountPct || ''}
-                          onChange={e => handleDiscountPctChange(Number(e.target.value))}
-                          placeholder="e.g. 3"
-                          className="w-full rounded-full py-3 pl-10 pr-4 bg-slate-50 border border-slate-200 text-sm outline-none focus:border-slate-900 focus:bg-white"
-                        />
+                {/* Step 5: Integrated Finance & Loan Planner */}
+                <div className="bg-white border border-slate-200 rounded-[2.5rem] p-6 md:p-8 space-y-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-slate-50 text-slate-500 flex items-center justify-center border border-slate-100">
+                        <Landmark size={18} />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-semibold text-slate-800">Step 5: Integrated Finance & Loan Planner</h4>
+                        <p className="text-[11px] text-slate-500">Configure EMI installment projections and downpayment limits</p>
                       </div>
                     </div>
-
-                    <div className="space-y-2">
-                      <label className="text-xs text-slate-500 pl-4">Discount (INR)</label>
-                      <div className="relative">
-                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-semibold">₹</span>
-                        <input
-                          type="number"
-                          value={bDiscountAmt || ''}
-                          onChange={e => handleDiscountAmtChange(Number(e.target.value))}
-                          placeholder="e.g. 50000"
-                          className="w-full rounded-full py-3 pl-10 pr-4 bg-slate-50 border border-slate-200 text-sm outline-none focus:border-slate-900 focus:bg-white"
-                        />
-                      </div>
-                    </div>
+                    
+                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={includeLoan}
+                        onChange={e => setIncludeLoan(e.target.checked)}
+                        className="w-5 h-5 text-slate-900 rounded border-slate-300 focus:ring-slate-900 transition-all"
+                      />
+                      <span className="text-xs font-semibold text-slate-700">Add EMI Planning to Quotation</span>
+                    </label>
                   </div>
 
-                  {bDiscountPct > discountThreshold && (
-                    <div className="bg-amber-50 text-amber-800 text-xs rounded-xl p-4 border border-amber-200 leading-normal">
-                      ⚠️ Discount rate of <strong>{bDiscountPct}%</strong> exceeds the standard threshold of {discountThreshold}%. 
-                      This quote will be locked in <strong>Draft status</strong> pending Branch Manager approval.
+                  {includeLoan && (
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                      
+                      {/* Left: Tuner */}
+                      <div className="lg:col-span-7 space-y-5">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          {/* Plan Offer */}
+                          <div className="space-y-2">
+                            <label className="text-xs text-slate-500 pl-4 font-medium">Finance Offer Plan</label>
+                            <select
+                              value={selectedPlanId}
+                              onChange={e => setSelectedPlanId(e.target.value)}
+                              className="w-full rounded-full py-3.5 px-5 bg-slate-50 border border-slate-200 text-sm text-slate-900 focus:border-slate-900 focus:bg-white outline-none appearance-none"
+                            >
+                              {financePlans.length === 0 ? (
+                                <option>No active plans found</option>
+                              ) : (
+                                financePlans.map(p => (
+                                  <option key={p.id} value={p.id}>
+                                    {p.finance_providers?.name} — {p.name} ({p.interest_rate}%)
+                                  </option>
+                                ))
+                              )}
+                            </select>
+                          </div>
+
+                          {/* Tenure */}
+                          <div className="space-y-2">
+                            <label className="text-xs text-slate-500 pl-4 font-medium">Loan Repayment Tenure</label>
+                            <select
+                              value={loanTenure}
+                              onChange={e => setLoanTenure(Number(e.target.value))}
+                              className="w-full rounded-full py-3.5 px-5 bg-slate-50 border border-slate-200 text-sm text-slate-900 focus:border-slate-900 focus:bg-white outline-none appearance-none"
+                            >
+                              <option value={12}>12 Months (1 Year)</option>
+                              <option value={24}>24 Months (2 Years)</option>
+                              <option value={36}>36 Months (3 Years)</option>
+                              <option value={48}>48 Months (4 Years)</option>
+                              <option value={60}>60 Months (5 Years)</option>
+                              <option value={72}>72 Months (6 Years)</option>
+                              <option value={84}>84 Months (7 Years)</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        {/* Down Payment config */}
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center pl-2">
+                            <label className="text-xs text-slate-500 font-medium">Downpayment Equity</label>
+                            <span className="text-sm font-bold text-slate-950">
+                              {fmtINR(loanDownPayment)} ({finalOnRoadPrice > 0 ? Math.round((loanDownPayment / finalOnRoadPrice) * 100) : 0}%)
+                            </span>
+                          </div>
+                          
+                          <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 items-center">
+                            <div className="sm:col-span-8">
+                              <input
+                                type="range"
+                                min={0}
+                                max={finalOnRoadPrice}
+                                step={10000}
+                                value={loanDownPayment}
+                                onChange={e => setLoanDownPayment(Number(e.target.value))}
+                                className="w-full h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-slate-900"
+                              />
+                            </div>
+                            <div className="sm:col-span-4 relative">
+                              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-semibold">₹</span>
+                              <input
+                                type="number"
+                                min={0}
+                                max={finalOnRoadPrice}
+                                value={loanDownPayment || ''}
+                                onChange={e => setLoanDownPayment(Math.min(finalOnRoadPrice, Math.max(0, Number(e.target.value))))}
+                                className="w-full rounded-full py-2.5 pl-8 pr-4 bg-slate-50 border border-slate-200 text-xs outline-none focus:border-slate-900 focus:bg-white"
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Sufficiency notice check */}
+                        <div className="bg-slate-50 rounded-2xl p-4 border border-slate-150 flex items-start gap-3 text-xs leading-relaxed text-slate-600">
+                          <Calculator size={18} className="text-slate-500 shrink-0 mt-0.5" />
+                          <div>
+                            <p className="font-semibold text-slate-800">Minimum plan requirements</p>
+                            <p className="mt-0.5">
+                              Minimum required downpayment for this plan is {activePlan?.min_down_payment_percent || 0}% ({fmtINR(dpCheck.minRequired)}).
+                              {dpCheck.sufficient ? (
+                                <span className="text-emerald-600 font-bold ml-1">Downpayment is sufficient!</span>
+                              ) : (
+                                <span className="text-rose-600 font-bold ml-1">Insufficient downpayment. Please adjust to continue.</span>
+                              )}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Right: EMI Output Breakdown */}
+                      <div className="lg:col-span-5 bg-slate-900 text-white rounded-[2rem] p-6 space-y-4">
+                        <div>
+                          <span className="text-xs text-slate-400">Monthly Outgoing Payment</span>
+                          <h3 className="text-2xl font-light tracking-tight text-white mt-0.5">{fmtINR(loanMetrics.monthlyEMI)}/mo</h3>
+                          <p className="text-[10px] text-slate-400">
+                            Interest applied: {activePlan?.interest_rate || 0}% per annum
+                          </p>
+                        </div>
+
+                        <div className="border-t border-slate-800 pt-4 space-y-2 text-xs">
+                          <div className="flex justify-between">
+                            <span className="text-slate-400">Net Loan Principal</span>
+                            <span className="font-semibold">{fmtINR(loanMetrics.loanAmount)}</span>
+                          </div>
+
+                          <div className="flex justify-between">
+                            <span className="text-slate-400">Processing Fee ({activePlan?.processing_fee_percent || 0}%)</span>
+                            <span className="font-semibold">{fmtINR(loanMetrics.processingFee)}</span>
+                          </div>
+
+                          <div className="flex justify-between">
+                            <span className="text-slate-400">Total Interest Payable</span>
+                            <span className="font-semibold">{fmtINR(loanMetrics.totalInterest)}</span>
+                          </div>
+
+                          <div className="border-t border-slate-800 pt-3 flex justify-between text-sm font-bold text-white">
+                            <span>Overall Loan Cost</span>
+                            <span className="text-base text-white">{fmtINR(loanMetrics.totalPayable)}</span>
+                          </div>
+                        </div>
+                      </div>
+
                     </div>
                   )}
-
-                  <div className="bg-slate-900 text-white rounded-2xl p-5 text-center">
-                    <p className="text-xs text-slate-400">Final On-Road price offer</p>
-                    <p className="text-2xl font-bold mt-1 text-white">{fmtINR(finalOnRoadPrice)}</p>
-                  </div>
                 </div>
-
               </div>
             )}
             
