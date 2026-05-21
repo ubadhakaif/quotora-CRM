@@ -1,14 +1,18 @@
 'use client'
 
 import { useState } from 'react'
-import { Car, Layers, Wrench } from 'lucide-react'
+import { Car, Layers, Wrench, Fuel, Settings } from 'lucide-react'
 import ModelsTab from './models/page'
 import VariantsTab from './variants/page'
 import AccessoriesTab from './accessories/page'
+import FuelsTab from './fuels/page'
+import TransmissionsTab from './transmissions/page'
 
 const tabs = [
   { id: 'models', label: 'Models', icon: Car },
   { id: 'variants', label: 'Variants', icon: Layers },
+  { id: 'fuels', label: 'Fuel Types', icon: Fuel },
+  { id: 'transmissions', label: 'Transmission Types', icon: Settings },
   { id: 'accessories', label: 'Accessories', icon: Wrench },
 ]
 
@@ -18,7 +22,7 @@ export default function CatalogPage() {
   return (
     <div className="space-y-6">
       {/* Tabs */}
-      <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-full p-1.5 w-fit">
+      <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-full p-1.5 w-fit overflow-x-auto hide-scrollbar">
         {tabs.map(tab => {
           const Icon = tab.icon
           const isActive = activeTab === tab.id
@@ -27,7 +31,7 @@ export default function CatalogPage() {
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`
-                flex items-center gap-2 px-6 py-3 rounded-full text-sm transition-all
+                flex items-center gap-2 px-6 py-3 rounded-full text-sm transition-all whitespace-nowrap
                 ${isActive
                   ? 'bg-slate-900 text-white'
                   : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
@@ -44,6 +48,8 @@ export default function CatalogPage() {
       {/* Tab Content */}
       {activeTab === 'models' && <ModelsTab />}
       {activeTab === 'variants' && <VariantsTab />}
+      {activeTab === 'fuels' && <FuelsTab />}
+      {activeTab === 'transmissions' && <TransmissionsTab />}
       {activeTab === 'accessories' && <AccessoriesTab />}
     </div>
   )

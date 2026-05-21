@@ -116,8 +116,7 @@ export const DEALER_ADMIN_NAV: NavItem[] = [
   { href: '/dashboard/branches', label: 'Branches', icon: 'Building2' },
   { href: '/dashboard/employees', label: 'Employees', icon: 'Users' },
   { href: '/dashboard/catalog', label: 'Catalog', icon: 'Car' },
-  { href: '/dashboard/quotations', label: 'Quotations', icon: 'FileText' },
-  { href: '/dashboard/customers', label: 'Customers', icon: 'UserCircle' },
+  { href: '/dashboard/leads', label: 'Leads', icon: 'Target' },
   { href: '/dashboard/finance', label: 'Finance', icon: 'Landmark' },
   { href: '/dashboard/reports', label: 'Reports', icon: 'BarChart3' },
   { href: '/dashboard/settings', label: 'Settings', icon: 'Settings' },
@@ -134,7 +133,6 @@ export const BRANCH_MANAGER_NAV: NavItem[] = [
 
 export const SALES_EXECUTIVE_NAV: NavItem[] = [
   { href: '/sales', label: 'Dashboard', icon: 'LayoutDashboard' },
-  { href: '/sales/customers', label: 'Customers', icon: 'UserCircle' },
   { href: '/sales/quotations', label: 'Quotations', icon: 'FileText' },
   { href: '/sales/emi', label: 'EMI Calculator', icon: 'Calculator' },
   { href: '/sales/follow-ups', label: 'Follow-ups', icon: 'PhoneCall' },
@@ -150,8 +148,7 @@ export const DEALER_ADMIN_ROUTE_TITLES: Record<string, string> = {
   '/dashboard/catalog/models': 'Models',
   '/dashboard/catalog/variants': 'Variants',
   '/dashboard/catalog/accessories': 'Accessories',
-  '/dashboard/quotations': 'Quotations',
-  '/dashboard/customers': 'Customers',
+  '/dashboard/leads': 'Leads',
   '/dashboard/finance': 'Finance',
   '/dashboard/reports': 'Reports',
   '/dashboard/settings': 'Settings',
@@ -168,7 +165,6 @@ export const BRANCH_MANAGER_ROUTE_TITLES: Record<string, string> = {
 
 export const SALES_EXECUTIVE_ROUTE_TITLES: Record<string, string> = {
   '/sales': 'Dashboard',
-  '/sales/customers': 'Customers',
   '/sales/quotations': 'Quotations',
   '/sales/emi': 'EMI Calculator',
   '/sales/follow-ups': 'Follow-ups',

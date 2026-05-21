@@ -9,12 +9,6 @@ import { StatCard } from '@/components/ui/StatCard'
 
 const quickLinks = [
   {
-    href: '/sales/customers',
-    label: 'Customers',
-    description: 'Manage your customer directory and notes',
-    icon: UserCircle,
-  },
-  {
     href: '/sales/quotations',
     label: 'Quotations',
     description: 'Build, calculate and manage vehicle quotes',

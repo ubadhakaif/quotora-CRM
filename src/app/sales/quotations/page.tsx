@@ -4,12 +4,20 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { useToast } from '@/components/providers/ToastProvider'
-import { Plus, X, FileText, Search, CheckCircle, XCircle, ArrowRight, DollarSign, Percent, PlusCircle, Trash2, Printer, Landmark, Calculator } from 'lucide-react'
+import { Plus, X, FileText, Search, CheckCircle, XCircle, ArrowRight, DollarSign, Percent, PlusCircle, Trash2, Printer, Landmark, Calculator, Car } from 'lucide-react'
 import { StatCard } from '@/components/ui/StatCard'
 import { calculateEMI, isDownPaymentSufficient } from '@/lib/emi'
 
 interface Model { id: string; name: string }
-interface Variant { id: string; name: string; price: number; model_id: string }
+interface Variant {
+  id: string
+  name: string
+  price: number
+  model_id: string
+  image_url: string | null
+  fuel_types?: { name: string } | null
+  transmission_types?: { name: string } | null
+}
 interface Accessory { id: string; name: string; price: number }
 interface Customer { id: string; name: string; phone: string | null }
 interface FinancePlan {
@@ -97,6 +105,14 @@ export default function SalesQuotationsPage() {
   const [loanDownPayment, setLoanDownPayment] = useState(0)
   const [loanTenure, setLoanTenure] = useState(60)
 
+  // Manual overrides for tax and insurance
+  const [customGst, setCustomGst] = useState<number | null>(null)
+  const [customTcs, setCustomTcs] = useState<number | null>(null)
+  const [customRoadTax, setCustomRoadTax] = useState<number | null>(null)
+  const [customRtoFee, setCustomRtoFee] = useState<number | null>(null)
+  const [customInsurance, setCustomInsurance] = useState<number | null>(null)
+  const [customOtherCharges, setCustomOtherCharges] = useState<number>(0)
+
   // Previewing details state
   const [previewingQuote, setPreviewingQuote] = useState<Quotation | null>(null)
 
@@ -128,7 +144,7 @@ export default function SalesQuotationsPage() {
         .order('name'),
       supabase
         .from('variants')
-        .select('id, name, price, model_id')
+        .select('id, name, price, model_id, image_url, fuel_types(name), transmission_types(name)')
         .eq('is_active', true)
         .order('name'),
       supabase
@@ -193,17 +209,42 @@ export default function SalesQuotationsPage() {
   // Calculation Math
   const activeVariant = variants.find(v => v.id === bVariantId)
   const exShowroom = activeVariant ? Number(activeVariant.price) : 0
-  const gstTax = Math.round(exShowroom * ((cgstRate + sgstRate) / 100)) // CGST + SGST
-  const tcsTax = exShowroom >= tcsThresholdSetting ? Math.round(exShowroom * (tcsRateSetting / 100)) : 0
-  const roadTax = Math.round(exShowroom * (roadTaxRate / 100))
-  const rtoFee = Math.round(exShowroom * (rtoFeeRate / 100))
-  const insuranceTax = Math.round(exShowroom * (insuranceRate / 100))
+
+  const defaultGst = Math.round(exShowroom * ((cgstRate + sgstRate) / 100))
+  const defaultTcs = exShowroom >= tcsThresholdSetting ? Math.round(exShowroom * (tcsRateSetting / 100)) : 0
+  const defaultRoadTax = Math.round(exShowroom * (roadTaxRate / 100))
+  const defaultRtoFee = Math.round(exShowroom * (rtoFeeRate / 100))
+  const defaultInsurance = Math.round(exShowroom * (insuranceRate / 100))
+
+  const gstTax = customGst !== null ? customGst : defaultGst
+  const tcsTax = customTcs !== null ? customTcs : defaultTcs
+  const roadTax = customRoadTax !== null ? customRoadTax : defaultRoadTax
+  const rtoFee = customRtoFee !== null ? customRtoFee : defaultRtoFee
+  const insuranceTax = customInsurance !== null ? customInsurance : defaultInsurance
+  const otherCharges = customOtherCharges
   
   const selectedAccessories = accessories.filter(a => selectedAccIds.includes(a.id))
   const accessoriesTotal = selectedAccessories.reduce((acc, a) => acc + Number(a.price), 0)
   
-  const vehicleSubtotal = exShowroom + gstTax + tcsTax + roadTax + rtoFee + insuranceTax
+  const vehicleSubtotal = exShowroom + gstTax + tcsTax + roadTax + rtoFee + insuranceTax + otherCharges
   const subtotal = vehicleSubtotal + accessoriesTotal
+
+  // Keep flat discount amount synchronized with discount percentage and base mode
+  useEffect(() => {
+    const baseForDiscount = discountMode === 'with_acc' ? subtotal : vehicleSubtotal
+    const calculatedAmt = Math.round((baseForDiscount * bDiscountPct) / 100)
+    setBDiscountAmt(calculatedAmt)
+  }, [discountMode, vehicleSubtotal, accessoriesTotal, bDiscountPct, gstTax, tcsTax, roadTax, rtoFee, insuranceTax, otherCharges])
+
+  // Reset custom overrides when variant is changed
+  useEffect(() => {
+    setCustomGst(null)
+    setCustomTcs(null)
+    setCustomRoadTax(null)
+    setCustomRtoFee(null)
+    setCustomInsurance(null)
+    setCustomOtherCharges(0)
+  }, [bVariantId])
 
   const finalOnRoadPrice = discountMode === 'with_acc'
     ? Math.max(0, subtotal - bDiscountAmt)
@@ -267,13 +308,13 @@ export default function SalesQuotationsPage() {
   const handleDiscountPctChange = (pctVal: number) => {
     const val = Math.min(100, Math.max(0, pctVal))
     setBDiscountPct(val)
-    setBDiscountAmt(Math.round((subtotal * val) / 100))
   }
 
   const handleDiscountAmtChange = (amtVal: number) => {
-    const val = Math.min(subtotal, Math.max(0, amtVal))
-    setBDiscountAmt(val)
-    setBDiscountPct(subtotal > 0 ? parseFloat(((val / subtotal) * 100).toFixed(2)) : 0)
+    const baseForDiscount = discountMode === 'with_acc' ? subtotal : vehicleSubtotal
+    const val = Math.min(baseForDiscount, Math.max(0, amtVal))
+    const pct = baseForDiscount > 0 ? parseFloat(((val / baseForDiscount) * 100).toFixed(2)) : 0
+    setBDiscountPct(pct)
   }
 
   const handleSaveQuotation = async () => {
@@ -348,6 +389,7 @@ export default function SalesQuotationsPage() {
         road_tax: roadTax,
         rto_fee: rtoFee,
         insurance: insuranceTax,
+        other_charges: otherCharges,
         accessories: accessoriesTotal,
         discount_base_option: discountMode,
         finance: includeLoan ? {
@@ -714,6 +756,40 @@ export default function SalesQuotationsPage() {
               </div>
             </div>
 
+            {activeVariant && (
+              <div className="bg-slate-50 border border-slate-200 rounded-[2rem] p-5 flex flex-col sm:flex-row gap-5 items-center">
+                {activeVariant.image_url ? (
+                  <img
+                    src={activeVariant.image_url}
+                    alt={activeVariant.name}
+                    className="w-32 h-20 rounded-2xl object-cover shrink-0 border border-slate-250 shadow-sm bg-white"
+                  />
+                ) : (
+                  <div className="w-32 h-20 rounded-2xl bg-slate-100 flex items-center justify-center shrink-0 border border-slate-205">
+                    <Car size={24} className="text-slate-400" />
+                  </div>
+                )}
+                <div className="flex-1 min-w-0 text-center sm:text-left space-y-1">
+                  <h5 className="font-bold text-slate-950 text-base">{activeVariant.name}</h5>
+                  <div className="flex flex-wrap justify-center sm:justify-start gap-2">
+                    {activeVariant.fuel_types?.name && (
+                      <span className="text-[10px] bg-slate-200 text-slate-700 font-extrabold px-2.5 py-0.5 rounded-full uppercase">
+                        ⛽ {activeVariant.fuel_types.name}
+                      </span>
+                    )}
+                    {activeVariant.transmission_types?.name && (
+                      <span className="text-[10px] bg-slate-200 text-slate-700 font-extrabold px-2.5 py-0.5 rounded-full uppercase">
+                        ⚙️ {activeVariant.transmission_types.name}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-500 font-semibold">
+                    Ex-Showroom Price: <span className="text-slate-950 font-bold">{fmtINR(activeVariant.price)}</span>
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Step 3: Optional Accessories */}
             {accessories.length > 0 && bVariantId && (
               <div className="space-y-3 pt-2">
@@ -753,31 +829,88 @@ export default function SalesQuotationsPage() {
                       <span className="font-medium text-slate-900">{fmtINR(exShowroom)}</span>
                     </div>
 
-                    <div className="flex justify-between pl-2 text-xs text-slate-500">
-                      <span>GST ({cgstRate + sgstRate}% Dynamic Tax)</span>
-                      <span>+ {fmtINR(gstTax)}</span>
-                    </div>
-
-                    {tcsTax > 0 && (
-                      <div className="flex justify-between pl-2 text-xs text-slate-500">
-                        <span>TCS ({tcsRateSetting}% Tax Collected at Source)</span>
-                        <span>+ {fmtINR(tcsTax)}</span>
+                    <div className="flex justify-between items-center pl-2 text-xs text-slate-500">
+                      <span>GST (CGST + SGST: {cgstRate + sgstRate}%)</span>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <span className="text-[10px] text-slate-400 font-medium">₹</span>
+                        <input
+                          type="number"
+                          value={customGst !== null ? customGst : ''}
+                          onChange={e => setCustomGst(e.target.value === '' ? null : Number(e.target.value))}
+                          placeholder={String(defaultGst)}
+                          className="w-24 text-right rounded-lg py-1 px-2 bg-white border border-slate-200 text-xs font-semibold text-slate-800 focus:border-slate-900 outline-none transition-all"
+                        />
                       </div>
-                    )}
-
-                    <div className="flex justify-between pl-2 text-xs text-slate-500">
-                      <span>Road Tax & State Charges ({roadTaxRate}%)</span>
-                      <span>+ {fmtINR(roadTax)}</span>
                     </div>
 
-                    <div className="flex justify-between pl-2 text-xs text-slate-500">
+                    <div className="flex justify-between items-center pl-2 text-xs text-slate-500">
+                      <span>TCS (Tax Collected at Source: {tcsRateSetting}%)</span>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <span className="text-[10px] text-slate-400 font-medium">₹</span>
+                        <input
+                          type="number"
+                          value={customTcs !== null ? customTcs : ''}
+                          onChange={e => setCustomTcs(e.target.value === '' ? null : Number(e.target.value))}
+                          placeholder={String(defaultTcs)}
+                          className="w-24 text-right rounded-lg py-1 px-2 bg-white border border-slate-200 text-xs font-semibold text-slate-800 focus:border-slate-900 outline-none transition-all"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between items-center pl-2 text-xs text-slate-500">
+                      <span>Road Tax & State Surcharges ({roadTaxRate}%)</span>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <span className="text-[10px] text-slate-400 font-medium">₹</span>
+                        <input
+                          type="number"
+                          value={customRoadTax !== null ? customRoadTax : ''}
+                          onChange={e => setCustomRoadTax(e.target.value === '' ? null : Number(e.target.value))}
+                          placeholder={String(defaultRoadTax)}
+                          className="w-24 text-right rounded-lg py-1 px-2 bg-white border border-slate-200 text-xs font-semibold text-slate-800 focus:border-slate-900 outline-none transition-all"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between items-center pl-2 text-xs text-slate-500">
                       <span>RTO & Registration Fees ({rtoFeeRate}%)</span>
-                      <span>+ {fmtINR(rtoFee)}</span>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <span className="text-[10px] text-slate-400 font-medium">₹</span>
+                        <input
+                          type="number"
+                          value={customRtoFee !== null ? customRtoFee : ''}
+                          onChange={e => setCustomRtoFee(e.target.value === '' ? null : Number(e.target.value))}
+                          placeholder={String(defaultRtoFee)}
+                          className="w-24 text-right rounded-lg py-1 px-2 bg-white border border-slate-200 text-xs font-semibold text-slate-800 focus:border-slate-900 outline-none transition-all"
+                        />
+                      </div>
                     </div>
 
-                    <div className="flex justify-between pl-2 text-xs text-slate-500">
+                    <div className="flex justify-between items-center pl-2 text-xs text-slate-500">
                       <span>Comprehensive Motor Insurance ({insuranceRate}%)</span>
-                      <span>+ {fmtINR(insuranceTax)}</span>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <span className="text-[10px] text-slate-400 font-medium">₹</span>
+                        <input
+                          type="number"
+                          value={customInsurance !== null ? customInsurance : ''}
+                          onChange={e => setCustomInsurance(e.target.value === '' ? null : Number(e.target.value))}
+                          placeholder={String(defaultInsurance)}
+                          className="w-24 text-right rounded-lg py-1 px-2 bg-white border border-slate-200 text-xs font-semibold text-slate-800 focus:border-slate-900 outline-none transition-all"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between items-center pl-2 text-xs text-slate-500">
+                      <span>Other Handling & Miscellaneous Charges</span>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <span className="text-[10px] text-slate-400 font-medium">₹</span>
+                        <input
+                          type="number"
+                          value={customOtherCharges || ''}
+                          onChange={e => setCustomOtherCharges(Number(e.target.value))}
+                          placeholder="e.g. 15000"
+                          className="w-24 text-right rounded-lg py-1 px-2 bg-white border border-slate-200 text-xs font-semibold text-slate-800 focus:border-slate-900 outline-none transition-all"
+                        />
+                      </div>
                     </div>
 
                     <div className="flex justify-between pl-2 text-xs text-slate-500">
