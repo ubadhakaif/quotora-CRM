@@ -3,15 +3,10 @@ import localFont from "next/font/local";
 import "./globals.css";
 
 const googleSans = localFont({
-  src: [
-    {
-      path: "../fonts/GoogleSans-VariableFont_GRAD,opsz,wght.ttf",
-      style: "normal",
-    },
-  ],
+  src: "../fonts/GoogleSans-VariableFont_GRAD,opsz,wght.ttf",
   variable: "--font-google-sans",
   display: "swap",
-  preload: true,
+  weight: "100 900",
 });
 
 export const metadata: Metadata = {
