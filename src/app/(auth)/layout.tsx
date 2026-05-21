@@ -9,7 +9,7 @@ export default function AuthLayout({
   return (
     <AuthProvider>
       <ToastProvider>
-        <div className="flex min-h-screen flex-col items-center justify-center bg-grid p-6">
+        <div className="flex min-h-screen flex-col items-center justify-center p-6">
           <div className="w-full max-w-md">
             {children}
           </div>

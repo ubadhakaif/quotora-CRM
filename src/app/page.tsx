@@ -3,7 +3,7 @@ import { ArrowRight, Car } from 'lucide-react'
 
 export default function LandingPage() {
   return (
-    <div className="flex flex-col min-h-screen bg-grid">
+    <div className="flex flex-col min-h-screen">
       {/* Header */}
       <header className="flex items-center justify-between px-6 md:px-12 py-6">
         <div className="flex items-center gap-3">

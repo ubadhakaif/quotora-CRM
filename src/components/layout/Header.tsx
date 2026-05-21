@@ -4,24 +4,12 @@ import { useAuth } from '@/components/providers/AuthProvider'
 import { usePathname } from 'next/navigation'
 import { Menu } from 'lucide-react'
 
-// Map route segments to page titles
-const routeTitles: Record<string, string> = {
-  '/dashboard': 'Dashboard',
-  '/dashboard/branches': 'Branches',
-  '/dashboard/employees': 'Employees',
-  '/dashboard/catalog': 'Catalog',
-  '/dashboard/catalog/models': 'Models',
-  '/dashboard/catalog/variants': 'Variants',
-  '/dashboard/catalog/accessories': 'Accessories',
-  '/dashboard/quotations': 'Quotations',
-  '/dashboard/customers': 'Customers',
-}
-
 interface HeaderProps {
   onMenuClick: () => void
+  routeTitles: Record<string, string>
 }
 
-export function Header({ onMenuClick }: HeaderProps) {
+export function Header({ onMenuClick, routeTitles }: HeaderProps) {
   const pathname = usePathname()
   const { profile } = useAuth()
   

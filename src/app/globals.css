@@ -25,10 +25,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* ─── Grid Background (DESIGN.md §1.12) ─── */
-.bg-grid {
-  /* Grid background dots removed */
-}
+/* ─── Grid Background removed ─── */
 
 /* ─── No Shadows (DESIGN.md §1.1) ─── */
 *,

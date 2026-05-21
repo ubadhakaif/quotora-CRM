@@ -1,9 +1,9 @@
 import { AuthProvider } from '@/components/providers/AuthProvider'
 import { ToastProvider } from '@/components/providers/ToastProvider'
 import { PortalShell } from '@/components/layout/PortalShell'
-import { DEALER_ADMIN_NAV, DEALER_ADMIN_ROUTE_TITLES } from '@/lib/permissions'
+import { BRANCH_MANAGER_NAV, BRANCH_MANAGER_ROUTE_TITLES } from '@/lib/permissions'
 
-export default function DashboardLayout({
+export default function BranchLayout({
   children,
 }: {
   children: React.ReactNode
@@ -12,9 +12,9 @@ export default function DashboardLayout({
     <AuthProvider>
       <ToastProvider>
         <PortalShell
-          navItems={DEALER_ADMIN_NAV}
-          routeTitles={DEALER_ADMIN_ROUTE_TITLES}
-          portalName="Quotora"
+          navItems={BRANCH_MANAGER_NAV}
+          routeTitles={BRANCH_MANAGER_ROUTE_TITLES}
+          portalName="Quotora Branch"
         >
           {children}
         </PortalShell>

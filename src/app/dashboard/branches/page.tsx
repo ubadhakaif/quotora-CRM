@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { useToast } from '@/components/providers/ToastProvider'
-import { Plus, X, MapPin, Building2, Search } from 'lucide-react'
+import { Plus, X, MapPin, Building2, Search, UserCircle } from 'lucide-react'
 
 interface Branch {
   id: string
@@ -13,6 +13,12 @@ interface Branch {
   is_hq: boolean
   is_active: boolean
   created_at: string
+  profiles?: { id: string, name: string, role: string }[]
+}
+
+interface Profile {
+  id: string
+  name: string
 }
 
 export default function BranchesPage() {
@@ -23,7 +29,10 @@ export default function BranchesPage() {
   const [search, setSearch] = useState('')
   const [formName, setFormName] = useState('')
   const [formAddress, setFormAddress] = useState('')
+  const [formManagerId, setFormManagerId] = useState<string>('')
   const [saving, setSaving] = useState(false)
+  const [deactivating, setDeactivating] = useState(false)
+  const [availableManagers, setAvailableManagers] = useState<Profile[]>([])
 
   const { profile } = useAuth()
   const { addToast } = useToast()
@@ -33,9 +42,16 @@ export default function BranchesPage() {
     setLoading(true)
     const { data, error } = await supabase
       .from('branches')
-      .select('*')
+      .select('*, profiles(id, name, role)')
       .eq('is_active', true)
       .order('created_at', { ascending: true })
+
+    const { data: managers } = await supabase
+      .from('profiles')
+      .select('id, name')
+      .eq('is_active', true)
+
+    setAvailableManagers(managers || [])
 
     if (error) {
       addToast(error.message, 'error')
@@ -54,6 +70,7 @@ export default function BranchesPage() {
     setEditingBranch(null)
     setFormName('')
     setFormAddress('')
+    setFormManagerId('')
     setPanelOpen(true)
   }
 
@@ -61,6 +78,8 @@ export default function BranchesPage() {
     setEditingBranch(branch)
     setFormName(branch.name)
     setFormAddress(branch.address || '')
+    const manager = branch.profiles?.find(p => p.role === 'branch_manager')
+    setFormManagerId(manager?.id || '')
     setPanelOpen(true)
   }
 
@@ -69,6 +88,7 @@ export default function BranchesPage() {
     setEditingBranch(null)
     setFormName('')
     setFormAddress('')
+    setFormManagerId('')
   }
 
   const handleSave = async () => {
@@ -84,12 +104,23 @@ export default function BranchesPage() {
       if (error) {
         addToast(error.message, 'error')
       } else {
+        // Handle manager assignment
+        const currentManager = editingBranch.profiles?.find(p => p.role === 'branch_manager')
+        if (currentManager && currentManager.id !== formManagerId) {
+          // Remove old manager role (demote to employee)
+          await supabase.from('profiles').update({ role: 'employee', branch_id: null }).eq('id', currentManager.id)
+        }
+        if (formManagerId && currentManager?.id !== formManagerId) {
+          // Assign new manager
+          await supabase.from('profiles').update({ role: 'branch_manager', branch_id: editingBranch.id }).eq('id', formManagerId)
+        }
+
         addToast('Branch updated', 'success')
         closePanel()
         fetchBranches()
       }
     } else {
-      const { error } = await supabase
+      const { data: newBranch, error } = await supabase
         .from('branches')
         .insert({
           tenant_id: profile?.tenant_id,
@@ -97,16 +128,41 @@ export default function BranchesPage() {
           address: formAddress,
           is_hq: false,
         })
+        .select('id')
+        .single()
 
       if (error) {
         addToast(error.message, 'error')
-      } else {
+      } else if (newBranch) {
+        if (formManagerId) {
+          await supabase.from('profiles').update({ role: 'branch_manager', branch_id: newBranch.id }).eq('id', formManagerId)
+        }
         addToast('Branch created', 'success')
         closePanel()
         fetchBranches()
       }
     }
     setSaving(false)
+  }
+
+  const handleDeactivate = async () => {
+    if (!editingBranch) return
+    if (!confirm('Are you sure you want to deactivate this branch?')) return
+    
+    setDeactivating(true)
+    const { error } = await supabase
+      .from('branches')
+      .update({ is_active: false })
+      .eq('id', editingBranch.id)
+
+    if (error) {
+      addToast(error.message, 'error')
+    } else {
+      addToast('Branch deactivated', 'success')
+      closePanel()
+      fetchBranches()
+    }
+    setDeactivating(false)
   }
 
   const filteredBranches = branches.filter(b =>
@@ -182,12 +238,45 @@ export default function BranchesPage() {
                 />
               </div>
             </div>
+
+            <div className="space-y-2">
+              <label htmlFor="branch-form-manager" className="text-sm text-slate-600 pl-4">
+                Assign Branch Manager
+              </label>
+              <div className="relative">
+                <UserCircle size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" />
+                <select
+                  id="branch-form-manager"
+                  value={formManagerId}
+                  onChange={e => setFormManagerId(e.target.value)}
+                  className="w-full rounded-full py-4 pl-14 pr-10 bg-slate-50 border border-slate-200 text-slate-900 appearance-none focus:border-slate-900 focus:bg-white transition-all outline-none"
+                >
+                  <option value="">No manager assigned</option>
+                  {availableManagers.map(m => (
+                    <option key={m.id} value={m.id}>{m.name}</option>
+                  ))}
+                </select>
+                <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                  ▼
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex flex-col sm:flex-row gap-3 pt-2">
+            {editingBranch && !editingBranch.is_hq && (
+              <button
+                onClick={handleDeactivate}
+                disabled={deactivating}
+                className="bg-red-50 text-red-600 border border-red-100 rounded-full p-4 px-8 flex items-center justify-center gap-3 hover:bg-red-100 transition-colors flex-1 sm:flex-initial"
+              >
+                {deactivating ? 'Deactivating...' : 'Deactivate'}
+              </button>
+            )}
+            <div className="flex-1" />
             <button
               onClick={closePanel}
-              className="bg-white border border-slate-200 text-slate-600 rounded-full p-4 px-8 flex items-center justify-start gap-3 hover:bg-slate-50 transition-colors flex-1 sm:flex-initial"
+              className="bg-white border border-slate-200 text-slate-600 rounded-full p-4 px-8 flex items-center justify-center gap-3 hover:bg-slate-50 transition-colors flex-1 sm:flex-initial"
             >
               Cancel
             </button>
@@ -222,7 +311,14 @@ export default function BranchesPage() {
               >
                 <MapPin size={18} className="text-slate-400 shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-slate-900 truncate">{branch.name}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-slate-900 truncate">{branch.name}</p>
+                    {branch.profiles?.find(p => p.role === 'branch_manager') && (
+                      <span className="text-[10px] bg-blue-50 text-blue-600 rounded-full px-2 py-0.5 whitespace-nowrap">
+                        {branch.profiles.find(p => p.role === 'branch_manager')?.name}
+                      </span>
+                    )}
+                  </div>
                   {branch.address && (
                     <p className="text-sm text-slate-500 truncate mt-0.5">{branch.address}</p>
                   )}

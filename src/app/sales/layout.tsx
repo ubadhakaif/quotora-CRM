@@ -1,9 +1,9 @@
 import { AuthProvider } from '@/components/providers/AuthProvider'
 import { ToastProvider } from '@/components/providers/ToastProvider'
 import { PortalShell } from '@/components/layout/PortalShell'
-import { DEALER_ADMIN_NAV, DEALER_ADMIN_ROUTE_TITLES } from '@/lib/permissions'
+import { SALES_EXECUTIVE_NAV, SALES_EXECUTIVE_ROUTE_TITLES } from '@/lib/permissions'
 
-export default function DashboardLayout({
+export default function SalesLayout({
   children,
 }: {
   children: React.ReactNode
@@ -12,9 +12,9 @@ export default function DashboardLayout({
     <AuthProvider>
       <ToastProvider>
         <PortalShell
-          navItems={DEALER_ADMIN_NAV}
-          routeTitles={DEALER_ADMIN_ROUTE_TITLES}
-          portalName="Quotora"
+          navItems={SALES_EXECUTIVE_NAV}
+          routeTitles={SALES_EXECUTIVE_ROUTE_TITLES}
+          portalName="Quotora Sales"
         >
           {children}
         </PortalShell>

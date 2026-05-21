@@ -9,28 +9,44 @@ import {
   FileText,
   UserCircle,
   LogOut,
-  Menu,
   X,
+  Landmark,
+  BarChart3,
+  Settings,
+  Target,
+  PhoneCall,
+  Calculator,
+  RefreshCw,
 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useState } from 'react'
+import type { NavItem } from '@/lib/permissions'
 
-const navItems = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/dashboard/branches', label: 'Branches', icon: Building2 },
-  { href: '/dashboard/employees', label: 'Employees', icon: Users },
-  { href: '/dashboard/catalog', label: 'Catalog', icon: Car },
-  { href: '/dashboard/quotations', label: 'Quotations', icon: FileText },
-  { href: '/dashboard/customers', label: 'Customers', icon: UserCircle },
-]
+// ─── Icon Resolver ───
+const iconMap: Record<string, React.ElementType> = {
+  LayoutDashboard,
+  Building2,
+  Users,
+  Car,
+  FileText,
+  UserCircle,
+  Landmark,
+  BarChart3,
+  Settings,
+  Target,
+  PhoneCall,
+  Calculator,
+  RefreshCw,
+}
 
 interface SidebarProps {
   isOpen: boolean
   setIsOpen: (open: boolean) => void
+  navItems: NavItem[]
+  portalName: string
 }
 
-export function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
+export function Sidebar({ isOpen, setIsOpen, navItems, portalName }: SidebarProps) {
   const pathname = usePathname()
   const { profile, signOut } = useAuth()
 
@@ -64,7 +80,7 @@ export function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
 
         {/* Brand */}
         <div className="p-8 pb-4">
-          <h2 className="text-xl text-slate-900">Quotora</h2>
+          <h2 className="text-xl text-slate-900">{portalName}</h2>
           {profile && (
             <p className="text-sm text-slate-500 mt-1 truncate">{profile.name}</p>
           )}
@@ -72,37 +88,30 @@ export function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
 
         {/* Nav */}
         <nav className="flex-1 px-4 space-y-1 overflow-y-auto">
-          {navItems
-            .filter(item => {
-              if (!profile) return false
-              if (['/dashboard/branches', '/dashboard/employees'].includes(item.href)) {
-                return profile.role === 'dealer_admin'
-              }
-              return true
-            })
-            .map(item => {
-              const Icon = item.icon
-              const isActive = pathname === item.href || 
-                (item.href !== '/dashboard' && pathname.startsWith(item.href))
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setIsOpen(false)}
-                  className={`
-                    flex items-center gap-3 px-5 py-3.5 rounded-full text-sm transition-all
-                    ${
-                      isActive
-                        ? 'bg-slate-900 text-white'
-                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                    }
-                  `}
-                >
-                  <Icon size={18} />
-                  {item.label}
-                </Link>
-              )
-            })}
+          {navItems.map(item => {
+            const Icon = iconMap[item.icon] || LayoutDashboard
+            const basePath = navItems[0]?.href || '/'
+            const isActive = pathname === item.href || 
+              (item.href !== basePath && pathname.startsWith(item.href))
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setIsOpen(false)}
+                className={`
+                  flex items-center gap-3 px-5 py-3.5 rounded-full text-sm transition-all
+                  ${
+                    isActive
+                      ? 'bg-slate-900 text-white'
+                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                  }
+                `}
+              >
+                <Icon size={18} />
+                {item.label}
+              </Link>
+            )
+          })}
         </nav>
 
         {/* Sign out */}

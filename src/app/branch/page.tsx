@@ -1,7 +1,7 @@
 'use client'
 
 import { useAuth } from '@/components/providers/AuthProvider'
-import { Building2, Users, Car, FileText, UserCircle, Landmark, BarChart3, Settings, ArrowRight, IndianRupee } from 'lucide-react'
+import { Users, Target, FileText, PhoneCall, BarChart3, ArrowRight, TrendingUp } from 'lucide-react'
 import Link from 'next/link'
 import { StatCard } from '@/components/ui/StatCard'
 import { createClient } from '@/lib/supabase/client'
@@ -9,85 +9,71 @@ import { useEffect, useState } from 'react'
 
 const quickLinks = [
   {
-    href: '/dashboard/branches',
-    label: 'Branches',
-    description: 'Manage your dealership branches',
-    icon: Building2,
-  },
-  {
-    href: '/dashboard/employees',
+    href: '/branch/employees',
     label: 'Employees',
-    description: 'Directory of your team',
+    description: 'View and monitor branch staff',
     icon: Users,
   },
   {
-    href: '/dashboard/catalog',
-    label: 'Catalog',
-    description: 'Models, variants, and accessories',
-    icon: Car,
+    href: '/branch/leads',
+    label: 'Leads',
+    description: 'Manage and assign customer leads',
+    icon: Target,
   },
   {
-    href: '/dashboard/quotations',
+    href: '/branch/quotations',
     label: 'Quotations',
-    description: 'Build and manage quotes',
+    description: 'Approve and track quotations',
     icon: FileText,
   },
   {
-    href: '/dashboard/customers',
-    label: 'Customers',
-    description: 'Your customer directory',
-    icon: UserCircle,
+    href: '/branch/follow-ups',
+    label: 'Follow-ups',
+    description: 'Monitor team follow-ups',
+    icon: PhoneCall,
   },
   {
-    href: '/dashboard/finance',
-    label: 'Finance',
-    description: 'Manage finance providers and EMI rules',
-    icon: Landmark,
-  },
-  {
-    href: '/dashboard/reports',
-    label: 'Reports',
-    description: 'Performance and analytics',
+    href: '/branch/analytics',
+    label: 'Analytics',
+    description: 'Branch performance metrics',
     icon: BarChart3,
-  },
-  {
-    href: '/dashboard/settings',
-    label: 'Settings',
-    description: 'Dealership configuration',
-    icon: Settings,
   },
 ]
 
-export default function DashboardPage() {
+export default function BranchDashboardPage() {
   const { profile, loading } = useAuth()
   const [stats, setStats] = useState({
-    branches: 0,
-    employees: 0,
-    quotationsThisMonth: 0,
-    revenueEstimate: 0,
+    quotationsToday: 0,
+    pendingFollowUps: 0,
+    activeLeads: 0,
+    revenueThisMonth: 0,
   })
   const [statsLoading, setStatsLoading] = useState(true)
 
   useEffect(() => {
     async function fetchStats() {
-      if (!profile?.tenant_id) return
+      if (!profile?.branch_id) return
       const supabase = createClient()
       
-      const [branchesRes, employeesRes, quotationsRes] = await Promise.all([
-        supabase.from('branches').select('id', { count: 'exact', head: true }),
-        supabase.from('profiles').select('id', { count: 'exact', head: true }),
-        supabase.from('quotations')
-          .select('total_price')
-          .gte('created_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString())
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      
+      const thisMonth = new Date(today.getFullYear(), today.getMonth(), 1)
+
+      const [quotesToday, followUps, leads, quotesMonth] = await Promise.all([
+        supabase.from('quotations').select('id', { count: 'exact', head: true }).gte('created_at', today.toISOString()),
+        supabase.from('follow_ups').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+        supabase.from('leads').select('id', { count: 'exact', head: true }).in('status', ['new', 'hot', 'warm']),
+        supabase.from('quotations').select('total_price').gte('created_at', thisMonth.toISOString())
       ])
 
-      const totalRevenue = (quotationsRes.data || []).reduce((acc: number, q: any) => acc + (Number(q.total_price) || 0), 0)
+      const totalRevenue = (quotesMonth.data || []).reduce((acc: number, q: any) => acc + (Number(q.total_price) || 0), 0)
 
       setStats({
-        branches: branchesRes.count || 0,
-        employees: employeesRes.count || 0,
-        quotationsThisMonth: quotationsRes.data?.length || 0,
-        revenueEstimate: totalRevenue,
+        quotationsToday: quotesToday.count || 0,
+        pendingFollowUps: followUps.count || 0,
+        activeLeads: leads.count || 0,
+        revenueThisMonth: totalRevenue,
       })
       setStatsLoading(false)
     }
@@ -102,7 +88,7 @@ export default function DashboardPage() {
       <div className="space-y-6">
         <div className="skeleton h-28 w-full rounded-[2rem]" />
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
+          {[1, 2, 3, 4, 5].map(i => (
             <div key={i} className="skeleton h-32 rounded-[2rem]" />
           ))}
         </div>
@@ -122,24 +108,24 @@ export default function DashboardPage() {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          label="Total Branches"
-          value={statsLoading ? '...' : stats.branches}
-          icon={Building2}
-        />
-        <StatCard
-          label="Total Employees"
-          value={statsLoading ? '...' : stats.employees}
-          icon={Users}
-        />
-        <StatCard
-          label="Quotations (This Month)"
-          value={statsLoading ? '...' : stats.quotationsThisMonth}
+          label="Quotations (Today)"
+          value={statsLoading ? '...' : stats.quotationsToday}
           icon={FileText}
         />
         <StatCard
-          label="Revenue Estimate"
-          value={statsLoading ? '...' : new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(stats.revenueEstimate)}
-          icon={IndianRupee}
+          label="Pending Follow-ups"
+          value={statsLoading ? '...' : stats.pendingFollowUps}
+          icon={PhoneCall}
+        />
+        <StatCard
+          label="Active Leads"
+          value={statsLoading ? '...' : stats.activeLeads}
+          icon={Target}
+        />
+        <StatCard
+          label="Revenue (This Month)"
+          value={statsLoading ? '...' : new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(stats.revenueThisMonth)}
+          icon={TrendingUp}
         />
       </div>
 
