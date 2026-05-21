@@ -8,10 +8,6 @@ const googleSans = localFont({
       path: "../fonts/GoogleSans-VariableFont_GRAD,opsz,wght.ttf",
       style: "normal",
     },
-    {
-      path: "../fonts/GoogleSans-Italic-VariableFont_GRAD,opsz,wght.ttf",
-      style: "italic",
-    },
   ],
   variable: "--font-google-sans",
   display: "swap",

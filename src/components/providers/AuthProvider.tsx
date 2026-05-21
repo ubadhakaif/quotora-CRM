@@ -99,9 +99,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let active = true
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event: AuthChangeEvent, newSession: Session | null) => {
+    const initAuth = async () => {
+      try {
+        const { data: { session: initialSession }, error } = await supabase.auth.getSession()
+        if (error) throw error
+
         if (!active) return
+
+        setSession(initialSession)
+        setUser(initialSession?.user ?? null)
+        
+        if (initialSession?.user) {
+          await fetchProfile(initialSession.user.id)
+        } else {
+          fetchedUserIds.current = null
+          setProfile(null)
+        }
+      } catch (e) {
+        console.error('Error fetching initial session:', e)
+      } finally {
+        if (active) setLoading(false)
+      }
+    }
+
+    initAuth()
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event: AuthChangeEvent, newSession: Session | null) => {
+        if (!active) return
+        if (event === 'INITIAL_SESSION') return // Handled by initAuth
 
         try {
           setSession(newSession)
@@ -114,10 +140,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
         } catch (e) {
           console.error('Error in onAuthStateChange:', e)
-        } finally {
-          if (active) {
-            setLoading(false)
-          }
         }
       }
     )
