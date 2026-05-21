@@ -54,6 +54,12 @@ export default function SalesQuotationsPage() {
 
   // Builder Form State
   const [bCustomerId, setBCustomerId] = useState('')
+  const [customerMode, setCustomerMode] = useState<'select' | 'new'>('select')
+  const [newCustName, setNewCustName] = useState('')
+  const [newCustPhone, setNewCustPhone] = useState('')
+  const [newCustEmail, setNewCustEmail] = useState('')
+  const [newCustSource, setNewCustSource] = useState('walk-in')
+  const [newCustStatus, setNewCustStatus] = useState('new')
   const [bModelId, setBModelId] = useState('')
   const [bVariantId, setBVariantId] = useState('')
   const [selectedAccIds, setSelectedAccIds] = useState<string[]>([])
@@ -143,6 +149,12 @@ export default function SalesQuotationsPage() {
 
   const handleOpenAdd = () => {
     setBCustomerId('')
+    setCustomerMode('select')
+    setNewCustName('')
+    setNewCustPhone('')
+    setNewCustEmail('')
+    setNewCustSource('walk-in')
+    setNewCustStatus('new')
     setBModelId('')
     setBVariantId('')
     setSelectedAccIds([])
@@ -176,8 +188,52 @@ export default function SalesQuotationsPage() {
   }
 
   const handleSaveQuotation = async () => {
-    if (!bCustomerId || !bVariantId || !profile) return
+    if (customerMode === 'select' && !bCustomerId) return
+    if (customerMode === 'new' && !newCustName.trim()) return
+    if (!bVariantId || !profile) return
     setSaving(true)
+
+    let finalCustomerId = bCustomerId
+
+    if (customerMode === 'new') {
+      const newCustomer = {
+        tenant_id: profile.tenant_id,
+        branch_id: profile.branch_id,
+        name: newCustName.trim(),
+        phone: newCustPhone.trim() || null,
+        email: newCustEmail.trim() || null,
+        source: newCustSource,
+        lead_status: newCustStatus,
+        assigned_to: profile.id,
+      }
+
+      const { data: custData, error: custError } = await supabase
+        .from('customers')
+        .insert(newCustomer)
+        .select()
+        .single()
+
+      if (custError) {
+        addToast(`Failed to create customer: ${custError.message}`, 'error')
+        setSaving(false)
+        return
+      }
+
+      if (custData) {
+        finalCustomerId = custData.id
+        
+        // Auto create a lead entry too for monitoring
+        await supabase.from('leads').insert({
+          tenant_id: profile.tenant_id,
+          branch_id: profile.branch_id,
+          customer_id: custData.id,
+          assigned_to: profile.id,
+          status: newCustStatus,
+          source: newCustSource,
+          notes: 'Customer created inline during Quotation Building'
+        })
+      }
+    }
 
     // Check discount approval requirement
     const exceedsThreshold = bDiscountPct > discountThreshold
@@ -187,7 +243,7 @@ export default function SalesQuotationsPage() {
     const newQuotation = {
       tenant_id: profile.tenant_id,
       branch_id: profile.branch_id,
-      customer_id: bCustomerId,
+      customer_id: finalCustomerId,
       variant_id: bVariantId,
       total_price: finalOnRoadPrice,
       discount_amount: bDiscountAmt,
@@ -229,12 +285,11 @@ export default function SalesQuotationsPage() {
     }
 
     // Auto-create CRM Note logging quotation creation
-    const selectedCust = customers.find(c => c.id === bCustomerId)
-    if (selectedCust) {
+    if (finalCustomerId) {
       const noteContent = `Quotation builder finalized. Vehicle: ${activeVariant?.name}. On-Road Price: ${fmtINR(finalOnRoadPrice)} (Discount: ${bDiscountPct}%). Status: ${finalStatus.toUpperCase()} (Approval: ${appStatus})`
       await supabase.from('customer_notes').insert({
         tenant_id: profile.tenant_id,
-        customer_id: bCustomerId,
+        customer_id: finalCustomerId,
         created_by: profile.id,
         content: noteContent,
         note_type: 'general'
@@ -245,7 +300,7 @@ export default function SalesQuotationsPage() {
       addToast('Quotation saved as Draft. Discount exceeds threshold — Pending Manager Approval.', 'success')
       
       // Auto-escalate or create lead log alert
-      await supabase.from('leads').update({ status: 'hot' }).eq('customer_id', bCustomerId)
+      await supabase.from('leads').update({ status: 'hot' }).eq('customer_id', finalCustomerId)
     } else {
       addToast('Quotation created and marked Sent successfully!', 'success')
     }
@@ -413,19 +468,109 @@ export default function SalesQuotationsPage() {
 
           <div className="space-y-6">
             
-            {/* Step 1: Customer Selection */}
-            <div className="space-y-2">
-              <label className="text-sm text-slate-600 pl-4">Step 1: Customer Profile</label>
-              <select
-                value={bCustomerId}
-                onChange={e => setBCustomerId(e.target.value)}
-                className="w-full rounded-full py-4 px-6 bg-slate-50 border border-slate-200 text-slate-900 focus:border-slate-900 focus:bg-white transition-all outline-none appearance-none"
-              >
-                <option value="">-- Select Assigned Customer --</option>
-                {customers.map(c => (
-                  <option key={c.id} value={c.id}>{c.name} {c.phone ? `(${c.phone})` : ''}</option>
-                ))}
-              </select>
+            {/* Step 1: Customer Selection or Creation */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                <label className="text-sm font-semibold text-slate-900 pl-2">Step 1: Customer Profile</label>
+                <div className="flex bg-slate-100 p-1 rounded-full text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setCustomerMode('select')}
+                    className={`rounded-full px-4 py-1.5 transition-all ${customerMode === 'select' ? 'bg-white text-slate-900 shadow-sm font-medium' : 'text-slate-500 hover:text-slate-900'}`}
+                  >
+                    Select Existing
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCustomerMode('new')}
+                    className={`rounded-full px-4 py-1.5 transition-all ${customerMode === 'new' ? 'bg-white text-slate-900 shadow-sm font-medium' : 'text-slate-500 hover:text-slate-900'}`}
+                  >
+                    Create New
+                  </button>
+                </div>
+              </div>
+
+              {customerMode === 'select' ? (
+                <div className="space-y-2">
+                  <select
+                    value={bCustomerId}
+                    onChange={e => setBCustomerId(e.target.value)}
+                    className="w-full rounded-full py-4 px-6 bg-slate-50 border border-slate-200 text-slate-900 focus:border-slate-900 focus:bg-white transition-all outline-none appearance-none text-sm"
+                  >
+                    <option value="">-- Select Assigned Customer --</option>
+                    {customers.map(c => (
+                      <option key={c.id} value={c.id}>{c.name} {c.phone ? `(${c.phone})` : ''}</option>
+                    ))}
+                  </select>
+                </div>
+              ) : (
+                <div className="space-y-4 bg-slate-50/50 p-6 rounded-[2rem] border border-slate-200/60">
+                  <div className="space-y-2">
+                    <label className="text-xs text-slate-500 pl-4 font-medium">Customer Name *</label>
+                    <input
+                      type="text"
+                      value={newCustName}
+                      onChange={e => setNewCustName(e.target.value)}
+                      placeholder="e.g. John Doe"
+                      className="w-full rounded-full py-3.5 px-6 bg-white border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-slate-900 outline-none text-sm"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-xs text-slate-500 pl-4 font-medium">Phone Number</label>
+                      <input
+                        type="tel"
+                        value={newCustPhone}
+                        onChange={e => setNewCustPhone(e.target.value)}
+                        placeholder="e.g. +91 99999 88888"
+                        className="w-full rounded-full py-3.5 px-6 bg-white border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-slate-900 outline-none text-sm"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-xs text-slate-500 pl-4 font-medium">Email Address</label>
+                      <input
+                        type="email"
+                        value={newCustEmail}
+                        onChange={e => setNewCustEmail(e.target.value)}
+                        placeholder="e.g. john@example.com"
+                        className="w-full rounded-full py-3.5 px-6 bg-white border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-slate-900 outline-none text-sm"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-xs text-slate-500 pl-4 font-medium">Lead Source</label>
+                      <select
+                        value={newCustSource}
+                        onChange={e => setNewCustSource(e.target.value)}
+                        className="w-full rounded-full py-3.5 px-6 bg-white border border-slate-200 text-slate-900 focus:border-slate-900 outline-none text-sm"
+                      >
+                        <option value="walk-in">Walk-in Visit</option>
+                        <option value="phone">Phone Call</option>
+                        <option value="web">Website Inquiry</option>
+                        <option value="referral">Referral</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-xs text-slate-500 pl-4 font-medium">Lead Status</label>
+                      <select
+                        value={newCustStatus}
+                        onChange={e => setNewCustStatus(e.target.value)}
+                        className="w-full rounded-full py-3.5 px-6 bg-white border border-slate-200 text-slate-900 focus:border-slate-900 outline-none text-sm"
+                      >
+                        <option value="new">New Lead</option>
+                        <option value="hot">Hot (High Intent)</option>
+                        <option value="warm">Warm (Medium Intent)</option>
+                        <option value="cold">Cold (Low Intent)</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Step 2: Vehicle Model & Variant */}
@@ -597,9 +742,9 @@ export default function SalesQuotationsPage() {
             >
               Cancel
             </button>
-            <button
+             <button
               onClick={handleSaveQuotation}
-              disabled={!bCustomerId || !bVariantId || saving}
+              disabled={(customerMode === 'select' && !bCustomerId) || (customerMode === 'new' && !newCustName.trim()) || !bVariantId || saving}
               className="bg-slate-900 text-white rounded-full px-8 py-4 hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed w-full md:w-auto"
             >
               {saving ? 'Creating...' : bDiscountPct > discountThreshold ? 'Save for Approval' : 'Create & Finalize'}
