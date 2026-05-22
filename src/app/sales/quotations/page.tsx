@@ -71,9 +71,15 @@ export default function SalesQuotationsPage() {
   const [financePlans, setFinancePlans] = useState<FinancePlan[]>([])
   
   const [loading, setLoading] = useState(true)
-  const [panelOpen, setPanelOpen] = useState(false)
+  const [panelOpen, setPanelOpen] = useState(true)
+  const [activeTab, setActiveTab] = useState<'new' | 'list'>('new')
   const [search, setSearch] = useState('')
   const [saving, setSaving] = useState(false)
+
+  // Follow-up Scheduling state
+  const [scheduleFollowUp, setScheduleFollowUp] = useState(false)
+  const [followUpDueDate, setFollowUpDueDate] = useState('')
+  const [followUpNotes, setFollowUpNotes] = useState('')
 
   // Builder Form State
   const [bCustomerId, setBCustomerId] = useState('')
@@ -350,13 +356,23 @@ export default function SalesQuotationsPage() {
     setLoanAadharBack(null)
     setLoanPanFront(null)
     setLoanPanBack(null)
+
+    // Reset follow-up state
+    setScheduleFollowUp(false)
+    setFollowUpDueDate('')
+    setFollowUpNotes('')
     
     setPanelOpen(true)
+    setActiveTab('new')
     setPreviewingQuote(null)
   }
 
   const handleCloseAdd = () => {
     setPanelOpen(false)
+    setActiveTab('list')
+    setScheduleFollowUp(false)
+    setFollowUpDueDate('')
+    setFollowUpNotes('')
   }
 
   const handleAccessoryToggle = (id: string) => {
@@ -438,6 +454,20 @@ export default function SalesQuotationsPage() {
       addToast('Please specify the details for other purchase mode.', 'error')
       setSaving(false)
       return
+    }
+
+    // 3.5. Follow-up scheduling validation
+    if (scheduleFollowUp) {
+      if (!followUpDueDate) {
+        addToast('Please select a date and time for the scheduled follow-up.', 'error')
+        setSaving(false)
+        return
+      }
+      if (!followUpNotes.trim()) {
+        addToast('Please enter action notes for the follow-up.', 'error')
+        setSaving(false)
+        return
+      }
     }
 
     // 4. Capture GPS Coordinates
@@ -645,6 +675,34 @@ export default function SalesQuotationsPage() {
       addToast('Quotation created and marked Sent successfully!', 'success')
     }
 
+    // Schedule Follow-up if enabled
+    if (scheduleFollowUp && followUpDueDate && finalCustomerId) {
+      const newFollowUp = {
+        tenant_id: profile.tenant_id,
+        branch_id: profile.branch_id,
+        customer_id: finalCustomerId,
+        assigned_to: profile.id,
+        due_date: new Date(followUpDueDate).toISOString(),
+        status: 'pending',
+        notes: followUpNotes.trim() || 'Follow-up scheduled from Quotation Builder'
+      }
+
+      const { error: fError } = await supabase.from('follow_ups').insert(newFollowUp)
+      if (fError) {
+        addToast(`Quotation saved but follow-up failed: ${fError.message}`, 'error')
+      } else {
+        // Auto-create interaction note
+        await supabase.from('customer_notes').insert({
+          tenant_id: profile.tenant_id,
+          customer_id: finalCustomerId,
+          created_by: profile.id,
+          content: `Future follow-up scheduled for: ${new Date(followUpDueDate).toLocaleString()}. Objective: ${followUpNotes.trim()}`,
+          note_type: 'general'
+        })
+        addToast('Follow-up scheduled successfully!', 'success')
+      }
+    }
+
     handleCloseAdd()
     fetchAll()
     setSaving(false)
@@ -814,36 +872,65 @@ export default function SalesQuotationsPage() {
 
       {/* Stats Cards */}
       {!loading && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <StatCard label="My Total Quotes" value={quotes.length} icon={FileText} />
-          <StatCard label="Pending Approvals" value={pendingApprovalsCount} icon={CheckCircle} />
-          <StatCard label="My Pipeline Value" value={fmtINR(totalValue)} icon={FileText} />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl">
+          <div className="bg-white border border-slate-200 rounded-[1.5rem] p-4 flex items-center justify-between">
+            <div className="space-y-1 pl-2">
+              <p className="text-xs text-slate-500 font-medium">My Total Quotes</p>
+              <p className="text-xl font-bold tracking-tight text-slate-900">{quotes.length}</p>
+            </div>
+            <div className="bg-slate-50 w-10 h-10 rounded-xl flex items-center justify-center shrink-0">
+              <FileText size={16} className="text-slate-500" />
+            </div>
+          </div>
+
+          <div className="bg-white border border-slate-200 rounded-[1.5rem] p-4 flex items-center justify-between">
+            <div className="space-y-1 pl-2">
+              <p className="text-xs text-slate-500 font-medium">Pending Approvals</p>
+              <p className="text-xl font-bold tracking-tight text-slate-900">{pendingApprovalsCount}</p>
+            </div>
+            <div className="bg-slate-50 w-10 h-10 rounded-xl flex items-center justify-center shrink-0">
+              <CheckCircle size={16} className="text-slate-500" />
+            </div>
+          </div>
         </div>
       )}
 
-      {/* Action Row */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
-        <div className="relative flex-1">
-          <Search size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input
-            type="text"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Search quotations by customer name or vehicle..."
-            className="w-full rounded-full py-4 pl-14 pr-8 bg-white border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-slate-900 transition-all outline-none"
-          />
-        </div>
+      {/* Tab Switcher Bar */}
+      <div className="flex bg-slate-50 border border-slate-200 p-1 rounded-full w-full max-w-md">
         <button
-          onClick={panelOpen ? handleCloseAdd : handleOpenAdd}
-          className="bg-slate-900 text-white rounded-full px-8 py-4 flex items-center justify-start gap-3 hover:bg-slate-800 transition-colors w-full md:w-auto shrink-0"
+          type="button"
+          onClick={() => {
+            setActiveTab('new')
+            setPanelOpen(true)
+          }}
+          className={`flex-1 rounded-full py-2.5 text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+            activeTab === 'new'
+              ? 'bg-slate-900 text-white shadow-xs'
+              : 'text-slate-500 hover:text-slate-900'
+          }`}
         >
-          {panelOpen ? <X size={18} /> : <Plus size={18} />}
-          {panelOpen ? 'Close panel' : 'New quotation'}
+          <Plus size={14} />
+          New Quotation
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setActiveTab('list')
+            setPanelOpen(false)
+          }}
+          className={`flex-1 rounded-full py-2.5 text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+            activeTab === 'list'
+              ? 'bg-slate-900 text-white shadow-xs'
+              : 'text-slate-500 hover:text-slate-900'
+          }`}
+        >
+          <FileText size={14} />
+          Created Quotations
         </button>
       </div>
 
-      {/* New Quotation Builder Panel */}
-      {panelOpen && (
+      {/* Tab 1: New Quotation Builder Panel */}
+      {activeTab === 'new' && panelOpen && (
         <div className="bg-white border border-slate-200 rounded-[2.5rem] p-5 md:p-6 space-y-4">
           <div>
             <h3 className="text-lg text-slate-900 pl-2">Step-by-Step On-Road Price Builder</h3>
@@ -1735,6 +1822,47 @@ export default function SalesQuotationsPage() {
                 className="w-full bg-slate-50 border border-slate-200 rounded-[1.5rem] p-5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-900 focus:bg-white transition-all outline-none resize-none"
               />
             </div>
+
+            {/* Step 6: Schedule Follow-Up Option */}
+            <div className="bg-slate-50 rounded-[1.5rem] p-5 border border-slate-200 space-y-4">
+              <label className="flex items-center gap-3 cursor-pointer group">
+                <input
+                  type="checkbox"
+                  checked={scheduleFollowUp}
+                  onChange={e => setScheduleFollowUp(e.target.checked)}
+                  className="w-5 h-5 text-slate-900 rounded border-slate-300 focus:ring-slate-900 transition-all shrink-0"
+                />
+                <span className="text-sm font-semibold text-slate-900 select-none">
+                  📅 Schedule a follow-up for this customer
+                </span>
+              </label>
+
+              {scheduleFollowUp && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                  <div className="space-y-2">
+                    <label className="text-xs text-slate-500 pl-4 font-medium">Follow-up Date & Time *</label>
+                    <input
+                      type="datetime-local"
+                      value={followUpDueDate}
+                      onChange={e => setFollowUpDueDate(e.target.value)}
+                      className="w-full rounded-full py-3 px-5 bg-white border border-slate-200 text-slate-900 text-sm focus:border-slate-900 outline-none"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs text-slate-500 pl-4 font-medium">Follow-up Notes / Goal *</label>
+                    <input
+                      type="text"
+                      value={followUpNotes}
+                      onChange={e => setFollowUpNotes(e.target.value)}
+                      placeholder="e.g. Discuss loan approval status, schedule test drive"
+                      className="w-full rounded-full py-3 px-5 bg-white border border-slate-200 text-slate-900 text-sm focus:border-slate-900 outline-none"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3 pt-2">
@@ -1755,69 +1883,88 @@ export default function SalesQuotationsPage() {
         </div>
       )}
 
-      {/* Quotations List */}
-      {loading ? (
-        <div className="space-y-4">
-          {[1, 2, 3].map(i => <div key={i} className="skeleton h-20 rounded-[2rem]" />)}
-        </div>
-      ) : (
-        <div className="bg-white border border-slate-200 rounded-[2.5rem] overflow-hidden">
-          <div className="divide-y divide-slate-100">
-            {filtered.map(q => {
-              const cust = q.customers?.name || '—'
-              const varName = q.variants?.name || '—'
-              const isPending = q.approval_status === 'pending'
-              
-              return (
-                <div key={q.id} className="p-6 md:p-8 px-6 md:px-12 flex flex-col md:flex-row md:items-center justify-between gap-6 hover:bg-slate-50 transition-colors">
-                  
-                  <div className="flex items-center gap-4 flex-1 min-w-0">
-                    <div className="w-12 h-12 rounded-full bg-slate-50 text-slate-500 flex items-center justify-center shrink-0">
-                      <FileText size={22} />
-                    </div>
-                    
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <p className="text-slate-900 font-medium text-lg truncate">{cust}</p>
-                        <span className={`text-[10px] rounded-full px-2.5 py-0.5 font-bold uppercase tracking-wider ${statusColors[q.status] || ''}`}>
-                          {q.status}
-                        </span>
-                        {q.approval_status && q.approval_status !== 'none' && (
-                          <span className={`text-[10px] rounded-full px-2.5 py-0.5 font-bold uppercase tracking-wider ${approvalColors[q.approval_status]}`}>
-                            {q.approval_status === 'pending' ? 'Approval Pending' : `Discount ${q.approval_status}`}
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-sm text-slate-500 truncate mt-1">
-                        Vehicle: <span className="font-semibold text-slate-700">{q.variants?.models?.name} — {varName}</span>
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-6 shrink-0 justify-between md:justify-end">
-                    <div className="text-right">
-                      <p className="text-lg font-bold text-slate-900">{fmtINR(q.total_price)}</p>
-                      {Number(q.discount_amount) > 0 && (
-                        <p className="text-xs text-emerald-600 font-semibold">- {fmtINR(q.discount_amount)} discount</p>
-                      )}
-                    </div>
-                    
-                    <button
-                      onClick={() => handlePrint(q)}
-                      className="p-3 text-slate-600 bg-slate-50 rounded-full hover:bg-slate-100 transition-colors border border-slate-200"
-                      title="Print Quotation"
-                    >
-                      <Printer size={18} />
-                    </button>
-                  </div>
-                  
-                </div>
-              )
-            })}
-            {filtered.length === 0 && (
-              <div className="p-16 text-center text-slate-500">No quotations found.</div>
-            )}
+      {/* Tab 2: Created Quotations List */}
+      {activeTab === 'list' && (
+        <div className="space-y-6">
+          {/* Action Row */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+            <div className="relative flex-1">
+              <Search size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder="Search quotations by customer name or vehicle..."
+                className="w-full rounded-full py-4 pl-14 pr-8 bg-white border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-slate-900 transition-all outline-none"
+              />
+            </div>
           </div>
+
+          {/* Quotations List */}
+          {loading ? (
+            <div className="space-y-4">
+              {[1, 2, 3].map(i => <div key={i} className="skeleton h-20 rounded-[2rem]" />)}
+            </div>
+          ) : (
+            <div className="bg-white border border-slate-200 rounded-[2.5rem] overflow-hidden">
+              <div className="divide-y divide-slate-100">
+                {filtered.map(q => {
+                  const cust = q.customers?.name || '—'
+                  const varName = q.variants?.name || '—'
+                  const isPending = q.approval_status === 'pending'
+                  
+                  return (
+                    <div key={q.id} className="p-6 md:p-8 px-6 md:px-12 flex flex-col md:flex-row md:items-center justify-between gap-6 hover:bg-slate-50 transition-colors">
+                      
+                      <div className="flex items-center gap-4 flex-1 min-w-0">
+                        <div className="w-12 h-12 rounded-full bg-slate-50 text-slate-500 flex items-center justify-center shrink-0">
+                          <FileText size={22} />
+                        </div>
+                        
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="text-slate-900 font-medium text-lg truncate">{cust}</p>
+                            <span className={`text-[10px] rounded-full px-2.5 py-0.5 font-bold uppercase tracking-wider ${statusColors[q.status] || ''}`}>
+                              {q.status}
+                            </span>
+                            {q.approval_status && q.approval_status !== 'none' && (
+                              <span className={`text-[10px] rounded-full px-2.5 py-0.5 font-bold uppercase tracking-wider ${approvalColors[q.approval_status]}`}>
+                                {q.approval_status === 'pending' ? 'Approval Pending' : `Discount ${q.approval_status}`}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-sm text-slate-500 truncate mt-1">
+                            Vehicle: <span className="font-semibold text-slate-700">{q.variants?.models?.name} — {varName}</span>
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-6 shrink-0 justify-between md:justify-end">
+                        <div className="text-right">
+                          <p className="text-lg font-bold text-slate-900">{fmtINR(q.total_price)}</p>
+                          {Number(q.discount_amount) > 0 && (
+                            <p className="text-xs text-emerald-600 font-semibold">- {fmtINR(q.discount_amount)} discount</p>
+                          )}
+                        </div>
+                        
+                        <button
+                          onClick={() => handlePrint(q)}
+                          className="p-3 text-slate-600 bg-slate-50 rounded-full hover:bg-slate-100 transition-colors border border-slate-200"
+                          title="Print Quotation"
+                        >
+                          <Printer size={18} />
+                        </button>
+                      </div>
+                      
+                    </div>
+                  )
+                })}
+                {filtered.length === 0 && (
+                  <div className="p-16 text-center text-slate-500">No quotations found.</div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

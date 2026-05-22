@@ -80,6 +80,22 @@ This file tracks the current stability of the application. It highlights what wa
 15. **Private Documents Bucket Migration & ImageUpload Routing**:
     - Appended a secure private `'documents'` Supabase storage bucket (50 MB limit, restricted to secure document mime-types like application/pdf and images) and configured authenticated-read/auth-write RLS policies inside `010_multi_media_catalog.sql`.
     - Updated `src/components/ui/ImageUpload.tsx` to automatically route folder `'documents'` uploads to the secure private `'documents'` bucket and generate long-lived (10-year) persistent signed URLs for secure and authorized viewing.
+16. **Global Border Radius Standardization**:
+    - Centralized and standardized all card, panel, and button boundary radii across the entire application to exactly 8px (0.5rem) inside `src/app/globals.css`.
+    - Redefined Tailwind CSS v4 `@theme` tokens (`--radius-lg`, `--radius-xl`, `--radius-2xl`, `--radius-3xl`, `--radius-4xl`) to `8px`.
+    - Declared robust global CSS rules mapping all custom layout-specific border radiuses (like `rounded-[3.5rem]`, `rounded-[3rem]`, `rounded-[2.5rem]`, `rounded-[2rem]`, etc.) to exactly `8px`.
+    - Mapped interactive elements, buttons (primary and secondary), form controls, and search inputs acting as buttons to a crisp 8px border-radius, while keeping non-interactive status dots, avatars, and loading spinners perfectly circular.
+    - Updated `DESIGN.md` guidelines to document the standard 8px visual constraints.
+17. **Quotation Builder Tabs Layout & Integrated Follow-Up Scheduling**:
+    - Reorganized the Sales portal's Quotations builder (`src/app/sales/quotations/page.tsx`) to utilize a modern, pill-shaped switcher with two tabs: Tab 1 (New Quotation builder) and Tab 2 (Created Quotations list with search box).
+    - Reduced the sizes of metric cards (compact cards) and removed the "Pipeline Value" card from the page, focusing exclusively on total quotes and pending approvals.
+    - Integrated a follow-up scheduling sub-form at the end of the Quotation Builder form. When checked and submitted, it validates inputs and performs a secondary insert into the database `follow_ups` table, which immediately displays on the follow-ups page (`src/app/sales/follow-ups/page.tsx`).
+    - Handled automatic tab transition from Tab 1 to Tab 2 upon successful quotation creation, enhancing user experience flow.
+18. **Global Spacing & Padding Reductions**:
+    - Reduced main page side gutters from 24px/48px down to 16px/32px globally in `PortalShell.tsx` and `Header.tsx` for a cleaner layout viewport.
+    - Standardized internal padding across all cards and panels by overriding standard Tailwind padding utility classes (`p-16`, `p-12`, `p-10`, `p-8`, `p-6`) to be ~30% smaller, keeping inputs and small badges proportional.
+    - Tightened table cell and header horizontal paddings globally to `px-4` (16px) on mobile and `px-6` (24px) on desktop to optimize horizontal space on lists.
+    - Updated `DESIGN.md` rules to maintain visual alignment across the entire codebase.
 
 ---
 

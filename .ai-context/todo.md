@@ -17,6 +17,22 @@ This is the source of truth for all current, pending, and completed tasks in thi
 - [ ] Implement mobile navigation bottom pill responsive behavior as per DESIGN.md
 
 ## Completed Tasks
+- [x] Global Spacing & Padding Reductions:
+  - [x] Reduced layout side gutters globally in `PortalShell.tsx` and `Header.tsx` from `px-6 md:px-12` to `px-4 md:px-8`.
+  - [x] Override Tailwind's standard large padding classes (`p-16`, `p-12`, `p-10`, `p-8`, `p-6`) by ~30% inside `globals.css` to compact all cards and panels uniformly.
+  - [x] Tightened table cell horizontal padding globally to `px-4` / `px-6`.
+  - [x] Updated guidelines inside `DESIGN.md`.
+- [x] Quotation Builder Tabs Layout & Integrated Follow-Up Scheduling:
+  - [x] Added `activeTab` switching and state variables inside `src/app/sales/quotations/page.tsx`.
+  - [x] Redesigned standard stat cards to be compact inline cards and removed "Pipeline Value" card.
+  - [x] Created Tab Switcher bar to switch between Tab 1 (New Quotation) and Tab 2 (Created Quotations).
+  - [x] Reorganized render structure using active tab switcher block.
+  - [x] Appended follow-up scheduling sub-form at the end of the Builder form, including checkbox, date/time picker, and notes text input.
+  - [x] Implemented robust validations and automated PostgreSQL database insert queries for follow-ups inside the submit quotation handler.
+- [x] Standardize Global Border Radius to 8px:
+  - [x] Redefined Tailwind CSS v4 `@theme` boundary radius variables inside `src/app/globals.css`.
+  - [x] Declared centralized global CSS overrides inside `src/app/globals.css` mapping custom card, panel, button, search input, and form input controls to exactly 8px (0.5rem), keeping status indicators and spinners circular.
+  - [x] Updated design rules under `DESIGN.md` and synchronized AI context logs.
 - [x] Implement Secure Private Documents Storage Bucket and Routing Integration:
   - [x] Configured dedicated private storage `'documents'` bucket in migration `010_multi_media_catalog.sql` with authenticated-only access rules to keep PII sensitive documents (Aadhar, PAN, RC, etc.) safe.
   - [x] Updated `<ImageUpload />` component to automatically select the private documents bucket when folder is `'documents'` and generate long-lived, secure signed URLs for instant authorized rendering in details preview frames.

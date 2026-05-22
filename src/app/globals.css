@@ -5,6 +5,13 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-google-sans);
+
+  /* Standardize default border radius variables to 8px */
+  --radius-lg: 8px;
+  --radius-xl: 8px;
+  --radius-2xl: 8px;
+  --radius-3xl: 8px;
+  --radius-4xl: 8px;
 }
 
 :root {
@@ -153,4 +160,109 @@ textarea:focus-visible {
 /* ─── INR Currency ─── */
 .currency::before {
   content: "₹";
+}
+
+/* ─── Global Border Radius Standard (8px) ─── */
+
+/* 1. Cards, Panels, and Layout Container Overrides */
+[class*="rounded-["] {
+  border-radius: 8px !important;
+}
+
+/* 2. Interactive Elements, Buttons, and Links Acting as Buttons */
+button,
+a.rounded-full,
+button.rounded-full,
+[role="button"],
+.btn,
+input[type="button"],
+input[type="submit"],
+[class*="rounded-full"][class*="cursor-pointer"] {
+  border-radius: 8px !important;
+}
+
+/* 3. Inputs, Searches, and Form Controls */
+input[type="text"],
+input[type="search"],
+input[type="email"],
+input[type="password"],
+input[type="tel"],
+input[type="number"],
+select,
+textarea,
+[class*="rounded-full"] input,
+[class*="rounded-full"] select {
+  border-radius: 8px !important;
+}
+
+/* ─── Global Padding & Spacing Reductions (~30% smaller) ─── */
+
+/* 1. Global Table Headers and Cells Padding Reductions */
+th, td {
+  padding-left: 1rem !important;   /* px-4 (16px) instead of px-6 (24px) */
+  padding-right: 1rem !important;  /* px-4 (16px) instead of px-6 (24px) */
+}
+@media (min-width: 768px) {
+  th, td {
+    padding-left: 1.5rem !important;  /* px-6 (24px) instead of px-12 (48px) */
+    padding-right: 1.5rem !important; /* px-6 (24px) instead of px-12 (48px) */
+  }
+}
+
+/* 2. Global Card & Panel Padding Class Overrides */
+.p-16 {
+  padding: 2.5rem !important; /* 40px instead of 64px */
+}
+@media (min-width: 768px) {
+  .md\:p-16 {
+    padding: 3rem !important; /* 48px instead of 64px */
+  }
+}
+
+.p-12 {
+  padding: 2rem !important; /* 32px instead of 48px */
+}
+@media (min-width: 768px) {
+  .md\:p-12 {
+    padding: 2.5rem !important; /* 40px instead of 48px */
+  }
+}
+
+.p-10 {
+  padding: 1.75rem !important; /* 28px instead of 40px */
+}
+@media (min-width: 768px) {
+  .md\:p-10 {
+    padding: 2rem !important; /* 32px instead of 40px */
+  }
+}
+
+.p-8 {
+  padding: 1.25rem !important; /* 20px instead of 32px */
+}
+@media (min-width: 768px) {
+  .md\:p-8 {
+    padding: 1.5rem !important; /* 24px instead of 32px */
+  }
+}
+
+.p-6 {
+  padding: 1rem !important; /* 16px instead of 24px */
+}
+@media (min-width: 768px) {
+  .md\:p-6 {
+    padding: 1.25rem !important; /* 20px instead of 24px */
+  }
+}
+
+/* Horizontal Gutter Reductions */
+.px-12 {
+  padding-left: 1.5rem !important; /* 24px instead of 48px */
+  padding-right: 1.5rem !important;
+}
+@media (min-width: 768px) {
+  .md\:px-12 {
+    padding-left: 2.5rem !important; /* 40px instead of 48px */
+    padding-right: 2.5rem !important;
+  }
 }
