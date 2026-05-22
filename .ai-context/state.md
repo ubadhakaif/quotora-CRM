@@ -16,11 +16,15 @@ This file tracks the current stability of the application. It highlights what wa
    - Streamlined `dashboard/settings/page.tsx` by removing dealership registration timestamps and timezone conversions.
    - Refactored `dashboard/catalog` models, variants, and accessories from simple listings to visually stunning responsive card grids.
 4. **Quotation Builder Enhancements**:
-   - Completed Next.js UI elements in `src/app/sales/quotations/page.tsx` for new customer address inputs and 10-digit mobile validation visual warnings.
-   - Developed dynamic Step 6 controls for likely purchase types and purchase modes with conditional upload systems (RC, Insurance, NOC, Aadhar sides, PAN sides).
+   - Completed Next.js UI elements in `src/app/sales/quotations/page.tsx` for new customer address inputs.
+   - Restricted customer mobile input validation strictly to exactly 10 digits with automatic visual warnings.
+   - Refactored accessories display to show small-scale thumbnails (`w-8 h-8 rounded-lg object-cover`) next to checkboxes.
+   - Dissolved the old Step 6: Relocated "Likely Purchase Type" to Step 4 (above trade-in exchange vehicle) and "Mode of Purchase" to Step 5 (above EMI checkbox).
+   - Designed auto-trigger behaviors: selecting "Replacement / Exchange" auto-enables the trade-in exchange valuation with required uploads (RC copy, Insurance copy, NOC, vehicle photos), and selecting "Finance / Loan" auto-enables the EMI planner with required finance document uploads (Aadhar front/back, PAN front/back).
+   - Removed the redundant Step 6 layout block entirely and resolved all JSX nesting and TypeScript compilation stability issues.
    - Synchronized Geolocation API integration to capture coordinates on final quotation creation.
    - Verified compile stability via strict TypeScript build checks.
-
+- Pushed latest changes to GitHub (main branch)
 ---
 
 ## Active & Broken Items

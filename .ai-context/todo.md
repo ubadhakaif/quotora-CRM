@@ -21,9 +21,9 @@ This is the source of truth for all current, pending, and completed tasks in thi
 - [x] Configure Supabase database schema, multi-portal roles, and RLS policies
 - [x] Establish global design guidelines (`DESIGN.md`) and Next.js agent constraints (`AGENTS.md`)
 - [x] Implement and verify Quotation Builder updates:
-  - [x] Added 10-digit mobile number validation and inline visual warning
-  - [x] Integrated customer address / location input field in new customer creation block
-  - [x] Created Step 6 block for purchase profiles (Likely Purchase type & Mode of Purchase)
-  - [x] Implemented conditional document uploads (Aadhar front/back, PAN front/back, RC copy, Insurance, NOC)
-  - [x] Integrated auto-triggers to activate exchange valuations and loan EMI planner based on selection
+  - [x] Restricted phone number input field to exactly 10 digits
+  - [x] Show accessories image in small scale next to checkboxes
+  - [x] Relocated Likely Purchase Type to Step 4 (above exchange toggle) with auto-triggers
+  - [x] Relocated Mode of Purchase to Step 5 (above EMI checkbox) with auto-triggers
+  - [x] Dissolved and removed Step 6 block entirely, fixing JSX nesting and compilation issues
   - [x] Capture exact GPS coordinates via Geolocation API during submission

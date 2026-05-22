@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { useToast } from '@/components/providers/ToastProvider'
-import { Plus, X, FileText, Search, CheckCircle, XCircle, ArrowRight, DollarSign, Percent, PlusCircle, Trash2, Printer, Landmark, Calculator, Car } from 'lucide-react'
+import { Plus, X, FileText, Search, CheckCircle, XCircle, ArrowRight, DollarSign, Percent, PlusCircle, Trash2, Printer, Landmark, Calculator, Car, Wrench } from 'lucide-react'
 import { StatCard } from '@/components/ui/StatCard'
 import { ImageUpload } from '@/components/ui/ImageUpload'
 import { calculateEMI, isDownPaymentSufficient } from '@/lib/emi'
@@ -19,7 +19,7 @@ interface Variant {
   fuel_types?: { name: string } | null
   transmission_types?: { name: string } | null
 }
-interface Accessory { id: string; name: string; price: number }
+interface Accessory { id: string; name: string; price: number; image_url: string | null }
 interface Customer { id: string; name: string; phone: string | null }
 interface FinancePlan {
   id: string
@@ -175,7 +175,7 @@ export default function SalesQuotationsPage() {
         .order('name'),
       supabase
         .from('accessories')
-        .select('id, name, price')
+        .select('id, name, price, image_url')
         .eq('is_active', true)
         .order('name'),
       supabase
@@ -867,11 +867,17 @@ export default function SalesQuotationsPage() {
                       <input
                         type="tel"
                         value={newCustPhone}
-                        onChange={e => setNewCustPhone(e.target.value)}
-                        placeholder="e.g. +91 99999 88888"
+                        onChange={e => {
+                          const cleaned = e.target.value.replace(/\D/g, '')
+                          if (cleaned.length <= 10) {
+                            setNewCustPhone(cleaned)
+                          }
+                        }}
+                        placeholder="e.g. 9999988888"
+                        maxLength={10}
                         className="w-full rounded-full py-3.5 px-6 bg-white border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-slate-900 outline-none text-sm"
                       />
-                      {newCustPhone && newCustPhone.replace(/\D/g, '').length !== 10 && (
+                      {newCustPhone && newCustPhone.length !== 10 && (
                         <p className="text-rose-500 text-xs pl-4 mt-1 font-semibold animate-fade-in">
                           Mobile number must be exactly 10 digits.
                         </p>
@@ -1023,8 +1029,19 @@ export default function SalesQuotationsPage() {
                           type="checkbox"
                           checked={isChecked}
                           onChange={() => handleAccessoryToggle(acc.id)}
-                          className="w-5 h-5 text-slate-900 rounded border-slate-300 focus:ring-slate-900 transition-all"
+                          className="w-5 h-5 text-slate-900 rounded border-slate-300 focus:ring-slate-900 transition-all shrink-0"
                         />
+                        {acc.image_url ? (
+                          <img
+                            src={acc.image_url}
+                            alt={acc.name}
+                            className="w-8 h-8 rounded-lg object-cover border border-slate-200 shrink-0"
+                          />
+                        ) : (
+                          <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center border border-slate-200 text-slate-400 shrink-0">
+                            <Wrench size={14} />
+                          </div>
+                        )}
                         <span className="text-sm text-slate-700 group-hover:text-slate-900 transition-colors">
                           {acc.name} ({fmtINR(acc.price)})
                         </span>
@@ -1227,6 +1244,19 @@ export default function SalesQuotationsPage() {
                         This quote will be locked in <strong>Draft status</strong> pending Branch Manager approval.
                       </div>
                     )}
+                        {/* Likely Purchase Type */}
+                    <div className="space-y-2 pt-3 border-t border-slate-100">
+                      <label className="text-xs text-slate-500 pl-4 font-medium">Likely Purchase Type</label>
+                      <select
+                        value={likelyPurchase}
+                        onChange={e => setLikelyPurchase(e.target.value as any)}
+                        className="w-full rounded-full py-3 px-5 bg-slate-50 border border-slate-200 text-sm text-slate-900 focus:border-slate-900 focus:bg-white outline-none appearance-none"
+                      >
+                        <option value="first_time">First Time Purchase</option>
+                        <option value="additional">Additional Purchase</option>
+                        <option value="replacement">Replacement / Exchange</option>
+                      </select>
+                    </div>
 
                     {/* Trade-In Exchange Vehicle Sub-Form */}
                     <div className="pt-3 border-t border-slate-100 space-y-3">
@@ -1234,7 +1264,7 @@ export default function SalesQuotationsPage() {
                         <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
                           🚗 Trade-In Exchange Vehicle
                         </label>
-                        <label className="relative inline-flex items-center cursor-pointer">
+                        <label className="relative inline-flex inline-flex items-center cursor-pointer">
                           <input
                             type="checkbox"
                             checked={hasExchange}
@@ -1247,89 +1277,167 @@ export default function SalesQuotationsPage() {
                       </div>
 
                       {hasExchange && (
-                        <div className="space-y-3 bg-slate-50 p-4 rounded-3xl border border-slate-200/60 text-xs">
-                          <div className="grid grid-cols-2 gap-2.5">
-                            <div className="space-y-1">
-                              <label className="text-[10px] text-slate-500 pl-2 font-bold uppercase">Make / Brand</label>
-                              <input
-                                type="text"
-                                value={exchangeMake}
-                                onChange={e => setExchangeMake(e.target.value)}
-                                placeholder="Maruti Suzuki, Honda"
-                                className="w-full rounded-full py-2 px-3.5 bg-white border border-slate-200 outline-none text-slate-800 focus:border-slate-950 text-xs animate-fade-in"
-                              />
+                        <div className="space-y-3">
+                          <div className="space-y-3 bg-slate-50 p-4 rounded-3xl border border-slate-200/60 text-xs">
+                            <div className="grid grid-cols-2 gap-2.5">
+                              <div className="space-y-1">
+                                <label className="text-[10px] text-slate-500 pl-2 font-bold uppercase">Make / Brand</label>
+                                <input
+                                  type="text"
+                                  value={exchangeMake}
+                                  onChange={e => setExchangeMake(e.target.value)}
+                                  placeholder="Maruti Suzuki, Honda"
+                                  className="w-full rounded-full py-2 px-3.5 bg-white border border-slate-200 outline-none text-slate-800 focus:border-slate-955 text-xs animate-fade-in"
+                                />
+                              </div>
+                              <div className="space-y-1">
+                                <label className="text-[10px] text-slate-500 pl-2 font-bold uppercase">Model</label>
+                                <input
+                                  type="text"
+                                  value={exchangeModel}
+                                  onChange={e => setExchangeModel(e.target.value)}
+                                  placeholder="Swift, City"
+                                  className="w-full rounded-full py-2 px-3.5 bg-white border border-slate-200 outline-none text-slate-800 focus:border-slate-955 text-xs"
+                                />
+                              </div>
                             </div>
+
+                            <div className="grid grid-cols-2 gap-2.5">
+                              <div className="space-y-1">
+                                <label className="text-[10px] text-slate-500 pl-2 font-bold uppercase">Mfg Year</label>
+                                <input
+                                  type="number"
+                                  value={exchangeYear}
+                                  onChange={e => setExchangeYear(e.target.value)}
+                                  placeholder="e.g. 2018"
+                                  className="w-full rounded-full py-2 px-3.5 bg-white border border-slate-200 outline-none text-slate-800 focus:border-slate-955 text-xs"
+                                />
+                              </div>
+                              <div className="space-y-1">
+                                <label className="text-[10px] text-slate-500 pl-2 font-bold uppercase">KMs Driven</label>
+                                <input
+                                  type="number"
+                                  value={exchangeKms}
+                                  onChange={e => setExchangeKms(e.target.value)}
+                                  placeholder="e.g. 50000"
+                                  className="w-full rounded-full py-2 px-3.5 bg-white border border-slate-200 outline-none text-slate-800 focus:border-slate-955 text-xs"
+                                />
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-2.5">
+                              <div className="space-y-1">
+                                <label className="text-[10px] text-slate-500 pl-2 font-bold uppercase">Condition</label>
+                                <select
+                                  value={exchangeCondition}
+                                  onChange={e => setExchangeCondition(e.target.value)}
+                                  className="w-full rounded-full py-2 px-3 bg-white border border-slate-200 outline-none text-slate-850 focus:border-slate-955 text-xs"
+                                >
+                                  <option value="excellent">Excellent</option>
+                                  <option value="good">Good</option>
+                                  <option value="fair">Fair</option>
+                                  <option value="poor">Poor</option>
+                                </select>
+                              </div>
+                              <div className="space-y-1">
+                                <label className="text-[10px] text-slate-500 pl-2 font-bold uppercase">Valuation (INR)</label>
+                                <input
+                                  type="number"
+                                  value={exchangeValuation}
+                                  onChange={e => setExchangeValuation(e.target.value)}
+                                  placeholder="e.g. 250000"
+                                  className="w-full rounded-full py-2 px-3.5 bg-white border border-slate-200 outline-none text-slate-800 focus:border-slate-955 text-xs font-bold"
+                                />
+                              </div>
+                            </div>
+
                             <div className="space-y-1">
-                              <label className="text-[10px] text-slate-500 pl-2 font-bold uppercase">Model</label>
-                              <input
-                                type="text"
-                                value={exchangeModel}
-                                onChange={e => setExchangeModel(e.target.value)}
-                                placeholder="Swift, City"
-                                className="w-full rounded-full py-2 px-3.5 bg-white border border-slate-200 outline-none text-slate-800 focus:border-slate-950 text-xs"
+                              <label className="text-[10px] text-slate-500 pl-2 font-bold uppercase">Appraisal Notes</label>
+                              <textarea
+                                value={exchangeNotes}
+                                onChange={e => setExchangeNotes(e.target.value)}
+                                placeholder="Structural or paint remarks..."
+                                rows={2}
+                                className="w-full rounded-2xl py-2 px-3 bg-white border border-slate-200 outline-none text-slate-850 text-xs resize-none"
                               />
                             </div>
                           </div>
 
-                          <div className="grid grid-cols-2 gap-2.5">
-                            <div className="space-y-1">
-                              <label className="text-[10px] text-slate-500 pl-2 font-bold uppercase">Mfg Year</label>
-                              <input
-                                type="number"
-                                value={exchangeYear}
-                                onChange={e => setExchangeYear(e.target.value)}
-                                placeholder="e.g. 2018"
-                                className="w-full rounded-full py-2 px-3.5 bg-white border border-slate-200 outline-none text-slate-800 focus:border-slate-950 text-xs"
-                              />
-                            </div>
-                            <div className="space-y-1">
-                              <label className="text-[10px] text-slate-500 pl-2 font-bold uppercase">KMs Driven</label>
-                              <input
-                                type="number"
-                                value={exchangeKms}
-                                onChange={e => setExchangeKms(e.target.value)}
-                                placeholder="e.g. 50000"
-                                className="w-full rounded-full py-2 px-3.5 bg-white border border-slate-200 outline-none text-slate-800 focus:border-slate-950 text-xs"
-                              />
-                            </div>
-                          </div>
+                          {/* Conditional Exchange Documents */}
+                          {likelyPurchase === 'replacement' && (
+                            <div className="space-y-3 bg-slate-50 p-4 rounded-3xl border border-slate-200/60 text-xs">
+                              <p className="text-[10px] font-bold text-slate-700 uppercase tracking-wider pl-2">
+                                Required Exchange Documents & Photos
+                              </p>
+                              
+                              <div className="space-y-2 pl-2">
+                                <label className="text-[10px] font-bold text-slate-500 uppercase">Vehicle Photos (At least 4 required) *</label>
+                                <div className="grid grid-cols-2 gap-2 pt-1">
+                                  {exchangeImages.map((imgUrl, idx) => (
+                                    <div key={idx} className="relative inline-block w-16 h-16">
+                                      <img
+                                        src={imgUrl}
+                                        alt={`Vehicle ${idx + 1}`}
+                                        className="w-16 h-16 rounded-xl object-cover border border-slate-200"
+                                      />
+                                      <button
+                                        type="button"
+                                        onClick={() => setExchangeImages(prev => prev.filter((_, i) => i !== idx))}
+                                        className="absolute -top-2 -right-2 bg-slate-900 text-white rounded-full p-1 hover:bg-slate-700 transition-colors"
+                                      >
+                                        <X size={10} />
+                                      </button>
+                                    </div>
+                                  ))}
+                                  {exchangeImages.length < 6 && (
+                                    <div className="w-16 h-16">
+                                      <ImageUpload
+                                        value={null}
+                                        folder="exchange"
+                                        onChange={(url) => {
+                                          if (url) {
+                                            setExchangeImages(prev => [...prev, url])
+                                          }
+                                        }}
+                                      />
+                                    </div>
+                                  )}
+                                </div>
+                                <p className="text-[9px] text-slate-500 mt-1">
+                                  Uploaded: {exchangeImages.length} {exchangeImages.length < 4 ? `(need ${4 - exchangeImages.length} more)` : '(Met)'}
+                                </p>
+                              </div>
 
-                          <div className="grid grid-cols-2 gap-2.5">
-                            <div className="space-y-1">
-                              <label className="text-[10px] text-slate-500 pl-2 font-bold uppercase">Condition</label>
-                              <select
-                                value={exchangeCondition}
-                                onChange={e => setExchangeCondition(e.target.value)}
-                                className="w-full rounded-full py-2 px-3 bg-white border border-slate-200 outline-none text-slate-850 focus:border-slate-950 text-xs"
-                              >
-                                <option value="excellent">Excellent</option>
-                                <option value="good">Good</option>
-                                <option value="fair">Fair</option>
-                                <option value="poor">Poor</option>
-                              </select>
-                            </div>
-                            <div className="space-y-1">
-                              <label className="text-[10px] text-slate-500 pl-2 font-bold uppercase">Valuation (INR)</label>
-                              <input
-                                type="number"
-                                value={exchangeValuation}
-                                onChange={e => setExchangeValuation(e.target.value)}
-                                placeholder="e.g. 250000"
-                                className="w-full rounded-full py-2 px-3.5 bg-white border border-slate-200 outline-none text-slate-800 focus:border-slate-955 text-xs font-bold"
-                              />
-                            </div>
-                          </div>
+                              <div className="space-y-2 pt-1">
+                                <div className="space-y-1">
+                                  <div className="text-[10px] text-slate-500 pl-2 font-bold uppercase">RC Copy (Registration Certificate) *</div>
+                                  <ImageUpload
+                                    value={exchangeRcCopy}
+                                    folder="exchange"
+                                    onChange={setExchangeRcCopy}
+                                  />
+                                </div>
 
-                          <div className="space-y-1">
-                            <label className="text-[10px] text-slate-500 pl-2 font-bold uppercase">Appraisal Notes</label>
-                            <textarea
-                              value={exchangeNotes}
-                              onChange={e => setExchangeNotes(e.target.value)}
-                              placeholder="Structural or paint remarks..."
-                              rows={2}
-                              className="w-full rounded-2xl py-2 px-3 bg-white border border-slate-200 outline-none text-slate-800 focus:border-slate-950 text-xs resize-none"
-                            />
-                          </div>
+                                <div className="space-y-1">
+                                  <div className="text-[10px] text-slate-500 pl-2 font-bold uppercase">Insurance Copy *</div>
+                                  <ImageUpload
+                                    value={exchangeInsurance}
+                                    folder="exchange"
+                                    onChange={setExchangeInsurance}
+                                  />
+                                </div>
+
+                                <div className="space-y-1">
+                                  <div className="text-[10px] text-slate-500 pl-2 font-bold uppercase">NOC (No Objection Certificate) *</div>
+                                  <ImageUpload
+                                    value={exchangeNoc}
+                                    folder="exchange"
+                                    onChange={setExchangeNoc}
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
@@ -1348,19 +1456,98 @@ export default function SalesQuotationsPage() {
 
                 {/* Step 5: Integrated Finance & Loan Planner */}
                 <div className="space-y-4 pt-4 border-t border-slate-100">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-2">
+                  <div className="border-b border-slate-100 pb-2">
                     <label className="text-sm font-semibold text-slate-900 pl-2">Step 5: Integrated Finance & Loan Planner</label>
-                    
-                    <label className="flex items-center gap-2 cursor-pointer select-none">
-                      <input
-                        type="checkbox"
-                        checked={includeLoan}
-                        onChange={e => setIncludeLoan(e.target.checked)}
-                        className="w-5 h-5 text-slate-900 rounded border-slate-300 focus:ring-slate-900 transition-all"
-                      />
-                      <span className="text-xs font-semibold text-slate-700">Add EMI Planning to Quotation</span>
-                    </label>
                   </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Mode of Purchase */}
+                    <div className="space-y-2">
+                      <label className="text-xs text-slate-500 pl-4 font-medium">Mode of Purchase</label>
+                      <select
+                        value={modeOfPurchase}
+                        onChange={e => setModeOfPurchase(e.target.value as any)}
+                        className="w-full rounded-full py-3.5 px-5 bg-slate-50 border border-slate-200 text-sm text-slate-900 focus:border-slate-900 focus:bg-white outline-none appearance-none"
+                      >
+                        <option value="cash">Cash Payment</option>
+                        <option value="loan">Finance / Loan</option>
+                        <option value="other">Other Payment Mode</option>
+                      </select>
+                    </div>
+
+                    {/* EMI Checkbox */}
+                    <div className="flex items-center pl-4 pt-6">
+                      <label className="flex items-center gap-2 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={includeLoan}
+                          disabled={modeOfPurchase === 'loan'}
+                          onChange={e => setIncludeLoan(e.target.checked)}
+                          className="w-5 h-5 text-slate-900 rounded border-slate-300 focus:ring-slate-900 transition-all"
+                        />
+                        <span className="text-xs font-semibold text-slate-700">Add EMI Planning to Quotation</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Conditional Other Payment Mode details */}
+                  {modeOfPurchase === 'other' && (
+                    <div className="space-y-2 pt-2">
+                      <label className="text-xs text-slate-500 pl-4 font-medium">Specify Other Purchase Mode Details *</label>
+                      <input
+                        type="text"
+                        value={modeOfPurchaseOtherText}
+                        onChange={e => setModeOfPurchaseOtherText(e.target.value)}
+                        placeholder="e.g. Demand Draft, Corporate Sponsorship, etc."
+                        className="w-full rounded-full py-3.5 px-6 bg-white border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-slate-900 outline-none text-sm"
+                      />
+                    </div>
+                  )}
+
+                  {/* Conditional: Mode of Purchase === 'loan' - Aadhar and PAN uploads */}
+                  {modeOfPurchase === 'loan' && (
+                    <div className="space-y-4 pt-2">
+                      <div className="bg-slate-50 rounded-3xl p-5 border border-slate-200/60 space-y-4">
+                        <p className="text-xs font-semibold text-slate-700 uppercase tracking-wider pl-2">
+                          Required Finance Documents (Aadhar & PAN Cards)
+                        </p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                          <div className="space-y-2">
+                            <div className="text-[10px] text-slate-500 pl-2 font-bold uppercase">Aadhar Card Front *</div>
+                            <ImageUpload
+                              value={loanAadharFront}
+                              folder="documents"
+                              onChange={setLoanAadharFront}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <div className="text-[10px] text-slate-500 pl-2 font-bold uppercase">Aadhar Card Back *</div>
+                            <ImageUpload
+                              value={loanAadharBack}
+                              folder="documents"
+                              onChange={setLoanAadharBack}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <div className="text-[10px] text-slate-500 pl-2 font-bold uppercase">PAN Card Front *</div>
+                            <ImageUpload
+                              value={loanPanFront}
+                              folder="documents"
+                              onChange={setLoanPanFront}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <div className="text-[10px] text-slate-500 pl-2 font-bold uppercase">PAN Card Back *</div>
+                            <ImageUpload
+                              value={loanPanBack}
+                              folder="documents"
+                              onChange={setLoanPanBack}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {includeLoan && (
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
@@ -1496,176 +1683,7 @@ export default function SalesQuotationsPage() {
                   )}
                 </div>
 
-                {/* Step 6: Purchase Profile & Document Requirements */}
-                <div className="space-y-4 pt-4 border-t border-slate-100">
-                  <div className="border-b border-slate-100 pb-2">
-                    <label className="text-sm font-semibold text-slate-900 pl-2">Step 6: Purchase Profile & Document Requirements</label>
-                  </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {/* Likely Purchase */}
-                    <div className="space-y-2">
-                      <label className="text-xs text-slate-500 pl-4 font-medium">Likely Purchase Type</label>
-                      <select
-                        value={likelyPurchase}
-                        onChange={e => setLikelyPurchase(e.target.value as any)}
-                        className="w-full rounded-full py-3.5 px-5 bg-slate-50 border border-slate-200 text-sm text-slate-900 focus:border-slate-900 focus:bg-white outline-none appearance-none"
-                      >
-                        <option value="first_time">First Time Purchase</option>
-                        <option value="additional">Additional Purchase</option>
-                        <option value="replacement">Replacement / Exchange</option>
-                      </select>
-                    </div>
-
-                    {/* Mode of Purchase */}
-                    <div className="space-y-2">
-                      <label className="text-xs text-slate-500 pl-4 font-medium">Mode of Purchase</label>
-                      <select
-                        value={modeOfPurchase}
-                        onChange={e => setModeOfPurchase(e.target.value as any)}
-                        className="w-full rounded-full py-3.5 px-5 bg-slate-50 border border-slate-200 text-sm text-slate-900 focus:border-slate-900 focus:bg-white outline-none appearance-none"
-                      >
-                        <option value="cash">Cash Payment</option>
-                        <option value="loan">Finance / Loan</option>
-                        <option value="other">Other Payment Mode</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  {/* Conditional: Mode of Purchase === 'other' */}
-                  {modeOfPurchase === 'other' && (
-                    <div className="space-y-2 pt-2">
-                      <label className="text-xs text-slate-500 pl-4 font-medium">Specify Other Purchase Mode Details *</label>
-                      <input
-                        type="text"
-                        value={modeOfPurchaseOtherText}
-                        onChange={e => setModeOfPurchaseOtherText(e.target.value)}
-                        placeholder="e.g. Demand Draft, Corporate Sponsorship, etc."
-                        className="w-full rounded-full py-3.5 px-6 bg-white border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-slate-900 outline-none text-sm"
-                      />
-                    </div>
-                  )}
-
-                  {/* Conditional: Mode of Purchase === 'loan' - Aadhar and PAN uploads */}
-                  {modeOfPurchase === 'loan' && (
-                    <div className="space-y-4 pt-2">
-                      <div className="bg-slate-50 rounded-3xl p-5 border border-slate-200/60 space-y-4">
-                        <p className="text-xs font-semibold text-slate-700 uppercase tracking-wider pl-2">
-                          Required Finance Documents (Aadhar & PAN Cards)
-                        </p>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <ImageUpload
-                            value={loanAadharFront}
-                            folder="documents"
-                            onChange={setLoanAadharFront}
-                          />
-                          <div className="text-xs text-slate-500 pt-8 pl-2">Aadhar Card Front Side *</div>
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <ImageUpload
-                            value={loanAadharBack}
-                            folder="documents"
-                            onChange={setLoanAadharBack}
-                          />
-                          <div className="text-xs text-slate-500 pt-8 pl-2">Aadhar Card Back Side *</div>
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <ImageUpload
-                            value={loanPanFront}
-                            folder="documents"
-                            onChange={setLoanPanFront}
-                          />
-                          <div className="text-xs text-slate-500 pt-8 pl-2">PAN Card Front Side *</div>
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <ImageUpload
-                            value={loanPanBack}
-                            folder="documents"
-                            onChange={setLoanPanBack}
-                          />
-                          <div className="text-xs text-slate-500 pt-8 pl-2">PAN Card Back Side *</div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Conditional: Likely Purchase === 'replacement' - 4+ photos, RC, Insurance, NOC */}
-                  {likelyPurchase === 'replacement' && (
-                    <div className="space-y-4 pt-2">
-                      <div className="bg-slate-50 rounded-3xl p-5 border border-slate-200/60 space-y-4">
-                        <p className="text-xs font-semibold text-slate-700 uppercase tracking-wider pl-2">
-                          Required Exchange Documents & Photos
-                        </p>
-                        
-                        {/* Vehicle Photos */}
-                        <div className="space-y-2 pl-2">
-                          <label className="text-xs font-medium text-slate-600">Vehicle Photos (At least 4 required) *</label>
-                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-2">
-                            {exchangeImages.map((imgUrl, idx) => (
-                              <div key={idx} className="relative inline-block w-24 h-24">
-                                <img
-                                  src={imgUrl}
-                                  alt={`Vehicle ${idx + 1}`}
-                                  className="w-24 h-24 rounded-2xl object-cover border border-slate-200"
-                                />
-                                <button
-                                  type="button"
-                                  onClick={() => setExchangeImages(prev => prev.filter((_, i) => i !== idx))}
-                                  className="absolute -top-2 -right-2 bg-slate-900 text-white rounded-full p-1 hover:bg-slate-700 transition-colors"
-                                >
-                                  <X size={12} />
-                                </button>
-                              </div>
-                            ))}
-                            {exchangeImages.length < 6 && (
-                              <ImageUpload
-                                value={null}
-                                folder="exchange"
-                                onChange={(url) => {
-                                  if (url) {
-                                    setExchangeImages(prev => [...prev, url])
-                                  }
-                                }}
-                              />
-                            )}
-                          </div>
-                          <p className="text-[10px] text-slate-500 mt-1">
-                            Uploaded: {exchangeImages.length} {exchangeImages.length < 4 ? `(need ${4 - exchangeImages.length} more)` : '(Minimum requirement met)'}
-                          </p>
-                        </div>
-
-                        {/* Document Uploads */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-                          <ImageUpload
-                            value={exchangeRcCopy}
-                            folder="exchange"
-                            onChange={setExchangeRcCopy}
-                          />
-                          <div className="text-xs text-slate-500 pt-8 pl-2">RC Copy (Registration Certificate) *</div>
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <ImageUpload
-                            value={exchangeInsurance}
-                            folder="exchange"
-                            onChange={setExchangeInsurance}
-                          />
-                          <div className="text-xs text-slate-500 pt-8 pl-2">Insurance Copy *</div>
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <ImageUpload
-                            value={exchangeNoc}
-                            folder="exchange"
-                            onChange={setExchangeNoc}
-                          />
-                          <div className="text-xs text-slate-500 pt-8 pl-2">NOC (No Objection Certificate) *</div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                </div>
               </div>
             )}
             
