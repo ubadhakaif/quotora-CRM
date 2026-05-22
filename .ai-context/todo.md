@@ -7,9 +7,9 @@ This is the source of truth for all current, pending, and completed tasks in thi
 - [x] Complete implementation of the Leave Management system
   - [x] Polish Branch leave request view (`src/app/branch/leave/page.tsx`)
   - [x] Polish Dashboard leave request view (`src/app/dashboard/leave/page.tsx`)
-- [ ] Finalize Employee creation flow (`src/app/api/employees/create/route.ts`)
-  - [ ] Add robust validation and error responses
-  - [ ] Implement corresponding Supabase triggers / RLS checks
+- [x] Finalize Employee creation flow (`src/app/api/employees/create/route.ts`)
+  - [x] Add robust validation and error responses
+  - [x] Implement corresponding Supabase triggers / RLS checks
 
 ## Future Milestones
 - [ ] Implement automated integration testing for multi-portal role-based security
@@ -17,6 +17,43 @@ This is the source of truth for all current, pending, and completed tasks in thi
 - [ ] Implement mobile navigation bottom pill responsive behavior as per DESIGN.md
 
 ## Completed Tasks
+- [x] Implement Secure Private Documents Storage Bucket and Routing Integration:
+  - [x] Configured dedicated private storage `'documents'` bucket in migration `010_multi_media_catalog.sql` with authenticated-only access rules to keep PII sensitive documents (Aadhar, PAN, RC, etc.) safe.
+  - [x] Updated `<ImageUpload />` component to automatically select the private documents bucket when folder is `'documents'` and generate long-lived, secure signed URLs for instant authorized rendering in details preview frames.
+- [x] Standardized CRM Listing Tabular Pagination:
+  - [x] Built reusable `<Pagination />` client-side page navigator with dynamic row scaling (5, 10, 25, 50 rows).
+  - [x] Integrated client-side table slicing and page control hooks across 12 distinct tabular portals (Sales Attendance, Sales Follow-ups, Dealer Admin Leads/Leave/Employees/Quotations/Attendance, and Branch Manager Leads/Leave/Quotations/Attendance/Follow-ups/Employees listings).
+- [x] Redesigned and Modernized Branch Portal Listings to Flat Tables:
+  - [x] Redesigned Branch Leads CRM view (`src/app/branch/leads/page.tsx`) from legacy cards to premium flat table.
+  - [x] Redesigned Branch Leave Requests view (`src/app/branch/leave/page.tsx`) from legacy cards to flat tables with inline expandable review drawer.
+  - [x] Redesigned Branch Quotations view (`src/app/branch/quotations/page.tsx`) to modern flat table with quick approval/reopen actions.
+  - [x] Redesigned Branch Attendance logs view (`src/app/branch/attendance/page.tsx`) to flat tables with inline roster adjustments.
+  - [x] Redesigned Branch Follow-ups checksheets view (`src/app/branch/follow-ups/page.tsx`) to flat table layout.
+  - [x] Redesigned Branch Employees list view (`src/app/branch/employees/page.tsx`) from legacy cards grid to flat table.
+- [x] Redesigned and Modernized Dashboard Listings to Flat Tables:
+  - [x] Redesigned Leads CRM view (`src/app/dashboard/leads/page.tsx`) from cards into a premium flat table.
+  - [x] Redesigned Leave Requests view (`src/app/dashboard/leave/page.tsx`) into a beautiful table with inline expandable review drawers.
+  - [x] Redesigned Employees view (`src/app/dashboard/employees/page.tsx`) into a clean table structure supporting search, branch badges, and role/active indicators.
+- [x] Implemented Employee Phone Configuration and Validation:
+  - [x] Added `phone` database migration and metadata-to-profile database triggers.
+  - [x] Refactored employee creation API to parse and store `phone` metadata.
+  - [x] Added a numeric-only Phone Number field to the employee creation/edit panel with strict 10-digit length validation.
+- [x] Designed Admin Quotations Directory:
+  - [x] Registered routes, permissions, and sidebar navigation titles for `/dashboard/quotations`.
+  - [x] Built the Admin Quotations list page featuring responsive flat tables, keyword search across columns, and navigation links.
+- [x] Implemented Operations 12h Format Toggle:
+  - [x] Added a persistent switch `'operations.use_12hour'` to settings database.
+  - [x] Designed beautiful custom hours/minutes dropdown selectors and AM/PM button toggle groups.
+  - [x] Integrated automated formatting helpers to serialize values to standard 24h `HH:MM` format before saving.
+- [x] Implement Model & Accessories Galleries Redesign and Multi-Media Catalog Integration:
+  - [x] Wrote database migration adding array of images and video_url columns to models, variants, and accessories
+  - [x] Built gorgeous, reusable MediaUpload component that uploads multiple media files to Supabase storage buckets
+  - [x] Updated Catalog editing forms for models, variants, and accessories to support multiple images and video uploading with backward compatibility (keeping `image_url` synced to `images[0]`)
+  - [x] Built reusable, high-fidelity `<ModelsGallery />` with swipeable carousels, video player overlays, and interactive variants expanding inline
+  - [x] Built reusable, high-fidelity `<AccessoriesGallery />` with category filtering, search, and a gorgeous detail drawer
+  - [x] Registered routes, permissions, and sidebar navigation entries for Dealer Admin
+  - [x] Retrofitted Branch Manager and Sales Executive portals to render these redesigned shared components directly
+  - [x] Verified full compilation stability and type-safety
 - [x] Implement Attendance Verification details pages & Branch Manager log filtering:
   - [x] Excluded Branch Manager's own records from team logs at `/branch/attendance` (making them viewable but non-editable under "My Logs")
   - [x] Added path hooks in `Header.tsx` to display "Attendance Verification" title for both portals

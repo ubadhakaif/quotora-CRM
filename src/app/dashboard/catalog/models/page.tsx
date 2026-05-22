@@ -5,13 +5,15 @@ import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { useToast } from '@/components/providers/ToastProvider'
 import { Plus, X, Car, Tag, Search } from 'lucide-react'
-import { ImageUpload } from '@/components/ui/ImageUpload'
+import { MediaUpload } from '@/components/ui/MediaUpload'
 
 interface Category { id: string; name: string }
 interface Model {
   id: string; name: string; description: string | null
   category_id: string | null; categories?: Category | null
   image_url?: string | null
+  images?: string[] | null
+  video_url?: string | null
 }
 
 export default function ModelsTab() {
@@ -25,7 +27,8 @@ export default function ModelsTab() {
   const [name, setName] = useState('')
   const [desc, setDesc] = useState('')
   const [catId, setCatId] = useState('')
-  const [imageUrl, setImageUrl] = useState('')
+  const [images, setImages] = useState<string[]>([])
+  const [videoUrl, setVideoUrl] = useState<string | null>(null)
   const [newCat, setNewCat] = useState('')
   const [saving, setSaving] = useState(false)
   const { profile } = useAuth()
@@ -45,13 +48,21 @@ export default function ModelsTab() {
 
   useEffect(() => { fetch() }, []) // eslint-disable-line
 
-  const openAdd = () => { setEditing(null); setName(''); setDesc(''); setCatId(''); setImageUrl(''); setPanelOpen(true) }
-  const openEdit = (m: Model) => { setEditing(m); setName(m.name); setDesc(m.description||''); setCatId(m.category_id||''); setImageUrl(m.image_url||''); setPanelOpen(true) }
+  const openAdd = () => { setEditing(null); setName(''); setDesc(''); setCatId(''); setImages([]); setVideoUrl(null); setPanelOpen(true) }
+  const openEdit = (m: Model) => { setEditing(m); setName(m.name); setDesc(m.description||''); setCatId(m.category_id||''); setImages(m.images || (m.image_url ? [m.image_url] : [])); setVideoUrl(m.video_url || null); setPanelOpen(true) }
   const close = () => { setPanelOpen(false); setEditing(null) }
 
   const save = async () => {
     if (!name.trim()) return; setSaving(true)
-    const p = { name, description: desc||null, category_id: catId||null, image_url: imageUrl||null, tenant_id: profile?.tenant_id }
+    const p = {
+      name,
+      description: desc||null,
+      category_id: catId||null,
+      images,
+      video_url: videoUrl,
+      image_url: images.length > 0 ? images[0] : null,
+      tenant_id: profile?.tenant_id
+    }
     const { error } = editing
       ? await supabase.from('models').update(p).eq('id', editing.id)
       : await supabase.from('models').insert(p)
@@ -118,7 +129,13 @@ export default function ModelsTab() {
                 <button onClick={addCat} disabled={!newCat.trim()} className="bg-slate-900 text-white rounded-full px-5 py-3 text-sm hover:bg-slate-800 transition-colors disabled:opacity-50">Add</button>
               </div>
             )}
-            <ImageUpload value={imageUrl} onChange={url => setImageUrl(url || '')} folder="models" />
+            <MediaUpload
+              images={images}
+              onImagesChange={setImages}
+              videoUrl={videoUrl}
+              onVideoChange={setVideoUrl}
+              folder="models"
+            />
           </div>
           <div className="flex flex-col sm:flex-row gap-3">
             <button onClick={close} className="bg-white border border-slate-200 text-slate-600 rounded-full p-4 px-8 flex items-center justify-start gap-3 hover:bg-slate-50 transition-colors flex-1 sm:flex-initial">Cancel</button>

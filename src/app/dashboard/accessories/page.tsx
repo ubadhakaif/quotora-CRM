@@ -2,6 +2,6 @@
 
 import { AccessoriesGallery } from '@/components/catalog/AccessoriesGallery'
 
-export default function BranchAccessoriesPage() {
+export default function DealerAdminAccessoriesPage() {
   return <AccessoriesGallery />
 }

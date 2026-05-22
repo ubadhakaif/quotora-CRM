@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { useToast } from '@/components/providers/ToastProvider'
-import { ImageUpload } from '@/components/ui/ImageUpload'
+import { MediaUpload } from '@/components/ui/MediaUpload'
 import { Plus, X, Layers, Search, Fuel, Settings } from 'lucide-react'
 
 interface Model { id: string; name: string }
@@ -14,6 +14,7 @@ interface Variant {
   id: string; name: string; model_id: string; price: number
   fuel_type_id: string|null; transmission_type_id: string|null
   variant_order: number; image_url: string|null
+  images?: string[] | null; video_url?: string | null
   models?: { name: string } | null
 }
 
@@ -31,7 +32,8 @@ export default function VariantsTab() {
   const [fName, setFName] = useState(''); const [fModelId, setFModelId] = useState('')
   const [fPrice, setFPrice] = useState(''); const [fFuelId, setFFuelId] = useState('')
   const [fTransId, setFTransId] = useState(''); const [fOrder, setFOrder] = useState('0')
-  const [fImageUrl, setFImageUrl] = useState<string|null>(null)
+  const [images, setImages] = useState<string[]>([])
+  const [videoUrl, setVideoUrl] = useState<string|null>(null)
   const [saving, setSaving] = useState(false)
   const [addFuel, setAddFuel] = useState(false); const [newFuel, setNewFuel] = useState('')
   const [addTrans, setAddTrans] = useState(false); const [newTrans, setNewTrans] = useState('')
@@ -52,13 +54,24 @@ export default function VariantsTab() {
   }
   useEffect(()=>{fetchAll()}, []) // eslint-disable-line
 
-  const openAdd = () => { setEditing(null);setFName('');setFModelId('');setFPrice('');setFFuelId('');setFTransId('');setFOrder('0');setFImageUrl(null);setPanelOpen(true) }
-  const openEdit = (v: Variant) => { setEditing(v);setFName(v.name);setFModelId(v.model_id);setFPrice(String(v.price));setFFuelId(v.fuel_type_id||'');setFTransId(v.transmission_type_id||'');setFOrder(String(v.variant_order));setFImageUrl(v.image_url);setPanelOpen(true) }
+  const openAdd = () => { setEditing(null);setFName('');setFModelId('');setFPrice('');setFFuelId('');setFTransId('');setFOrder('0');setImages([]);setVideoUrl(null);setPanelOpen(true) }
+  const openEdit = (v: Variant) => { setEditing(v);setFName(v.name);setFModelId(v.model_id);setFPrice(String(v.price));setFFuelId(v.fuel_type_id||'');setFTransId(v.transmission_type_id||'');setFOrder(String(v.variant_order));setImages(v.images || (v.image_url ? [v.image_url] : []));setVideoUrl(v.video_url || null);setPanelOpen(true) }
   const close = () => { setPanelOpen(false);setEditing(null) }
 
   const save = async () => {
     if(!fName.trim()||!fModelId) return; setSaving(true)
-    const p = { name:fName, model_id:fModelId, price:parseFloat(fPrice)||0, fuel_type_id:fFuelId||null, transmission_type_id:fTransId||null, variant_order:parseInt(fOrder)||0, image_url:fImageUrl, tenant_id:profile?.tenant_id }
+    const p = {
+      name:fName,
+      model_id:fModelId,
+      price:parseFloat(fPrice)||0,
+      fuel_type_id:fFuelId||null,
+      transmission_type_id:fTransId||null,
+      variant_order:parseInt(fOrder)||0,
+      images,
+      video_url:videoUrl,
+      image_url:images.length > 0 ? images[0] : null,
+      tenant_id:profile?.tenant_id
+    }
     const {error} = editing ? await supabase.from('variants').update(p).eq('id',editing.id) : await supabase.from('variants').insert(p)
     if(error) addToast(error.message,'error')
     else { addToast(editing?'Updated':'Created','success');close();fetchAll() }
@@ -89,7 +102,13 @@ export default function VariantsTab() {
               <div className="space-y-2"><label className="text-sm text-slate-600 pl-4">Order</label><input type="number" value={fOrder} onChange={e=>setFOrder(e.target.value)} className="w-full rounded-full py-4 px-6 bg-slate-50 border border-slate-200 text-slate-900 focus:border-slate-900 focus:bg-white transition-all outline-none"/></div>
             </div>
             {/* Fuel type and Transmission are managed as separate standalone catalog tabs */}
-            <ImageUpload value={fImageUrl} onChange={setFImageUrl} folder="variants" />
+            <MediaUpload
+              images={images}
+              onImagesChange={setImages}
+              videoUrl={videoUrl}
+              onVideoChange={setVideoUrl}
+              folder="variants"
+            />
           </div>
           <div className="flex flex-col sm:flex-row gap-3">
             <button onClick={close} className="bg-white border border-slate-200 text-slate-600 rounded-full p-4 px-8 hover:bg-slate-50 transition-colors flex-1 sm:flex-initial">Cancel</button>

@@ -1,10 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { useToast } from '@/components/providers/ToastProvider'
 import { CalendarDays, Check, X, Plus, Search } from 'lucide-react'
+import { Pagination } from '@/components/ui/Pagination'
 
 interface LeaveRequest {
   id: string
@@ -52,6 +53,19 @@ export default function BranchLeavePage() {
   const [applyEnd, setApplyEnd] = useState('')
   const [applyReason, setApplyReason] = useState('')
   const [applying, setApplying] = useState(false)
+
+  // Pagination State
+  const [myCurrentPage, setMyCurrentPage] = useState(1)
+  const [myRowsPerPage, setMyRowsPerPage] = useState(10)
+
+  const [teamCurrentPage, setTeamCurrentPage] = useState(1)
+  const [teamRowsPerPage, setTeamRowsPerPage] = useState(10)
+
+  // Reset page numbers when search/filters change
+  useEffect(() => {
+    setMyCurrentPage(1)
+    setTeamCurrentPage(1)
+  }, [search, statusFilter])
 
   const { profile } = useAuth()
   const { addToast } = useToast()
@@ -262,24 +276,105 @@ export default function BranchLeavePage() {
       )}
 
       {loading ? (
-        <div className="space-y-4">{[1, 2, 3].map(i => <div key={i} className="skeleton h-28 rounded-[2rem]" />)}</div>
+        <div className="space-y-4">
+          {[1, 2, 3].map(i => <div key={i} className="skeleton h-20 rounded-[2rem]" />)}
+        </div>
       ) : (
         <>
           {/* My Requests */}
           {myRequests.length > 0 && (
             <div className="space-y-3">
               <h3 className="text-sm font-bold text-slate-900 pl-2">My Requests</h3>
-              {myRequests.map(r => (
-                <LeaveCard
-                  key={r.id}
-                  request={r}
-                  profileName={getProfileName(r)}
-                  getDays={getDays}
-                  isMine
-                  onCancel={handleCancel}
-                  actionLoading={actionLoading}
+              <div className="bg-white border border-slate-200 rounded-[3rem] overflow-hidden">
+                <div className="overflow-x-auto w-full">
+                  <table className="w-full text-left border-collapse text-sm">
+                    <thead>
+                      <tr className="border-b border-slate-200 bg-slate-50/50 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                        <th className="py-5 px-6 md:px-8">Leave Type</th>
+                        <th className="py-5 px-6">Duration</th>
+                        <th className="py-5 px-6">Date Range</th>
+                        <th className="py-5 px-6">Reason / Notes</th>
+                        <th className="py-5 px-6">Status</th>
+                        <th className="py-5 px-6">Reviewed By</th>
+                        <th className="py-5 px-6 md:pr-8 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {myRequests.slice((myCurrentPage - 1) * myRowsPerPage, myCurrentPage * myRowsPerPage).map(r => {
+                        const days = getDays(r.start_date, r.end_date)
+                        return (
+                          <tr key={r.id} className="hover:bg-slate-50/50 transition-colors">
+                            <td className="py-5 px-6 md:px-8 min-w-[140px] font-semibold text-slate-800">
+                              {LEAVE_TYPE_LABELS[r.leave_type] || r.leave_type}
+                            </td>
+                            <td className="py-5 px-6 min-w-[100px] text-slate-700">
+                              {days} day{days > 1 ? 's' : ''}
+                            </td>
+                            <td className="py-5 px-6 min-w-[160px] text-slate-700">
+                              <p className="font-medium">
+                                {new Date(r.start_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                                {r.start_date !== r.end_date && ` — ${new Date(r.end_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}`}
+                              </p>
+                              <span className="text-[10px] text-slate-400">
+                                Applied: {new Date(r.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                              </span>
+                            </td>
+                            <td className="py-5 px-6 min-w-[200px]">
+                              <div className="space-y-1 max-w-[220px]">
+                                {r.reason && (
+                                  <p className="text-xs text-slate-600 truncate" title={r.reason}>
+                                    <span className="font-semibold text-slate-400 text-[10px] uppercase block">Reason:</span>
+                                    {r.reason}
+                                  </p>
+                                )}
+                                {r.review_note && (
+                                  <p className="text-xs text-slate-600 truncate" title={r.review_note}>
+                                    <span className="font-semibold text-slate-400 text-[10px] uppercase block">Review Note:</span>
+                                    {r.review_note}
+                                  </p>
+                                )}
+                                {!r.reason && !r.review_note && <span className="text-xs text-slate-400 italic">—</span>}
+                              </div>
+                            </td>
+                            <td className="py-5 px-6 min-w-[110px]">
+                              <span className={`text-[10px] uppercase tracking-wider font-extrabold px-3 py-1 rounded-full border ${STATUS_STYLES[r.status] || STATUS_STYLES.pending}`}>
+                                {r.status}
+                              </span>
+                            </td>
+                            <td className="py-5 px-6 min-w-[120px] text-slate-700 font-medium">
+                              {r.reviewer ? r.reviewer.name : <span className="text-slate-400 italic">—</span>}
+                            </td>
+                            <td className="py-5 px-6 md:pr-8 text-right min-w-[120px]">
+                              {r.status === 'pending' && (
+                                <button
+                                  onClick={() => handleCancel(r.id)}
+                                  disabled={actionLoading === r.id}
+                                  className="bg-white border border-slate-200 text-slate-600 rounded-full px-4 py-2 text-xs font-semibold hover:bg-slate-50 transition-colors disabled:opacity-50 cursor-pointer"
+                                >
+                                  Cancel Request
+                                </button>
+                              )}
+                              {r.status !== 'pending' && (
+                                <span className="text-xs text-slate-400 italic">Completed</span>
+                              )}
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                <Pagination
+                  currentPage={myCurrentPage}
+                  totalItems={myRequests.length}
+                  rowsPerPage={myRowsPerPage}
+                  onPageChange={setMyCurrentPage}
+                  onRowsPerPageChange={(rows) => {
+                    setMyRowsPerPage(rows)
+                    setMyCurrentPage(1)
+                  }}
                 />
-              ))}
+              </div>
             </div>
           )}
 
@@ -289,141 +384,178 @@ export default function BranchLeavePage() {
             {teamRequests.length === 0 ? (
               <div className="bg-white border border-slate-200 rounded-[2rem] p-10 text-center">
                 <CalendarDays className="mx-auto text-slate-300 mb-3" size={36} />
-                <p className="text-sm text-slate-500">No team leave requests found.</p>
+                <p className="text-sm text-slate-500 font-medium">No team leave requests found.</p>
               </div>
             ) : (
-              teamRequests.map(r => (
-                <div key={r.id} className="bg-white border border-slate-200 rounded-[2rem] p-6 md:p-8 space-y-4">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 bg-slate-100 rounded-full flex items-center justify-center text-slate-500 text-sm font-bold shrink-0">
-                        {getProfileName(r).charAt(0).toUpperCase()}
-                      </div>
-                      <p className="font-bold text-slate-900 text-sm">{getProfileName(r)}</p>
-                    </div>
-                    <span className={`text-[10px] uppercase tracking-wider font-extrabold px-3 py-1 rounded-full border ${STATUS_STYLES[r.status] || STATUS_STYLES.pending}`}>
-                      {r.status}
-                    </span>
-                  </div>
-                  <div className="flex flex-wrap gap-6 text-xs">
-                    <div>
-                      <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider block mb-0.5">Type</span>
-                      <span className="text-slate-800 font-semibold">{LEAVE_TYPE_LABELS[r.leave_type] || r.leave_type}</span>
-                    </div>
-                    <div>
-                      <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider block mb-0.5">Duration</span>
-                      <span className="text-slate-800 font-semibold">
-                        {new Date(r.start_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
-                        {r.start_date !== r.end_date && ` — ${new Date(r.end_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}`}
-                        {' '}({getDays(r.start_date, r.end_date)} day{getDays(r.start_date, r.end_date) > 1 ? 's' : ''})
-                      </span>
-                    </div>
-                    {r.reviewer && (
-                      <div>
-                        <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider block mb-0.5">
-                          {r.status === 'approved' ? 'Approved by' : r.status === 'rejected' ? 'Rejected by' : 'Reviewed by'}
-                         </span>
-                        <span className="text-slate-800 font-semibold">{r.reviewer.name}</span>
-                      </div>
-                    )}
-                  </div>
-                  {r.reason && (
-                    <p className="text-xs text-slate-600 bg-slate-50 rounded-[1.5rem] p-4 border border-slate-100">
-                      <span className="font-bold text-slate-400 text-[10px] uppercase tracking-wider block mb-1">Reason</span>
-                      {r.reason}
-                    </p>
-                  )}
-                  {r.status === 'pending' && (
-                    <div className="pt-2 space-y-3">
-                      {activeReview === r.id && (
-                        <input
-                          type="text"
-                          value={reviewNote}
-                          onChange={e => setReviewNote(e.target.value)}
-                          placeholder="Optional review note..."
-                          className="w-full rounded-full py-3 px-5 bg-slate-50 border border-slate-200 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-900 focus:bg-white transition-all outline-none"
-                        />
-                      )}
-                      <div className="flex gap-2">
-                        {activeReview !== r.id ? (
-                          <button onClick={() => { setActiveReview(r.id); setReviewNote('') }} className="bg-slate-900 text-white rounded-full px-6 py-3 text-xs font-semibold hover:bg-slate-800 transition-colors cursor-pointer">Review</button>
-                        ) : (
-                          <>
-                            <button onClick={() => handleAction(r.id, 'approved')} disabled={actionLoading === r.id} className="bg-emerald-600 text-white rounded-full px-5 py-3 text-xs font-semibold hover:bg-emerald-700 transition-colors disabled:opacity-50 cursor-pointer flex items-center gap-1.5"><Check size={14} /> Approve</button>
-                            <button onClick={() => handleAction(r.id, 'rejected')} disabled={actionLoading === r.id} className="bg-red-600 text-white rounded-full px-5 py-3 text-xs font-semibold hover:bg-red-700 transition-colors disabled:opacity-50 cursor-pointer flex items-center gap-1.5"><X size={14} /> Reject</button>
-                            <button onClick={() => { setActiveReview(null); setReviewNote('') }} className="bg-white border border-slate-200 text-slate-600 rounded-full px-5 py-3 text-xs font-semibold hover:bg-slate-50 transition-colors cursor-pointer">Cancel</button>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  )}
+              <div className="bg-white border border-slate-200 rounded-[3rem] overflow-hidden">
+                <div className="overflow-x-auto w-full">
+                  <table className="w-full text-left border-collapse text-sm">
+                    <thead>
+                      <tr className="border-b border-slate-200 bg-slate-50/50 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                        <th className="py-5 px-6 md:px-8">Employee</th>
+                        <th className="py-5 px-6">Leave Type</th>
+                        <th className="py-5 px-6">Duration</th>
+                        <th className="py-5 px-6">Date Range</th>
+                        <th className="py-5 px-6">Reason / Notes</th>
+                        <th className="py-5 px-6">Status</th>
+                        <th className="py-5 px-6">Reviewed By</th>
+                        <th className="py-5 px-6 md:pr-8 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {teamRequests.slice((teamCurrentPage - 1) * teamRowsPerPage, teamCurrentPage * teamRowsPerPage).map(r => {
+                        const employeeName = getProfileName(r)
+                        const employeeEmail = r.profiles?.email || ''
+                        const days = getDays(r.start_date, r.end_date)
+                        
+                        return (
+                          <React.Fragment key={r.id}>
+                            <tr className="hover:bg-slate-50/50 transition-colors">
+                              {/* Employee */}
+                              <td className="py-5 px-6 md:px-8 min-w-[200px]">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-9 h-9 bg-slate-100 rounded-full flex items-center justify-center text-slate-600 text-xs font-bold shrink-0">
+                                    {employeeName.charAt(0).toUpperCase()}
+                                  </div>
+                                  <div>
+                                    <p className="font-semibold text-slate-900">{employeeName}</p>
+                                    {employeeEmail && <p className="text-[11px] text-slate-400">{employeeEmail}</p>}
+                                  </div>
+                                </div>
+                              </td>
+
+                              {/* Leave Type */}
+                              <td className="py-5 px-6 min-w-[120px] font-semibold text-slate-800">
+                                {LEAVE_TYPE_LABELS[r.leave_type] || r.leave_type}
+                              </td>
+
+                              {/* Duration */}
+                              <td className="py-5 px-6 min-w-[100px] text-slate-700">
+                                {days} day{days > 1 ? 's' : ''}
+                              </td>
+
+                              {/* Date Range */}
+                              <td className="py-5 px-6 min-w-[160px] text-slate-700">
+                                <p className="font-medium">
+                                  {new Date(r.start_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                                  {r.start_date !== r.end_date && ` — ${new Date(r.end_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}`}
+                                </p>
+                                <span className="text-[10px] text-slate-400">
+                                  Applied: {new Date(r.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                                </span>
+                              </td>
+
+                              {/* Reason / Notes */}
+                              <td className="py-5 px-6 min-w-[200px]">
+                                <div className="space-y-1 max-w-[220px]">
+                                  {r.reason && (
+                                    <p className="text-xs text-slate-600 truncate" title={r.reason}>
+                                      <span className="font-semibold text-slate-400 text-[10px] uppercase block">Reason:</span>
+                                      {r.reason}
+                                    </p>
+                                  )}
+                                  {r.review_note && (
+                                    <p className="text-xs text-slate-600 truncate" title={r.review_note}>
+                                      <span className="font-semibold text-slate-400 text-[10px] uppercase block">Review Note:</span>
+                                      {r.review_note}
+                                    </p>
+                                  )}
+                                  {!r.reason && !r.review_note && <span className="text-xs text-slate-400 italic">—</span>}
+                                </div>
+                              </td>
+
+                              {/* Status */}
+                              <td className="py-5 px-6 min-w-[110px]">
+                                <span className={`text-[10px] uppercase tracking-wider font-extrabold px-3 py-1 rounded-full border ${STATUS_STYLES[r.status] || STATUS_STYLES.pending}`}>
+                                  {r.status}
+                                </span>
+                              </td>
+
+                              {/* Reviewed By */}
+                              <td className="py-5 px-6 min-w-[120px] text-slate-700 font-medium">
+                                {r.reviewer ? r.reviewer.name : <span className="text-slate-400 italic">—</span>}
+                              </td>
+
+                              {/* Actions */}
+                              <td className="py-5 px-6 md:pr-8 text-right min-w-[120px]">
+                                {r.status === 'pending' && (
+                                  <div className="flex justify-end">
+                                    {activeReview !== r.id ? (
+                                      <button
+                                        onClick={() => { setActiveReview(r.id); setReviewNote('') }}
+                                        className="bg-slate-900 text-white rounded-full px-4 py-2 text-xs font-semibold hover:bg-slate-800 transition-colors cursor-pointer"
+                                      >
+                                        Review
+                                      </button>
+                                    ) : (
+                                      <span className="text-xs font-bold text-slate-400">Reviewing...</span>
+                                    )}
+                                  </div>
+                                )}
+                                {r.status !== 'pending' && (
+                                  <span className="text-xs text-slate-400 italic">Completed</span>
+                                )}
+                              </td>
+                            </tr>
+
+                            {/* Expandable review slot inside table row */}
+                            {activeReview === r.id && (
+                              <tr className="bg-slate-50/40">
+                                <td colSpan={8} className="py-4 px-6 md:px-8">
+                                  <div className="flex flex-col sm:flex-row gap-3 items-center w-full">
+                                    <input
+                                      type="text"
+                                      value={reviewNote}
+                                      onChange={e => setReviewNote(e.target.value)}
+                                      placeholder="Optional review note..."
+                                      className="flex-1 rounded-full py-2.5 px-5 bg-white border border-slate-200 text-xs text-slate-900 placeholder:text-slate-400 focus:border-slate-900 transition-all outline-none"
+                                    />
+                                    <div className="flex gap-2 shrink-0">
+                                      <button
+                                        onClick={() => handleAction(r.id, 'approved')}
+                                        disabled={actionLoading === r.id}
+                                        className="bg-emerald-600 text-white rounded-full px-5 py-2.5 text-xs font-semibold hover:bg-emerald-700 transition-colors disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
+                                      >
+                                        <Check size={12} /> Approve
+                                      </button>
+                                      <button
+                                        onClick={() => handleAction(r.id, 'rejected')}
+                                        disabled={actionLoading === r.id}
+                                        className="bg-red-600 text-white rounded-full px-5 py-2.5 text-xs font-semibold hover:bg-red-700 transition-colors disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
+                                      >
+                                        <X size={12} /> Reject
+                                      </button>
+                                      <button
+                                        onClick={() => { setActiveReview(null); setReviewNote('') }}
+                                        className="bg-white border border-slate-200 text-slate-600 rounded-full px-5 py-2.5 text-xs font-semibold hover:bg-slate-50 transition-colors cursor-pointer"
+                                      >
+                                        Cancel
+                                      </button>
+                                    </div>
+                                  </div>
+                                </td>
+                              </tr>
+                            )}
+                          </React.Fragment>
+                        )
+                      })}
+                    </tbody>
+                  </table>
                 </div>
-              ))
+                <Pagination
+                  currentPage={teamCurrentPage}
+                  totalItems={teamRequests.length}
+                  rowsPerPage={teamRowsPerPage}
+                  onPageChange={setTeamCurrentPage}
+                  onRowsPerPageChange={(rows) => {
+                    setTeamRowsPerPage(rows)
+                    setTeamCurrentPage(1)
+                  }}
+                />
+              </div>
             )}
           </div>
         </>
-      )}
-    </div>
-  )
-}
-
-function LeaveCard({ request: r, profileName, getDays, isMine, onCancel, actionLoading }: {
-  request: LeaveRequest
-  profileName: string
-  getDays: (s: string, e: string) => number
-  isMine?: boolean
-  onCancel?: (id: string) => void
-  actionLoading: string | null
-}) {
-  return (
-    <div className="bg-white border border-slate-200 rounded-[2rem] p-6 md:p-8 space-y-3">
-      <div className="flex items-center justify-between gap-3">
-        <span className="text-sm font-bold text-slate-900">{LEAVE_TYPE_LABELS[r.leave_type] || r.leave_type}</span>
-        <span className={`text-[10px] uppercase tracking-wider font-extrabold px-3 py-1 rounded-full border ${STATUS_STYLES[r.status] || STATUS_STYLES.pending}`}>
-          {r.status}
-        </span>
-      </div>
-      <div className="flex flex-wrap gap-6 text-xs">
-        <div>
-          <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider block mb-0.5">Duration</span>
-          <span className="text-slate-800 font-semibold">
-            {new Date(r.start_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
-            {r.start_date !== r.end_date && ` — ${new Date(r.end_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}`}
-            {' '}({getDays(r.start_date, r.end_date)} day{getDays(r.start_date, r.end_date) > 1 ? 's' : ''})
-          </span>
-        </div>
-        <div>
-          <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider block mb-0.5">Applied</span>
-          <span className="text-slate-800 font-semibold">
-            {new Date(r.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-          </span>
-        </div>
-        {r.reviewer && (
-          <div>
-            <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider block mb-0.5">
-              {r.status === 'approved' ? 'Approved by' : r.status === 'rejected' ? 'Rejected by' : 'Reviewed by'}
-            </span>
-            <span className="text-slate-800 font-semibold">{r.reviewer.name}</span>
-          </div>
-        )}
-      </div>
-      {r.reason && (
-        <p className="text-xs text-slate-600 bg-slate-50 rounded-[1.5rem] p-4 border border-slate-100">{r.reason}</p>
-      )}
-      {r.review_note && (
-        <p className="text-xs text-slate-600 bg-slate-50 rounded-[1.5rem] p-4 border border-slate-100">
-          <span className="font-bold text-slate-400 text-[10px] uppercase tracking-wider block mb-1">Review note</span>
-          {r.review_note}
-        </p>
-      )}
-      {isMine && r.status === 'pending' && onCancel && (
-        <button
-          onClick={() => onCancel(r.id)}
-          disabled={actionLoading === r.id}
-          className="bg-white border border-slate-200 text-slate-600 rounded-full px-5 py-3 text-xs font-semibold hover:bg-slate-50 transition-colors disabled:opacity-50 cursor-pointer"
-        >
-          Cancel Request
-        </button>
       )}
     </div>
   )

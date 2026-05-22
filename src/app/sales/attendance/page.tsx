@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { Calendar, Clock, ArrowLeft, Hourglass, Award } from 'lucide-react'
 import Link from 'next/link'
+import { Pagination } from '@/components/ui/Pagination'
 
 interface AttendanceRecord {
   id: string
@@ -20,6 +21,10 @@ export default function SalesAttendancePage() {
   const [loading, setLoading] = useState(true)
   const { profile } = useAuth()
   const supabase = createClient()
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1)
+  const [rowsPerPage, setRowsPerPage] = useState(10)
 
   useEffect(() => {
     async function fetchAttendance() {
@@ -56,6 +61,12 @@ export default function SalesAttendancePage() {
     return acc
   }, 0)
   const avgHours = totalPresent > 0 ? (totalHours / totalPresent).toFixed(2) : '0'
+
+  // Paginated Slicing
+  const paginatedRecords = records.slice(
+    (currentPage - 1) * rowsPerPage,
+    currentPage * rowsPerPage
+  )
 
   return (
     <div className="space-y-6">
@@ -98,7 +109,7 @@ export default function SalesAttendancePage() {
         </div>
       </div>
 
-      {/* Attendance History List */}
+      {/* Attendance History Table */}
       {loading ? (
         <div className="space-y-4">
           {[1, 2, 3].map(i => (
@@ -110,66 +121,83 @@ export default function SalesAttendancePage() {
           No attendance records found yet. Use the check-in button on the dashboard to start!
         </div>
       ) : (
-        <div className="bg-white border border-slate-200 rounded-[2rem] overflow-hidden">
-          <div className="divide-y divide-slate-100">
-            {records.map(record => (
-              <div
-                key={record.id}
-                className="p-6 md:px-8 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-slate-50 transition-all text-sm"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-slate-100 rounded-xl text-slate-600">
-                    <Clock size={16} />
-                  </div>
-                  <div>
-                    <p className="font-bold text-slate-950">
-                      {new Date(record.date).toLocaleDateString([], { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                    </p>
-                    <span className="text-[10px] uppercase font-extrabold text-slate-400">
-                      Record Date
-                    </span>
-                  </div>
-                </div>
+        <div className="bg-white border border-slate-200 rounded-[3rem] overflow-hidden">
+          <div className="overflow-x-auto w-full">
+            <table className="w-full text-left border-collapse text-sm">
+              <thead>
+                <tr className="border-b border-slate-200 bg-slate-50/50 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                  <th className="py-5 px-6 md:px-8">Log Date</th>
+                  <th className="py-5 px-6">Check-In</th>
+                  <th className="py-5 px-6">Check-Out</th>
+                  <th className="py-5 px-6">Duration</th>
+                  <th className="py-5 px-6 md:pr-8 text-right">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {paginatedRecords.map(record => (
+                  <tr
+                    key={record.id}
+                    className="hover:bg-slate-50/50 transition-colors text-sm"
+                  >
+                    <td className="py-5 px-6 md:px-8 min-w-[200px]">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center shrink-0">
+                          <Calendar size={14} />
+                        </div>
+                        <div>
+                          <p className="font-semibold text-slate-900">
+                            {new Date(record.date).toLocaleDateString([], { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                          </p>
+                          <span className="text-[10px] uppercase font-extrabold text-slate-500">
+                            Record Date
+                          </span>
+                        </div>
+                      </div>
+                    </td>
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-2 items-center">
-                  <div>
-                    <p className="text-xs text-slate-400">Check-In</p>
-                    <p className="font-semibold text-slate-800">
+                    <td className="py-5 px-6 min-w-[140px] text-slate-700 font-medium">
                       {new Date(record.check_in).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' })}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-slate-400">Check-Out</p>
-                    <p className="font-semibold text-slate-800">
+                    </td>
+
+                    <td className="py-5 px-6 min-w-[140px] text-slate-700 font-medium">
                       {record.check_out
                         ? new Date(record.check_out).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' })
-                        : 'Active'}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-slate-400">Hours</p>
-                    <p className="font-semibold text-slate-800">
+                        : <span className="text-slate-500 font-semibold text-xs">Active</span>}
+                    </td>
+
+                    <td className="py-5 px-6 min-w-[110px] text-slate-700 font-medium">
                       {calculateHours(record.check_in, record.check_out)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-slate-400">Status</p>
-                    <span
-                      className={`text-[9px] uppercase tracking-wider font-extrabold px-2.5 py-0.5 rounded-full border ${
-                        record.status === 'present'
-                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                          : record.status === 'half_day'
-                          ? 'bg-amber-50 text-amber-700 border-amber-200'
-                          : 'bg-rose-50 text-rose-700 border-rose-200'
-                      }`}
-                    >
-                      {record.status}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ))}
+                    </td>
+
+                    <td className="py-5 px-6 md:pr-8 text-right min-w-[120px]">
+                      <span
+                        className={`inline-block text-[9px] uppercase tracking-wider font-extrabold px-2.5 py-0.5 rounded-full border ${
+                          record.status === 'present'
+                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                            : record.status === 'half_day'
+                            ? 'bg-amber-50 text-amber-700 border-amber-200'
+                            : 'bg-rose-50 text-rose-700 border-rose-200'
+                        }`}
+                      >
+                        {record.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
+          {/* Unified Pagination Control */}
+          <Pagination
+            currentPage={currentPage}
+            totalItems={records.length}
+            rowsPerPage={rowsPerPage}
+            onPageChange={setCurrentPage}
+            onRowsPerPageChange={(rows) => {
+              setRowsPerPage(rows)
+              setCurrentPage(1)
+            }}
+          />
         </div>
       )}
     </div>

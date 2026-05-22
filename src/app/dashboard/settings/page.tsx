@@ -13,6 +13,92 @@ const TABS = [
   { id: 'operations', label: 'Operations' },
 ]
 
+// 12h / 24h Format Helpers
+const parse24To12 = (timeStr: string) => {
+  const [hStr, mStr] = (timeStr || '09:00').split(':')
+  const h24 = Number(hStr)
+  const m = Number(mStr)
+  const period = h24 >= 12 ? 'PM' : 'AM'
+  const h12 = h24 % 12 || 12
+  return { hour: h12, minute: m, period }
+}
+
+const format12To24 = (hour: number, minute: number, period: string) => {
+  let h24 = hour
+  if (period === 'PM' && hour !== 12) h24 += 12
+  if (period === 'AM' && hour === 12) h24 = 0
+  const hStr = String(h24).padStart(2, '0')
+  const mStr = String(minute).padStart(2, '0')
+  return `${hStr}:${mStr}`
+}
+
+interface TimePicker12Props {
+  label: string
+  value: string
+  onChange: (val: string) => void
+}
+
+const TimePicker12 = ({ label, value, onChange }: TimePicker12Props) => {
+  const { hour, minute, period } = parse24To12(value)
+
+  const handleValChange = (newHour: number, newMin: number, newPeriod: string) => {
+    onChange(format12To24(newHour, newMin, newPeriod))
+  }
+
+  return (
+    <div className="space-y-2">
+      <label className="text-sm font-semibold text-slate-700 pl-4">{label}</label>
+      <div className="flex items-center gap-2">
+        {/* Hour Select */}
+        <div className="relative flex-1">
+          <select
+            value={hour}
+            onChange={e => handleValChange(Number(e.target.value), minute, period)}
+            className="w-full rounded-full py-4 px-4 bg-slate-50 border border-slate-200 text-slate-900 focus:border-slate-900 focus:bg-white transition-all outline-none cursor-pointer appearance-none text-center font-medium"
+          >
+            {Array.from({ length: 12 }, (_, i) => i + 1).map(h => (
+              <option key={h} value={h}>{String(h).padStart(2, '0')}</option>
+            ))}
+          </select>
+        </div>
+        
+        <span className="text-slate-400 font-bold shrink-0">:</span>
+
+        {/* Minute Select */}
+        <div className="relative flex-1">
+          <select
+            value={minute}
+            onChange={e => handleValChange(hour, Number(e.target.value), period)}
+            className="w-full rounded-full py-4 px-4 bg-slate-50 border border-slate-200 text-slate-900 focus:border-slate-900 focus:bg-white transition-all outline-none cursor-pointer appearance-none text-center font-medium"
+          >
+            {Array.from({ length: 60 }, (_, i) => i).map(m => (
+              <option key={m} value={m}>{String(m).padStart(2, '0')}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* AM/PM Buttons */}
+        <div className="flex bg-slate-100 p-1 rounded-full border border-slate-200 shrink-0">
+          {['AM', 'PM'].map(p => (
+            <button
+              key={p}
+              type="button"
+              onClick={() => handleValChange(hour, minute, p)}
+              className={`rounded-full px-4 py-2 text-xs font-bold transition-all cursor-pointer ${
+                period === p 
+                  ? 'bg-slate-900 text-white shadow-sm' 
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              {p}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('branding')
   const [loading, setLoading] = useState(true)
@@ -65,15 +151,6 @@ export default function SettingsPage() {
     setSaving(false)
   }
 
-  // Format time string (HH:MM) to IST display
-  const formatTimeIST = (timeStr: string) => {
-    if (!timeStr) return '--:--'
-    const [h, m] = timeStr.split(':').map(Number)
-    const period = h >= 12 ? 'PM' : 'AM'
-    const hour12 = h % 12 || 12
-    return `${hour12}:${String(m).padStart(2, '0')} ${period} IST`
-  }
-
   if (loading) {
     return <div className="skeleton h-64 w-full rounded-[2rem]" />
   }
@@ -106,7 +183,7 @@ export default function SettingsPage() {
             </h3>
             <div className="space-y-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">Dealership Name</label>
+                <label className="text-sm font-semibold text-slate-700 pl-4">Dealership Name</label>
                 <input
                   type="text"
                   value={settings['branding.name'] || ''}
@@ -116,7 +193,7 @@ export default function SettingsPage() {
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">Tagline</label>
+                <label className="text-sm font-semibold text-slate-700 pl-4">Tagline</label>
                 <input
                   type="text"
                   value={settings['branding.tagline'] || ''}
@@ -136,7 +213,7 @@ export default function SettingsPage() {
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">CGST (%)</label>
+                <label className="text-sm font-semibold text-slate-700 pl-4">CGST (%)</label>
                 <input
                   type="number"
                   value={settings['tax.cgst_percent'] !== undefined ? settings['tax.cgst_percent'] : ''}
@@ -146,7 +223,7 @@ export default function SettingsPage() {
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">SGST (%)</label>
+                <label className="text-sm font-semibold text-slate-700 pl-4">SGST (%)</label>
                 <input
                   type="number"
                   value={settings['tax.sgst_percent'] !== undefined ? settings['tax.sgst_percent'] : ''}
@@ -156,7 +233,7 @@ export default function SettingsPage() {
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">TCS Threshold (₹)</label>
+                <label className="text-sm font-semibold text-slate-700 pl-4">TCS Threshold (₹)</label>
                 <input
                   type="number"
                   value={settings['tax.tcs_threshold'] !== undefined ? settings['tax.tcs_threshold'] : ''}
@@ -166,7 +243,7 @@ export default function SettingsPage() {
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">TCS (%)</label>
+                <label className="text-sm font-semibold text-slate-700 pl-4">TCS (%)</label>
                 <input
                   type="number"
                   step="0.1"
@@ -177,7 +254,7 @@ export default function SettingsPage() {
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">Road Tax & State Charges (%)</label>
+                <label className="text-sm font-semibold text-slate-700 pl-4">Road Tax & State Charges (%)</label>
                 <input
                   type="number"
                   step="0.1"
@@ -188,7 +265,7 @@ export default function SettingsPage() {
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">RTO & Registration Fees (%)</label>
+                <label className="text-sm font-semibold text-slate-700 pl-4">RTO & Registration Fees (%)</label>
                 <input
                   type="number"
                   step="0.1"
@@ -199,7 +276,7 @@ export default function SettingsPage() {
                 />
               </div>
               <div className="space-y-2 col-span-1 sm:col-span-2">
-                <label className="text-sm font-medium text-slate-700">Comprehensive Vehicle Insurance (%)</label>
+                <label className="text-sm font-semibold text-slate-700 pl-4">Comprehensive Vehicle Insurance (%)</label>
                 <input
                   type="number"
                   step="0.1"
@@ -220,7 +297,7 @@ export default function SettingsPage() {
             </h3>
             <div className="space-y-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">Max Auto-Approved Discount (%)</label>
+                <label className="text-sm font-semibold text-slate-700 pl-4">Max Auto-Approved Discount (%)</label>
                 <input
                   type="number"
                   step="0.5"
@@ -229,11 +306,11 @@ export default function SettingsPage() {
                   placeholder="E.g. 2.5"
                   className="w-full rounded-full py-4 px-6 bg-slate-50 border border-slate-200 text-slate-900 focus:border-slate-900 focus:bg-white transition-all outline-none"
                 />
-                <p className="text-xs text-slate-500 pl-4">Discounts above this percentage will require branch manager approval.</p>
+                <p className="text-xs text-slate-500 pl-4 font-semibold mt-1">Discounts above this percentage will require branch manager approval.</p>
               </div>
               
               <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">Max Auto-Approved Discount (Amount ₹)</label>
+                <label className="text-sm font-semibold text-slate-700 pl-4">Max Auto-Approved Discount (Amount ₹)</label>
                 <input
                   type="number"
                   value={settings['quotation.max_auto_discount_amount'] || ''}
@@ -241,7 +318,7 @@ export default function SettingsPage() {
                   placeholder="E.g. 10000"
                   className="w-full rounded-full py-4 px-6 bg-slate-50 border border-slate-200 text-slate-900 focus:border-slate-900 focus:bg-white transition-all outline-none"
                 />
-                <p className="text-xs text-slate-500 pl-4">Discounts above this flat amount will require branch manager approval.</p>
+                <p className="text-xs text-slate-500 pl-4 font-semibold mt-1">Discounts above this flat amount will require branch manager approval.</p>
               </div>
             </div>
           </div>
@@ -252,27 +329,69 @@ export default function SettingsPage() {
             <h3 className="text-xl font-semibold text-slate-900 flex items-center gap-2">
               <Settings size={20} className="text-slate-400" /> Operations
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">Shift Start Time (IST)</label>
-                <input
-                  type="time"
-                  value={settings['operations.shift_start'] || '09:00'}
-                  onChange={e => handleSettingChange('operations.shift_start', e.target.value)}
-                  className="w-full rounded-full py-4 px-6 bg-slate-50 border border-slate-200 text-slate-900 focus:border-slate-900 focus:bg-white transition-all outline-none"
-                />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              {/* 12-Hour format Toggle Switch */}
+              <div className="space-y-4 border-b border-slate-100 pb-6 col-span-1 sm:col-span-2">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="text-sm font-semibold text-slate-800">12-Hour Time Format</h4>
+                    <p className="text-xs text-slate-500 mt-1">Enable 12-hour AM/PM selectors for setting operational shifts.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleSettingChange('operations.use_12hour', !settings['operations.use_12hour'])}
+                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                      settings['operations.use_12hour'] ? 'bg-slate-900' : 'bg-slate-200'
+                    }`}
+                  >
+                    <span
+                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+                        settings['operations.use_12hour'] ? 'translate-x-5' : 'translate-x-0'
+                      }`}
+                    />
+                  </button>
+                </div>
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">Shift End Time (IST)</label>
-                <input
-                  type="time"
-                  value={settings['operations.shift_end'] || '18:00'}
-                  onChange={e => handleSettingChange('operations.shift_end', e.target.value)}
-                  className="w-full rounded-full py-4 px-6 bg-slate-50 border border-slate-200 text-slate-900 focus:border-slate-900 focus:bg-white transition-all outline-none"
-                />
-              </div>
+
+              {/* Shift Start and Shift End input fields based on 12-hour format setting */}
+              {settings['operations.use_12hour'] ? (
+                <>
+                  <TimePicker12
+                    label="Shift Start Time"
+                    value={settings['operations.shift_start'] || '09:00'}
+                    onChange={val => handleSettingChange('operations.shift_start', val)}
+                  />
+                  <TimePicker12
+                    label="Shift End Time"
+                    value={settings['operations.shift_end'] || '18:00'}
+                    onChange={val => handleSettingChange('operations.shift_end', val)}
+                  />
+                </>
+              ) : (
+                <>
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-slate-700 pl-4">Shift Start Time (IST)</label>
+                    <input
+                      type="time"
+                      value={settings['operations.shift_start'] || '09:00'}
+                      onChange={e => handleSettingChange('operations.shift_start', e.target.value)}
+                      className="w-full rounded-full py-4 px-6 bg-slate-50 border border-slate-200 text-slate-900 focus:border-slate-900 focus:bg-white transition-all outline-none"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-slate-700 pl-4">Shift End Time (IST)</label>
+                    <input
+                      type="time"
+                      value={settings['operations.shift_end'] || '18:00'}
+                      onChange={e => handleSettingChange('operations.shift_end', e.target.value)}
+                      className="w-full rounded-full py-4 px-6 bg-slate-50 border border-slate-200 text-slate-900 focus:border-slate-900 focus:bg-white transition-all outline-none"
+                    />
+                  </div>
+                </>
+              )}
+
               <div className="space-y-2 sm:col-span-2">
-                <label className="text-sm font-medium text-slate-700">Roster Grace Period (Minutes)</label>
+                <label className="text-sm font-semibold text-slate-700 pl-4">Roster Grace Period (Minutes)</label>
                 <input
                   type="number"
                   value={settings['operations.grace_period'] !== undefined ? settings['operations.grace_period'] : '15'}

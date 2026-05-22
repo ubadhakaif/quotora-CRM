@@ -4,11 +4,15 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { useToast } from '@/components/providers/ToastProvider'
-import { ImageUpload } from '@/components/ui/ImageUpload'
+import { MediaUpload } from '@/components/ui/MediaUpload'
 import { Plus, X, Wrench, Search, Tag } from 'lucide-react'
 
 interface AccType { id: string; name: string }
-interface Accessory { id: string; name: string; price: number; type_id: string|null; image_url: string|null; accessory_types?: {name:string}|null }
+interface Accessory {
+  id: string; name: string; price: number; type_id: string|null
+  image_url: string|null; images?: string[] | null; video_url?: string | null
+  accessory_types?: {name:string}|null
+}
 
 const formatINR = (n: number) => new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR',maximumFractionDigits:0}).format(n)
 
@@ -20,7 +24,9 @@ export default function AccessoriesTab() {
   const [editing, setEditing] = useState<Accessory|null>(null)
   const [search, setSearch] = useState('')
   const [fName, setFName] = useState(''); const [fPrice, setFPrice] = useState('')
-  const [fTypeId, setFTypeId] = useState(''); const [fImageUrl, setFImageUrl] = useState<string|null>(null)
+  const [fTypeId, setFTypeId] = useState('')
+  const [images, setImages] = useState<string[]>([])
+  const [videoUrl, setVideoUrl] = useState<string|null>(null)
   const [saving, setSaving] = useState(false)
   const [addType, setAddType] = useState(false); const [newType, setNewType] = useState('')
   const { profile } = useAuth(); const { addToast } = useToast()
@@ -37,13 +43,21 @@ export default function AccessoriesTab() {
   }
   useEffect(()=>{fetchAll()}, []) // eslint-disable-line
 
-  const openAdd = () => { setEditing(null);setFName('');setFPrice('');setFTypeId('');setFImageUrl(null);setPanelOpen(true) }
-  const openEdit = (a: Accessory) => { setEditing(a);setFName(a.name);setFPrice(String(a.price));setFTypeId(a.type_id||'');setFImageUrl(a.image_url);setPanelOpen(true) }
+  const openAdd = () => { setEditing(null);setFName('');setFPrice('');setFTypeId('');setImages([]);setVideoUrl(null);setPanelOpen(true) }
+  const openEdit = (a: Accessory) => { setEditing(a);setFName(a.name);setFPrice(String(a.price));setFTypeId(a.type_id||'');setImages(a.images || (a.image_url ? [a.image_url] : []));setVideoUrl(a.video_url || null);setPanelOpen(true) }
   const close = () => { setPanelOpen(false);setEditing(null) }
 
   const save = async () => {
     if(!fName.trim()) return; setSaving(true)
-    const p = { name:fName, price:parseFloat(fPrice)||0, type_id:fTypeId||null, image_url:fImageUrl, tenant_id:profile?.tenant_id }
+    const p = {
+      name:fName,
+      price:parseFloat(fPrice)||0,
+      type_id:fTypeId||null,
+      images,
+      video_url:videoUrl,
+      image_url:images.length > 0 ? images[0] : null,
+      tenant_id:profile?.tenant_id
+    }
     const {error} = editing ? await supabase.from('accessories').update(p).eq('id',editing.id) : await supabase.from('accessories').insert(p)
     if(error) addToast(error.message,'error')
     else { addToast(editing?'Updated':'Created','success');close();fetchAll() }
@@ -75,7 +89,13 @@ export default function AccessoriesTab() {
             </div>
             <div className="space-y-2"><label className="text-sm text-slate-600 pl-4">Accessory type</label><div className="flex gap-2"><select value={fTypeId} onChange={e=>setFTypeId(e.target.value)} className="flex-1 rounded-full py-4 px-6 bg-slate-50 border border-slate-200 text-slate-900 focus:border-slate-900 focus:bg-white transition-all outline-none appearance-none"><option value="">No type</option>{types.map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select><button onClick={()=>setAddType(!addType)} className="bg-white border border-slate-200 text-slate-600 rounded-full p-4 hover:bg-slate-50 transition-colors shrink-0"><Plus size={18}/></button></div></div>
             {addType&&<div className="flex gap-2"><input type="text" value={newType} onChange={e=>setNewType(e.target.value)} placeholder="e.g. Protection, Comfort" className="flex-1 rounded-full py-3 px-5 bg-slate-50 border border-slate-200 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-900 focus:bg-white transition-all outline-none"/><button onClick={saveType} disabled={!newType.trim()} className="bg-slate-900 text-white rounded-full px-5 py-3 text-sm hover:bg-slate-800 disabled:opacity-50">Add</button></div>}
-            <ImageUpload value={fImageUrl} onChange={setFImageUrl} folder="accessories" />
+            <MediaUpload
+              images={images}
+              onImagesChange={setImages}
+              videoUrl={videoUrl}
+              onVideoChange={setVideoUrl}
+              folder="accessories"
+            />
           </div>
           <div className="flex flex-col sm:flex-row gap-3">
             <button onClick={close} className="bg-white border border-slate-200 text-slate-600 rounded-full p-4 px-8 hover:bg-slate-50 transition-colors flex-1 sm:flex-initial">Cancel</button>

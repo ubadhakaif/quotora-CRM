@@ -2,6 +2,6 @@
 
 import { ModelsGallery } from '@/components/catalog/ModelsGallery'
 
-export default function SalesModelsPage() {
+export default function DealerAdminModelsPage() {
   return <ModelsGallery />
 }

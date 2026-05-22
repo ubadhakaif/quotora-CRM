@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { useToast } from '@/components/providers/ToastProvider'
 import { Search, Filter, AlertCircle, ArrowRight } from 'lucide-react'
+import { Pagination } from '@/components/ui/Pagination'
 
 interface Profile {
   id: string
@@ -44,6 +45,15 @@ export default function BranchLeadsPage() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [empFilter, setEmpFilter] = useState('all')
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1)
+  const [rowsPerPage, setRowsPerPage] = useState(10)
+
+  // Reset page to 1 on filter or search changes
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [search, statusFilter, empFilter])
   
   const { profile } = useAuth()
   const { addToast } = useToast()
@@ -145,68 +155,116 @@ export default function BranchLeadsPage() {
 
       {loading ? (
         <div className="space-y-4">
-          {[1, 2, 3].map(i => <div key={i} className="skeleton h-24 rounded-[2rem]" />)}
+          {[1, 2, 3].map(i => <div key={i} className="skeleton h-20 rounded-[2rem]" />)}
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="bg-white border border-slate-200 rounded-[2rem] p-12 text-center text-slate-500">
+          No leads found matching criteria.
         </div>
       ) : (
-        <div className="bg-white border border-slate-200 rounded-[2rem] overflow-hidden">
-          <div className="divide-y divide-slate-100">
-            {filtered.map(lead => (
-              <div key={lead.id} className="p-4 md:p-8 px-6 md:px-12 flex flex-col lg:flex-row lg:items-center justify-between gap-6 hover:bg-slate-50 transition-colors">
-                
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-3">
-                    <p className="text-slate-900 font-medium text-lg truncate">{lead.customers?.name}</p>
-                    <span className={`text-[10px] uppercase tracking-wider font-bold rounded-full px-3 py-1 border ${statusColors[lead.status] || ''}`}>
-                      {lead.status}
-                    </span>
-                  </div>
-                  <p className="text-sm text-slate-500 mt-1">{lead.customers?.phone || 'No phone'}</p>
-                  <p className="text-xs text-slate-400 mt-2">Created: {new Date(lead.created_at).toLocaleDateString()}</p>
-                </div>
+        <div className="bg-white border border-slate-200 rounded-[3rem] overflow-hidden">
+          <div className="overflow-x-auto w-full">
+            <table className="w-full text-left border-collapse text-sm">
+              <thead>
+                <tr className="border-b border-slate-200 bg-slate-50/50 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                  <th className="py-5 px-6 md:px-8">Customer</th>
+                  <th className="py-5 px-6">Current Status</th>
+                  <th className="py-5 px-6">Change Status</th>
+                  <th className="py-5 px-6">Reassign Executive</th>
+                  <th className="py-5 px-6 md:pr-8 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filtered.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage).map(lead => {
+                  const customerName = lead.customers?.name || '—'
+                  const customerPhone = lead.customers?.phone
+                  
+                  return (
+                    <tr key={lead.id} className="hover:bg-slate-50/50 transition-colors">
+                      {/* Customer Info */}
+                      <td className="py-5 px-6 md:px-8 min-w-[220px]">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 bg-slate-100 rounded-full flex items-center justify-center text-slate-600 text-xs font-bold shrink-0">
+                            {customerName.charAt(0).toUpperCase()}
+                          </div>
+                          <div>
+                            <p className="font-semibold text-slate-900">{customerName}</p>
+                            {customerPhone && <p className="text-[11px] text-slate-400">{customerPhone}</p>}
+                            <p className="text-[10px] text-slate-400 mt-0.5">
+                              Created: {new Date(lead.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
 
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 shrink-0">
-                  {/* Status update */}
-                  <select 
-                    value={lead.status}
-                    onChange={e => handleStatusChange(lead.id, e.target.value)}
-                    className="rounded-full py-2 px-4 bg-white border border-slate-200 text-sm text-slate-700 outline-none hover:bg-slate-50"
-                  >
-                    <option value="new">Set: New</option>
-                    <option value="hot">Set: Hot</option>
-                    <option value="warm">Set: Warm</option>
-                    <option value="cold">Set: Cold</option>
-                    <option value="won">Set: Won</option>
-                    <option value="lost">Set: Lost</option>
-                  </select>
+                      {/* Current Status */}
+                      <td className="py-5 px-6 min-w-[120px]">
+                        <span className={`text-[10px] uppercase tracking-wider font-extrabold px-3 py-1 rounded-full border ${statusColors[lead.status] || ''}`}>
+                          {lead.status}
+                        </span>
+                      </td>
 
-                  {/* Reassign */}
-                  <div className="flex items-center gap-2 bg-slate-100 rounded-full px-2 py-1 border border-slate-200">
-                    <ArrowRight size={14} className="text-slate-400 ml-2" />
-                    <select
-                      value={lead.assigned_to || 'unassigned'}
-                      onChange={e => handleAssign(lead.id, e.target.value)}
-                      className="bg-transparent text-sm py-1 pr-4 outline-none text-slate-700"
-                    >
-                      <option value="unassigned">Unassigned</option>
-                      {employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
-                    </select>
-                  </div>
+                      {/* Change Status Dropdown */}
+                      <td className="py-5 px-6 min-w-[165px]">
+                        <select 
+                          value={lead.status}
+                          onChange={e => handleStatusChange(lead.id, e.target.value)}
+                          className="rounded-full py-1.5 px-3 bg-white border border-slate-200 text-xs font-semibold text-slate-700 outline-none hover:bg-slate-50 cursor-pointer"
+                        >
+                          <option value="new">Set: New</option>
+                          <option value="hot">Set: Hot</option>
+                          <option value="warm">Set: Warm</option>
+                          <option value="cold">Set: Cold</option>
+                          <option value="won">Set: Won</option>
+                          <option value="lost">Set: Lost</option>
+                        </select>
+                      </td>
 
-                  {/* Escalate */}
-                  <button 
-                    onClick={() => handleEscalate(lead.id)}
-                    className="p-2 text-rose-500 bg-rose-50 rounded-full hover:bg-rose-100 transition-colors"
-                    title="Escalate to Admin"
-                  >
-                    <AlertCircle size={18} />
-                  </button>
-                </div>
-              </div>
-            ))}
-            {filtered.length === 0 && (
-              <div className="p-12 text-center text-slate-500">No leads found matching criteria.</div>
-            )}
+                      {/* Reassign Executive Dropdown */}
+                      <td className="py-5 px-6 min-w-[180px]">
+                        <div className="inline-flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-full px-2.5 py-1">
+                          <ArrowRight size={12} className="text-slate-400" />
+                          <select
+                            value={lead.assigned_to || 'unassigned'}
+                            onChange={e => handleAssign(lead.id, e.target.value)}
+                            className="bg-transparent text-xs font-semibold text-slate-700 outline-none cursor-pointer pr-2"
+                          >
+                            <option value="unassigned">Unassigned</option>
+                            {employees.map(e => (
+                              <option key={e.id} value={e.id}>
+                                {e.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </td>
+
+                      {/* Actions */}
+                      <td className="py-5 px-6 md:pr-8 text-right min-w-[100px]">
+                        <button 
+                          onClick={() => handleEscalate(lead.id)}
+                          className="inline-flex items-center justify-center p-2 text-rose-500 bg-rose-50 border border-rose-100 rounded-full hover:bg-rose-100 transition-colors cursor-pointer"
+                          title="Escalate to Admin"
+                        >
+                          <AlertCircle size={14} />
+                        </button>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
           </div>
+          <Pagination
+            currentPage={currentPage}
+            totalItems={filtered.length}
+            rowsPerPage={rowsPerPage}
+            onPageChange={setCurrentPage}
+            onRowsPerPageChange={(rows) => {
+              setRowsPerPage(rows)
+              setCurrentPage(1)
+            }}
+          />
         </div>
       )}
     </div>

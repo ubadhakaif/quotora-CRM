@@ -36,15 +36,56 @@ This file tracks the current stability of the application. It highlights what wa
    - Supported PDF uploads for Aadhar, PAN, RC, Insurance, and NOC files alongside existing image types.
    - Removed EMI Planning checkbox toggle, auto-triggering loan calculations and verification document uploads based on Mode of Purchase.
    - Added custom interactive Interest Rate (%) override to the finance loan calculator and saved overrides to Supabase JSONB payload.
+
    - Refactored FilePreview on Branch and Dealer details pages to render custom vector-based PDF preview cards.
    - Upgraded printable PDF sheet layouts to display full customized loan parameters and interest rate overrides.
    - Resolved all type-checking issues and verified full compilation stability.
+7. **Model & Accessories Galleries Redesign & Multi-Media catalog integration**:
+   - Designed and implemented central reusable `<ModelsGallery />` and `<AccessoriesGallery />` high-fidelity gallery components using Slate color palette, grid background, zero shadows, rounded corners, natural casing, and high contrast.
+   - Models gallery includes swipeable carousels, video overlays, HTML5 inline media players, and interactive variant listings that expand inline to show separate variant galleries.
+   - Accessories gallery groups items by category, implements search and filters, and displays accessory drawers with carousels and pricing info.
+   - Added `/dashboard/models` and `/dashboard/accessories` to permissions map, Dealer Admin sidebar navigations, and route titles.
+   - Retrofitted Branch Manager and Sales Executive portals to render these redesigned shared components directly.
+   - Verified compilation stability and database compatibility for all forms.
+8. **CRM Listings to Modern Flat Tables**:
+   - Redesigned the **Leads** CRM portal from generic cards to a highly readable, scrollable flat table with status updates, assignees, and quick action buttons.
+   - Refactored the **Leave Management** panel to use a clean slate-colored flat table layout with responsive scrolling and expandable inline review drawers.
+   - Converted the **Employees Directory** list from card buttons to a gorgeous flat slate table showing names, emails, phones, branch filters, role categories, and status tags.
+9. **Employee Phone Configuration & Input Validation**:
+   - Implemented a database schema migration mapping a `phone` attribute to auth profiles.
+   - Integrated the `phone` field directly in the Add/Edit Employee Drawer, applying a strict 10-digit input limit and numeric filtering to block invalid phone records.
+10. **Quotations Directory for Dealer Admins**:
+    - Registered and connected the new Admin `/dashboard/quotations` path in the permissions map and route headings.
+    - Designed and implemented a responsive quotations list page featuring multi-field search and row links deep-linking to the full details page.
+11. **Operations Time AM/PM Format Toggle**:
+    - Created the persistent `'operations.use_12hour'` toggle inside the Settings Operations pane.
+    - Designed custom dropdown selectors (Hours/Minutes) and interactive AM/PM toggle switches that automatically format and serialize to 24h standard format.
+    - Verified compilation stability and complete database compatibility.
+12. **Employee Creation Route**:
+    - Verified `src/app/api/employees/create/route.ts` to ensure proper parameter validation and that RLS handles the employee creation cleanly without violating role permissions.
+13. **Branch Portal Redesigns to Modern Flat Tables**:
+    - Redesigned all 6 major Branch Manager lists/logs pages under `/branch/` to flat tables (`<table>`) utilizing the Slate color palette, extreme rounded corners (`rounded-[3rem]`), zero shadows, and smooth mobile viewport horizontal scroll (`overflow-x-auto w-full` wrapper).
+    - **Branch Leads**: Redesigned to flat table with avatar details, status update dropdowns, and executive reassignments.
+    - **Branch Leave**: Redesigned BOTH "My Requests" and "Team Requests" blocks to premium tables, including an inline expandable team request review drawer.
+    - **Branch Quotations**: Converted quotations cards to flat table, integrating details deep-linking, quick discount approval actions, and reopen draft commands.
+    - **Branch Attendance**: Remodeled team rosters and personal logs lists to modern tables with inline editing inside table cells for roster check-in/out adjustments.
+    - **Branch Follow-ups**: Redesigned upcoming/overdue check sheets to unified tables rendering customer cards, formatted clock intervals, status colors, assignees, and preview notes.
+    - **Branch Employees**: Redesigned cards list to flat table displaying staff details, 7-day quotations and leads stats, roles, and status tags.
+14. **CRM Listing Tabular Pagination**:
+    - Created standard, reusable `<Pagination />` component supporting dynamic rows-per-page (5, 10, 25, 50) and chevron page routing.
+    - Integrated client-side slicing and pagination controls across 12 distinct listing pages across the entire application:
+      - **Sales Portal**: Attendance and Follow-ups listings.
+      - **Dealer Admin Dashboard**: Leads CRM, Leave Requests, Employees Directory, Quotations, and Attendance lists.
+      - **Branch Manager Portal**: Leads CRM, Leave Requests (My Requests / Team Requests separate), Quotations, Attendance logs (Team / Personal separate), Follow-ups, and Employees lists.
+15. **Private Documents Bucket Migration & ImageUpload Routing**:
+    - Appended a secure private `'documents'` Supabase storage bucket (50 MB limit, restricted to secure document mime-types like application/pdf and images) and configured authenticated-read/auth-write RLS policies inside `010_multi_media_catalog.sql`.
+    - Updated `src/components/ui/ImageUpload.tsx` to automatically route folder `'documents'` uploads to the secure private `'documents'` bucket and generate long-lived (10-year) persistent signed URLs for secure and authorized viewing.
+
 ---
 
 ## Active & Broken Items
 
-1. **Employee Creation Route**:
-   - `src/app/api/employees/create/route.ts` needs verification to ensure proper parameter validation and that RLS handles the employee creation cleanly without violating role permissions.
+*None. All components are compiling cleanly and are fully stabilized.*
 
 ---
 

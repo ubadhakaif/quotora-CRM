@@ -31,25 +31,38 @@ export function ImageUpload({
     try {
       const ext = file.name.split('.').pop()
       const fileName = `${folder}/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`
+      const bucketName = folder === 'documents' ? 'documents' : 'images'
 
       const { error: uploadError } = await supabase.storage
-          .from('images')
+          .from(bucketName)
           .upload(fileName, file, { cacheControl: '3600', upsert: false })
 
       if (uploadError) throw uploadError
 
-      const { data: { publicUrl } } = supabase.storage
-          .from('images')
-          .getPublicUrl(fileName)
+      let fileUrl = ''
+      if (bucketName === 'documents') {
+        // Since documents bucket is private, we generate a long-lived signed URL (10 years)
+        const { data, error: signError } = await supabase.storage
+            .from(bucketName)
+            .createSignedUrl(fileName, 315360000) // 10 years in seconds
+        if (signError) throw signError
+        fileUrl = data.signedUrl
+      } else {
+        const { data: { publicUrl } } = supabase.storage
+            .from(bucketName)
+            .getPublicUrl(fileName)
+        fileUrl = publicUrl
+      }
 
-      onChange(publicUrl)
-    } catch {
-      console.error('Upload failed')
+      onChange(fileUrl)
+    } catch (err) {
+      console.error('Upload failed:', err)
     } finally {
       setUploading(false)
       if (fileRef.current) fileRef.current.value = ''
     }
   }
+
 
   const handleRemove = () => {
     onChange(null)

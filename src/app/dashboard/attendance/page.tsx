@@ -6,6 +6,7 @@ import { useAuth } from '@/components/providers/AuthProvider'
 import { useToast } from '@/components/providers/ToastProvider'
 import { Calendar, Clock, ArrowLeft, Filter, Users, ShieldCheck, Edit2, Check, Landmark, Eye } from 'lucide-react'
 import Link from 'next/link'
+import { Pagination } from '@/components/ui/Pagination'
 
 interface Profile {
   id: string
@@ -38,6 +39,16 @@ export default function DealerAdminAttendancePage() {
   const [selectedBranchId, setSelectedBranchId] = useState<string>('all')
   const [selectedStaffId, setSelectedStaffId] = useState<string>('all')
   const [loading, setLoading] = useState(true)
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1)
+  const [rowsPerPage, setRowsPerPage] = useState(10)
+
+  // Reset page to 1 on filter changes
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [selectedBranchId, selectedStaffId])
+
   const { profile } = useAuth()
   const { addToast } = useToast()
   const supabase = createClient()
@@ -247,7 +258,7 @@ export default function DealerAdminAttendancePage() {
       ) : (
         <div className="bg-white border border-slate-200 rounded-[2rem] overflow-hidden">
           <div className="divide-y divide-slate-100">
-            {logs.map(log => {
+            {logs.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage).map(log => {
               const isEditing = editingId === log.id
               const branchName = branches.find(b => b.id === log.profiles?.branch_id)?.name || 'Headquarters'
               return (
@@ -312,7 +323,7 @@ export default function DealerAdminAttendancePage() {
                     <div className="grid grid-cols-2 sm:grid-cols-5 gap-x-8 gap-y-2 items-center flex-1 max-w-3xl">
                       <div>
                         <p className="text-slate-400 font-medium">Log Date</p>
-                        <p className="font-semibold text-slate-850">{new Date(log.date).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+                        <p className="font-semibold text-slate-855">{new Date(log.date).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}</p>
                       </div>
                       <div>
                         <p className="text-slate-400 font-medium">Check-In</p>
@@ -374,6 +385,16 @@ export default function DealerAdminAttendancePage() {
               )
             })}
           </div>
+          <Pagination
+            currentPage={currentPage}
+            totalItems={logs.length}
+            rowsPerPage={rowsPerPage}
+            onPageChange={setCurrentPage}
+            onRowsPerPageChange={(rows) => {
+              setRowsPerPage(rows)
+              setCurrentPage(1)
+            }}
+          />
         </div>
       )}
     </div>

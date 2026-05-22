@@ -4,8 +4,9 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { useToast } from '@/components/providers/ToastProvider'
-import { Calendar, Clock, ArrowLeft, User, ShieldAlert, Edit2, Check, Eye } from 'lucide-react'
+import { Calendar, Clock, ArrowLeft, User, ShieldAlert, Edit2, Check, Eye, X } from 'lucide-react'
 import Link from 'next/link'
+import { Pagination } from '@/components/ui/Pagination'
 
 interface Profile {
   id: string
@@ -34,6 +35,19 @@ export default function BranchAttendancePage() {
   const { profile } = useAuth()
   const { addToast } = useToast()
   const supabase = createClient()
+
+  // Pagination State
+  const [teamCurrentPage, setTeamCurrentPage] = useState(1)
+  const [teamRowsPerPage, setTeamRowsPerPage] = useState(10)
+
+  const [personalCurrentPage, setPersonalCurrentPage] = useState(1)
+  const [personalRowsPerPage, setPersonalRowsPerPage] = useState(10)
+
+  // Reset page parameters on filter / tab changes
+  useEffect(() => {
+    setTeamCurrentPage(1)
+    setPersonalCurrentPage(1)
+  }, [selectedStaffId, activeTab])
 
   // State for manual attendance adjustment modal/fields
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -191,96 +205,149 @@ export default function BranchAttendancePage() {
               No employee attendance records found.
             </div>
           ) : (
-            <div className="bg-white border border-slate-200 rounded-[2rem] overflow-hidden">
-              <div className="divide-y divide-slate-100">
-                {teamLogs.map(log => {
-                  const isEditing = editingId === log.id
-                  return (
-                    <div
-                      key={log.id}
-                      className="p-6 md:px-8 flex flex-col xl:flex-row xl:items-center justify-between gap-6 hover:bg-slate-50 transition-all text-xs"
-                    >
-                      {/* Left: Employee Info */}
-                      <div className="flex items-center gap-3 shrink-0">
-                        <div className="w-9 h-9 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center font-bold">
-                          {log.profiles?.name?.charAt(0) || 'E'}
-                        </div>
-                        <div>
-                          <p className="font-bold text-slate-900 text-sm">{log.profiles?.name || 'Unspecified staff'}</p>
-                          <p className="text-[10px] text-slate-400">{log.profiles?.email}</p>
-                        </div>
-                      </div>
+            <div className="bg-white border border-slate-200 rounded-[3rem] overflow-hidden">
+              <div className="overflow-x-auto w-full">
+                <table className="w-full text-left border-collapse text-sm">
+                  <thead>
+                    <tr className="border-b border-slate-200 bg-slate-50/50 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                      <th className="py-5 px-6 md:px-8">Employee</th>
+                      <th className="py-5 px-6">Log Date</th>
+                      <th className="py-5 px-6">Check-In</th>
+                      <th className="py-5 px-6">Check-Out</th>
+                      <th className="py-5 px-6">Duration</th>
+                      <th className="py-5 px-6">Status</th>
+                      <th className="py-5 px-6 md:pr-8 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {teamLogs.slice((teamCurrentPage - 1) * teamRowsPerPage, teamCurrentPage * teamRowsPerPage).map(log => {
+                      const isEditing = editingId === log.id
+                      const empName = log.profiles?.name || 'Unspecified staff'
+                      const empEmail = log.profiles?.email || ''
 
-                      {/* Middle: Shift log data OR editing inputs */}
-                      {isEditing ? (
-                        <div className="flex-1 grid grid-cols-1 sm:grid-cols-4 gap-4 items-end bg-slate-50 border border-slate-200 rounded-2xl p-4">
-                          <div className="space-y-1">
-                            <label className="text-[10px] text-slate-500 pl-1 font-bold uppercase">Status</label>
-                            <select
-                              value={editStatus}
-                              onChange={e => setEditStatus(e.target.value as any)}
-                              className="w-full rounded-lg p-2 bg-white border border-slate-200 outline-none text-xs"
-                            >
-                              <option value="present">Present</option>
-                              <option value="absent">Absent</option>
-                              <option value="half_day">Half Day</option>
-                              <option value="on_leave">On Leave</option>
-                            </select>
-                          </div>
-                          <div className="space-y-1">
-                            <label className="text-[10px] text-slate-500 pl-1 font-bold uppercase">Check-In</label>
-                            <input
-                              type="datetime-local"
-                              value={editCheckIn}
-                              onChange={e => setEditCheckIn(e.target.value)}
-                              className="w-full rounded-lg p-2 bg-white border border-slate-200 outline-none text-xs"
-                            />
-                          </div>
-                          <div className="space-y-1">
-                            <label className="text-[10px] text-slate-500 pl-1 font-bold uppercase">Check-Out</label>
-                            <input
-                              type="datetime-local"
-                              value={editCheckOut}
-                              onChange={e => setEditCheckOut(e.target.value)}
-                              className="w-full rounded-lg p-2 bg-white border border-slate-200 outline-none text-xs"
-                            />
-                          </div>
-                          <button
-                            onClick={() => handleSaveEdit(log.id)}
-                            disabled={saving}
-                            className="bg-slate-950 text-white rounded-lg p-2.5 flex items-center justify-center gap-1 hover:bg-slate-900 transition-colors cursor-pointer"
-                          >
-                            <Check size={14} /> {saving ? 'Saving...' : 'Save'}
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="grid grid-cols-2 sm:grid-cols-5 gap-x-8 gap-y-2 items-center flex-1 max-w-3xl">
-                          <div>
-                            <p className="text-slate-400 font-medium">Log Date</p>
-                            <p className="font-semibold text-slate-800">{new Date(log.date).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}</p>
-                          </div>
-                          <div>
-                            <p className="text-slate-400 font-medium">Check-In</p>
-                            <p className="font-semibold text-slate-800">
-                              {new Date(log.check_in).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' })}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-slate-400 font-medium">Check-Out</p>
-                            <p className="font-semibold text-slate-800">
-                              {log.check_out
-                                ? new Date(log.check_out).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' })
-                                : 'Active'}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-slate-400 font-medium">Duration</p>
-                            <p className="font-semibold text-slate-800">
-                              {calculateHours(log.check_in, log.check_out)}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-slate-400 font-medium">Status</p>
+                      if (isEditing) {
+                        return (
+                          <tr key={log.id} className="bg-slate-50/40">
+                            {/* Employee Info */}
+                            <td className="py-4 px-6 md:px-8 min-w-[200px]">
+                              <div className="flex items-center gap-3">
+                                <div className="w-9 h-9 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center font-bold">
+                                  {empName.charAt(0).toUpperCase()}
+                                </div>
+                                <div>
+                                  <p className="font-semibold text-slate-900">{empName}</p>
+                                  <p className="text-[11px] text-slate-500 font-medium">{empEmail}</p>
+                                </div>
+                              </div>
+                            </td>
+
+                            {/* Log Date (readonly) */}
+                            <td className="py-4 px-6 min-w-[120px] text-slate-700 font-medium">
+                              {new Date(log.date).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
+                            </td>
+
+                            {/* Check-In Edit */}
+                            <td className="py-4 px-6 min-w-[180px]">
+                              <input
+                                type="datetime-local"
+                                value={editCheckIn}
+                                onChange={e => setEditCheckIn(e.target.value)}
+                                className="w-full rounded-xl py-1.5 px-3 bg-white border border-slate-200 text-xs text-slate-800 focus:border-slate-900 transition-all outline-none"
+                              />
+                            </td>
+
+                            {/* Check-Out Edit */}
+                            <td className="py-4 px-6 min-w-[180px]">
+                              <input
+                                type="datetime-local"
+                                value={editCheckOut}
+                                onChange={e => setEditCheckOut(e.target.value)}
+                                className="w-full rounded-xl py-1.5 px-3 bg-white border border-slate-200 text-xs text-slate-800 focus:border-slate-900 transition-all outline-none"
+                              />
+                            </td>
+
+                            {/* Duration (calculating / placeholder) */}
+                            <td className="py-4 px-6 min-w-[100px] text-slate-400 font-medium">
+                              —
+                            </td>
+
+                            {/* Status Edit */}
+                            <td className="py-4 px-6 min-w-[130px]">
+                              <select
+                                value={editStatus}
+                                onChange={e => setEditStatus(e.target.value as any)}
+                                className="w-full rounded-xl py-1.5 px-3 bg-white border border-slate-200 text-xs text-slate-800 focus:border-slate-900 transition-all outline-none"
+                              >
+                                <option value="present">Present</option>
+                                <option value="absent">Absent</option>
+                                <option value="half_day">Half Day</option>
+                                <option value="on_leave">On Leave</option>
+                              </select>
+                            </td>
+
+                            {/* Actions Save/Cancel */}
+                            <td className="py-4 px-6 md:pr-8 text-right min-w-[120px]">
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  onClick={() => handleSaveEdit(log.id)}
+                                  disabled={saving}
+                                  className="p-2 text-emerald-600 bg-emerald-50 border border-emerald-100 rounded-full hover:bg-emerald-100 transition-colors cursor-pointer"
+                                  title={saving ? 'Saving...' : 'Save Changes'}
+                                >
+                                  <Check size={13} />
+                                </button>
+                                <button
+                                  onClick={() => setEditingId(null)}
+                                  className="p-2 text-rose-600 bg-rose-50 border border-rose-100 rounded-full hover:bg-rose-100 transition-colors cursor-pointer"
+                                  title="Cancel Edit"
+                                >
+                                  <X size={13} />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        )
+                      }
+
+                      return (
+                        <tr key={log.id} className="hover:bg-slate-50/50 transition-colors">
+                          {/* Employee Info */}
+                          <td className="py-5 px-6 md:px-8 min-w-[200px]">
+                            <div className="flex items-center gap-3">
+                              <div className="w-9 h-9 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center font-bold shrink-0">
+                                {empName.charAt(0).toUpperCase()}
+                              </div>
+                              <div>
+                                <p className="font-semibold text-slate-900">{empName}</p>
+                                <p className="text-[11px] text-slate-500 font-medium">{empEmail}</p>
+                              </div>
+                            </div>
+                          </td>
+
+                          {/* Log Date */}
+                          <td className="py-5 px-6 min-w-[120px] text-slate-700 font-medium">
+                            {new Date(log.date).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
+                          </td>
+
+                          {/* Check-In */}
+                          <td className="py-5 px-6 min-w-[140px] text-slate-700 font-medium">
+                            {new Date(log.check_in).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' })}
+                          </td>
+
+                          {/* Check-Out */}
+                          <td className="py-5 px-6 min-w-[140px] text-slate-700 font-medium">
+                            {log.check_out
+                              ? new Date(log.check_out).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' })
+                              : <span className="text-slate-400 font-semibold text-xs">Active</span>}
+                          </td>
+
+                          {/* Duration */}
+                          <td className="py-5 px-6 min-w-[110px] text-slate-700 font-medium">
+                            {calculateHours(log.check_in, log.check_out)}
+                          </td>
+
+                          {/* Status */}
+                          <td className="py-5 px-6 min-w-[120px]">
                             <span
                               className={`inline-block text-[9px] uppercase tracking-wider font-extrabold px-2.5 py-0.5 rounded-full border ${
                                 log.status === 'present'
@@ -292,33 +359,43 @@ export default function BranchAttendancePage() {
                             >
                               {log.status}
                             </span>
-                          </div>
-                        </div>
-                      )}
+                          </td>
 
-                      {/* Actions */}
-                      {!isEditing && (
-                        <div className="shrink-0 flex items-center justify-end gap-2">
-                          <Link
-                            href={`/branch/attendance/${log.id}`}
-                            className="p-2 border border-slate-200 text-slate-500 hover:text-slate-900 bg-white hover:bg-slate-50 rounded-xl transition-all cursor-pointer"
-                            title="View check-in verification details"
-                          >
-                            <Eye size={13} />
-                          </Link>
-                          <button
-                            onClick={() => handleEditClick(log)}
-                            className="p-2 border border-slate-200 text-slate-500 hover:text-slate-900 bg-white hover:bg-slate-50 rounded-xl transition-all cursor-pointer"
-                            title="Edit log details"
-                          >
-                            <Edit2 size={13} />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  )
-                })}
+                          {/* Actions */}
+                          <td className="py-5 px-6 md:pr-8 text-right min-w-[120px]">
+                            <div className="flex items-center justify-end gap-2">
+                              <Link
+                                href={`/branch/attendance/${log.id}`}
+                                className="p-2 border border-slate-200 text-slate-500 hover:text-slate-900 bg-white hover:bg-slate-50 rounded-full transition-all cursor-pointer"
+                                title="View check-in verification details"
+                              >
+                                <Eye size={13} />
+                              </Link>
+                              <button
+                                onClick={() => handleEditClick(log)}
+                                className="p-2 border border-slate-200 text-slate-500 hover:text-slate-900 bg-white hover:bg-slate-50 rounded-full transition-all cursor-pointer"
+                                title="Edit log details"
+                              >
+                                <Edit2 size={13} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
               </div>
+              <Pagination
+                currentPage={teamCurrentPage}
+                totalItems={teamLogs.length}
+                rowsPerPage={teamRowsPerPage}
+                onPageChange={setTeamCurrentPage}
+                onRowsPerPageChange={(rows) => {
+                  setTeamRowsPerPage(rows)
+                  setTeamCurrentPage(1)
+                }}
+              />
             </div>
           )}
         </div>
@@ -335,76 +412,96 @@ export default function BranchAttendancePage() {
               No personal attendance logs found. Use the check-in button on the dashboard to register.
             </div>
           ) : (
-            <div className="bg-white border border-slate-200 rounded-[2rem] overflow-hidden">
-              <div className="divide-y divide-slate-100">
-                {personalLogs.map(log => (
-                  <div
-                    key={log.id}
-                    className="p-6 md:px-8 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-slate-50 transition-all text-xs"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-slate-100 rounded-xl text-slate-600">
-                        <Clock size={16} />
-                      </div>
-                      <div>
-                        <p className="font-bold text-slate-900 text-sm">
-                          {new Date(log.date).toLocaleDateString([], { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                        </p>
-                        <span className="text-[10px] uppercase font-bold text-slate-400">
-                          My Attendance Record
-                        </span>
-                      </div>
-                    </div>
+            <div className="bg-white border border-slate-200 rounded-[3rem] overflow-hidden">
+              <div className="overflow-x-auto w-full">
+                <table className="w-full text-left border-collapse text-sm">
+                  <thead>
+                    <tr className="border-b border-slate-200 bg-slate-50/50 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                      <th className="py-5 px-6 md:px-8">Date</th>
+                      <th className="py-5 px-6">Check-In</th>
+                      <th className="py-5 px-6">Check-Out</th>
+                      <th className="py-5 px-6">Duration</th>
+                      <th className="py-5 px-6">Status</th>
+                      <th className="py-5 px-6 md:pr-8 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {personalLogs.slice((personalCurrentPage - 1) * personalRowsPerPage, personalCurrentPage * personalRowsPerPage).map(log => (
+                      <tr key={log.id} className="hover:bg-slate-50/50 transition-colors">
+                        {/* Date */}
+                        <td className="py-5 px-6 md:px-8 min-w-[200px]">
+                          <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 bg-slate-100 text-slate-600 rounded-full flex items-center justify-center shrink-0">
+                              <Clock size={15} />
+                            </div>
+                            <div>
+                              <p className="font-semibold text-slate-900">
+                                {new Date(log.date).toLocaleDateString([], { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                              </p>
+                              <p className="text-[11px] text-slate-400 font-medium">My Attendance Record</p>
+                            </div>
+                          </div>
+                        </td>
 
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-2 items-center text-xs">
-                      <div>
-                        <p className="text-slate-400">Check-In</p>
-                        <p className="font-semibold text-slate-800">
+                        {/* Check-In */}
+                        <td className="py-5 px-6 min-w-[140px] text-slate-700 font-medium">
                           {new Date(log.check_in).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' })}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-slate-400">Check-Out</p>
-                        <p className="font-semibold text-slate-800">
+                        </td>
+
+                        {/* Check-Out */}
+                        <td className="py-5 px-6 min-w-[140px] text-slate-700 font-medium">
                           {log.check_out
                             ? new Date(log.check_out).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' })
-                            : 'Active'}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-slate-400">Hours</p>
-                        <p className="font-semibold text-slate-800">
-                          {calculateHours(log.check_in, log.check_out)}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-slate-400">Status</p>
-                        <span
-                          className={`text-[9px] uppercase tracking-wider font-extrabold px-2.5 py-0.5 rounded-full border ${
-                            log.status === 'present'
-                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                              : log.status === 'half_day'
-                              ? 'bg-amber-50 text-amber-700 border-amber-200'
-                              : 'bg-rose-50 text-rose-700 border-rose-200'
-                          }`}
-                        >
-                          {log.status}
-                        </span>
-                      </div>
-                    </div>
+                            : <span className="text-slate-400 font-semibold text-xs">Active</span>}
+                        </td>
 
-                    <div className="shrink-0 flex items-center justify-end">
-                      <Link
-                        href={`/branch/attendance/${log.id}`}
-                        className="p-2 border border-slate-200 text-slate-500 hover:text-slate-900 bg-white hover:bg-slate-50 rounded-xl transition-all cursor-pointer"
-                        title="View my check-in verification details"
-                      >
-                        <Eye size={13} />
-                      </Link>
-                    </div>
-                  </div>
-                ))}
+                        {/* Duration */}
+                        <td className="py-5 px-6 min-w-[110px] text-slate-700 font-medium">
+                          {calculateHours(log.check_in, log.check_out)}
+                        </td>
+
+                        {/* Status */}
+                        <td className="py-5 px-6 min-w-[120px]">
+                          <span
+                            className={`inline-block text-[9px] uppercase tracking-wider font-extrabold px-2.5 py-0.5 rounded-full border ${
+                              log.status === 'present'
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                : log.status === 'half_day'
+                                ? 'bg-amber-50 text-amber-700 border-amber-200'
+                                : 'bg-rose-50 text-rose-700 border-rose-200'
+                            }`}
+                          >
+                            {log.status}
+                          </span>
+                        </td>
+
+                        {/* Actions */}
+                        <td className="py-5 px-6 md:pr-8 text-right min-w-[120px]">
+                          <div className="flex items-center justify-end">
+                            <Link
+                                href={`/branch/attendance/${log.id}`}
+                                className="p-2 border border-slate-200 text-slate-500 hover:text-slate-900 bg-white hover:bg-slate-50 rounded-full transition-all cursor-pointer"
+                                title="View my check-in verification details"
+                            >
+                              <Eye size={13} />
+                            </Link>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
+              <Pagination
+                currentPage={personalCurrentPage}
+                totalItems={personalLogs.length}
+                rowsPerPage={personalRowsPerPage}
+                onPageChange={setPersonalCurrentPage}
+                onRowsPerPageChange={(rows) => {
+                  setPersonalRowsPerPage(rows)
+                  setPersonalCurrentPage(1)
+                }}
+              />
             </div>
           )}
         </div>

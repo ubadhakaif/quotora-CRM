@@ -6,6 +6,7 @@ import { useAuth } from '@/components/providers/AuthProvider'
 import { useToast } from '@/components/providers/ToastProvider'
 import { Search, ShieldAlert, ArrowRight, UserCircle, Phone, Mail, Building2, User, FileText, Bookmark } from 'lucide-react'
 import Link from 'next/link'
+import { Pagination } from '@/components/ui/Pagination'
 
 interface Branch { id: string; name: string }
 interface Profile { id: string; name: string; branch_id: string | null }
@@ -72,6 +73,15 @@ export default function AdminLeadsPage() {
   const [branchFilter, setBranchFilter] = useState('all')
   const [empFilter, setEmpFilter] = useState('all')
   
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1)
+  const [rowsPerPage, setRowsPerPage] = useState(10)
+
+  // Reset page to 1 on filter or search changes
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [search, statusFilter, branchFilter, empFilter])
+
   const { profile } = useAuth()
   const { addToast } = useToast()
   const supabase = createClient()
@@ -240,11 +250,11 @@ export default function AdminLeadsPage() {
         </div>
       </div>
 
-      {/* Leads List */}
+      {/* Leads Table */}
       {loading ? (
         <div className="space-y-4">
           {[1, 2, 3].map(i => (
-            <div key={i} className="skeleton h-32 rounded-[2rem]" />
+            <div key={i} className="skeleton h-20 rounded-[2rem]" />
           ))}
         </div>
       ) : filtered.length === 0 ? (
@@ -252,176 +262,164 @@ export default function AdminLeadsPage() {
           No leads matching your active filters.
         </div>
       ) : (
-        <div className="space-y-4">
-          {filtered.map(lead => {
-            const leadQuotes = getLeadQuotations(lead.customer_id)
-            return (
-              <div
-                key={lead.id}
-                className={`bg-white border transition-all rounded-[2rem] p-6 md:p-8 space-y-6 hover:shadow-sm ${
-                  lead.escalated ? 'border-rose-300 bg-rose-50/10' : 'border-slate-200'
-                }`}
-              >
-                {/* Header Block */}
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 pb-4">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-3 flex-wrap">
-                      <h3 className="text-slate-950 font-bold text-lg">{lead.customers?.name}</h3>
-                      <span className={`text-[10px] uppercase tracking-wider font-extrabold rounded-full px-3 py-1 border ${statusColors[lead.status]}`}>
-                        {lead.status}
-                      </span>
-                      <span className="text-xs bg-slate-100 text-slate-600 px-3 py-1 rounded-full font-medium">
-                        {sourceLabels[lead.source] || lead.source}
-                      </span>
-                      {lead.escalated && (
-                        <span className="text-[10px] bg-rose-100 text-rose-700 font-extrabold uppercase px-3 py-1 rounded-full flex items-center gap-1">
-                          <ShieldAlert size={12} /> Escalated
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-slate-500 text-xs mt-1">
-                      {lead.customers?.phone && (
-                        <span className="flex items-center gap-1">
-                          <Phone size={12} /> {lead.customers.phone}
-                        </span>
-                      )}
-                      {lead.customers?.email && (
-                        <span className="flex items-center gap-1">
-                          <Mail size={12} /> {lead.customers.email}
-                        </span>
-                      )}
-                    </div>
-                  </div>
+        <div className="bg-white border border-slate-200 rounded-[3rem] overflow-hidden">
+          <div className="overflow-x-auto w-full">
+            <table className="w-full text-left border-collapse text-sm">
+              <thead>
+                <tr className="border-b border-slate-200 bg-slate-50/50 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                  <th className="py-5 px-6 md:px-8">Customer</th>
+                  <th className="py-5 px-6">Status</th>
+                  <th className="py-5 px-6">Dealership Branch</th>
+                  <th className="py-5 px-6">Sales Executive</th>
+                  <th className="py-5 px-6">Executive Notes</th>
+                  <th className="py-5 px-6">Active Projections</th>
+                  <th className="py-5 px-6 md:pr-8 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filtered.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage).map(lead => {
+                  const leadQuotes = getLeadQuotations(lead.customer_id)
+                  return (
+                    <tr 
+                      key={lead.id} 
+                      className={`hover:bg-slate-50/50 transition-colors ${
+                        lead.escalated ? 'bg-rose-50/10' : ''
+                      }`}
+                    >
+                      {/* Customer info */}
+                      <td className="py-5 px-6 md:px-8 min-w-[220px]">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-slate-900">{lead.customers?.name || '—'}</span>
+                            {lead.escalated && (
+                              <span className="text-[10px] bg-rose-100 text-rose-700 font-extrabold uppercase px-2 py-0.5 rounded-full flex items-center gap-0.5">
+                                <ShieldAlert size={10} /> Escalated
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-xs text-slate-500 space-y-0.5">
+                            {lead.customers?.phone && <p>{lead.customers.phone}</p>}
+                            {lead.customers?.email && <p className="truncate max-w-[200px]">{lead.customers.email}</p>}
+                            <p className="text-[11px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full inline-block mt-1">
+                              {sourceLabels[lead.source] || lead.source}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
 
-                  {/* Actions / Admin Controllers */}
-                  <div className="flex flex-wrap items-center gap-3">
-                    {/* Status Dropdown */}
-                    <div className="space-y-1">
-                      <label className="text-[10px] text-slate-400 font-semibold uppercase block pl-2">Lead Status</label>
-                      <select
-                        value={lead.status}
-                        onChange={e => handleStatusChange(lead.id, e.target.value)}
-                        className="rounded-full py-2 px-4 bg-slate-50 border border-slate-200 text-xs text-slate-700 font-semibold outline-none hover:bg-slate-100"
-                      >
-                        <option value="new">New</option>
-                        <option value="hot">Hot 🔥</option>
-                        <option value="warm">Warm ☀️</option>
-                        <option value="cold">Cold ❄️</option>
-                        <option value="converted">Converted 🎉</option>
-                        <option value="lost">Lost ❌</option>
-                      </select>
-                    </div>
+                      {/* Status select dropdown */}
+                      <td className="py-5 px-6 min-w-[145px]">
+                        <select
+                          value={lead.status}
+                          onChange={e => handleStatusChange(lead.id, e.target.value)}
+                          className={`rounded-full py-1.5 px-3 text-xs font-semibold border outline-none cursor-pointer hover:bg-slate-50 ${statusColors[lead.status] || ''}`}
+                        >
+                          <option value="new">New</option>
+                          <option value="hot">Hot 🔥</option>
+                          <option value="warm">Warm ☀️</option>
+                          <option value="cold">Cold ❄️</option>
+                          <option value="converted">Converted 🎉</option>
+                          <option value="lost">Lost ❌</option>
+                        </select>
+                      </td>
 
-                    {/* Branch Assignment */}
-                    <div className="space-y-1">
-                      <label className="text-[10px] text-slate-400 font-semibold uppercase block pl-2">Dealership Branch</label>
-                      <select
-                        value={lead.branch_id || 'nobranch'}
-                        onChange={e => handleAssignBranch(lead.id, e.target.value)}
-                        className="rounded-full py-2 px-4 bg-slate-50 border border-slate-200 text-xs text-slate-700 font-semibold outline-none hover:bg-slate-100"
-                      >
-                        <option value="nobranch">No Branch Assigned</option>
-                        {branches.map(b => (
-                          <option key={b.id} value={b.id}>
-                            {b.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                      {/* Branch select dropdown */}
+                      <td className="py-5 px-6 min-w-[180px]">
+                        <select
+                          value={lead.branch_id || 'nobranch'}
+                          onChange={e => handleAssignBranch(lead.id, e.target.value)}
+                          className="rounded-full py-1.5 px-3 bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-700 outline-none hover:bg-slate-100 cursor-pointer"
+                        >
+                          <option value="nobranch">No Branch Assigned</option>
+                          {branches.map(b => (
+                            <option key={b.id} value={b.id}>
+                              {b.name}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
 
-                    {/* Sales Executive Assignment */}
-                    <div className="space-y-1">
-                      <label className="text-[10px] text-slate-400 font-semibold uppercase block pl-2">Sales Executive</label>
-                      <div className="flex items-center gap-2 bg-slate-50 rounded-full px-3 py-1.5 border border-slate-200">
-                        <ArrowRight size={12} className="text-slate-400" />
+                      {/* Sales Executive select dropdown */}
+                      <td className="py-5 px-6 min-w-[180px]">
                         <select
                           value={lead.assigned_to || 'unassigned'}
                           onChange={e => handleAssignExecutive(lead.id, e.target.value)}
-                          className="bg-transparent text-xs py-0.5 pr-2 outline-none font-semibold text-slate-700"
+                          className="rounded-full py-1.5 px-3 bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-700 outline-none hover:bg-slate-100 cursor-pointer"
                         >
                           <option value="unassigned">Unassigned</option>
                           {employees
-                            .filter(emp => !lead.branch_id || emp.branch_id === lead.branch_id)
-                            .map(emp => (
-                              <option key={emp.id} value={emp.id}>
-                                {emp.name}
-                              </option>
-                            ))}
+                             .filter(emp => !lead.branch_id || emp.branch_id === lead.branch_id)
+                             .map(emp => (
+                               <option key={emp.id} value={emp.id}>
+                                 {emp.name}
+                               </option>
+                             ))}
                         </select>
-                      </div>
-                    </div>
+                      </td>
 
-                    {/* Escalation Toggle */}
-                    <button
-                      onClick={() => handleToggleEscalation(lead.id, lead.escalated)}
-                      className={`p-2.5 rounded-full border transition-all ${
-                        lead.escalated
-                          ? 'bg-rose-100 border-rose-200 text-rose-600 hover:bg-rose-200'
-                          : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100'
-                      }`}
-                      title={lead.escalated ? 'Remove escalation' : 'Escalate lead priority'}
-                    >
-                      <ShieldAlert size={16} />
-                    </button>
-                  </div>
-                </div>
+                      {/* Notes Column */}
+                      <td className="py-5 px-6 min-w-[180px]">
+                        <div className="max-w-[200px] text-xs text-slate-600 italic truncate" title={lead.notes || ''}>
+                          {lead.notes || 'No active details or follow-up notes reported.'}
+                        </div>
+                      </td>
 
-                {/* Details Section */}
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                  {/* Notes / Comments */}
-                  <div className="lg:col-span-6 bg-slate-50 rounded-2xl p-5 border border-slate-150 space-y-2">
-                    <p className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-                      <Bookmark size={14} className="text-slate-400" /> Executive Notes
-                    </p>
-                    <p className="text-xs text-slate-600 italic leading-relaxed">
-                      {lead.notes || 'No active details or follow-up notes reported.'}
-                    </p>
-                    <div className="flex gap-4 pt-2 text-[10px] text-slate-400 font-semibold">
-                      <span className="flex items-center gap-1">
-                        <Building2 size={12} /> Branch: {lead.branches?.name || 'Unassigned'}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <User size={12} /> Executive: {lead.profiles?.name || 'Unassigned'}
-                      </span>
-                    </div>
-                  </div>
+                      {/* Associated Quotations list */}
+                      <td className="py-5 px-6 min-w-[240px]">
+                        {leadQuotes.length === 0 ? (
+                          <span className="text-xs text-slate-500 italic">No quotes draft configured yet</span>
+                        ) : (
+                          <div className="space-y-1.5">
+                            {leadQuotes.map(quote => (
+                              <Link 
+                                href={`/dashboard/quotations/${quote.id}`} 
+                                key={quote.id} 
+                                className="flex justify-between items-center gap-2 p-2 rounded-lg border border-slate-100 hover:border-slate-300 bg-slate-50 hover:bg-white transition-all text-xs"
+                              >
+                                <span className="font-medium text-slate-700 truncate max-w-[120px]">
+                                  {quote.variants?.models?.name} {quote.variants?.name}
+                                </span>
+                                <span className="font-bold text-slate-900 shrink-0">
+                                  {formatINR(quote.total_price)}
+                                </span>
+                              </Link>
+                            ))}
+                          </div>
+                        )}
+                      </td>
 
-                  {/* Associated Quotation details */}
-                  <div className="lg:col-span-6 bg-slate-50 rounded-2xl p-5 border border-slate-150 space-y-3">
-                    <p className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-                      <FileText size={14} className="text-slate-400" /> Active Quotations & Projections
-                    </p>
-                    {leadQuotes.length === 0 ? (
-                      <p className="text-xs text-slate-500 italic">No quotation draft configured yet for this customer.</p>
-                    ) : (
-                      <div className="space-y-3">
-                        {leadQuotes.map(quote => (
-                          <Link href={`/dashboard/quotations/${quote.id}`} key={quote.id} className="block w-full bg-white hover:bg-slate-50 transition-colors border border-slate-200 rounded-xl p-3 flex justify-between items-center gap-4 text-xs">
-                            <div className="min-w-0">
-                              <p className="font-semibold text-slate-800 truncate">
-                                {quote.variants?.models?.name} {quote.variants?.name}
-                              </p>
-                              <p className="text-[10px] text-slate-400 mt-0.5">
-                                Ex-Showroom: {formatINR(quote.variants?.price || 0)}
-                              </p>
-                            </div>
-                            <div className="text-right shrink-0">
-                              <p className="font-bold text-slate-900">{formatINR(quote.total_price)}</p>
-                              {quote.discount_amount > 0 && (
-                                <p className="text-[9px] text-emerald-600 font-semibold">
-                                  Discount: -{formatINR(quote.discount_amount)}
-                                </p>
-                              )}
-                            </div>
-                          </Link>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )
-          })}
+                      {/* Escalation Actions */}
+                      <td className="py-5 px-6 md:pr-8 text-right min-w-[100px]">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => handleToggleEscalation(lead.id, lead.escalated)}
+                            className={`p-2 rounded-full border transition-all cursor-pointer ${
+                              lead.escalated
+                                ? 'bg-rose-100 border-rose-200 text-rose-600 hover:bg-rose-200'
+                                : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100'
+                            }`}
+                            title={lead.escalated ? 'Remove escalation' : 'Escalate lead priority'}
+                          >
+                            <ShieldAlert size={14} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+          <Pagination
+            currentPage={currentPage}
+            totalItems={filtered.length}
+            rowsPerPage={rowsPerPage}
+            onPageChange={setCurrentPage}
+            onRowsPerPageChange={(rows) => {
+              setRowsPerPage(rows)
+              setCurrentPage(1)
+            }}
+          />
         </div>
       )}
     </div>
