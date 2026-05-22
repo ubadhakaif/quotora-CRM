@@ -31,6 +31,14 @@ This file tracks the current stability of the application. It highlights what wa
    - Created beautiful, flat-design responsive Details pages displaying Hero employee specs, shift duration timeline calculations, high-fidelity check-in selfie rendering, and precise GPS location geolocation card with instant Google Maps search deep-links.
    - Enforced branch-level scoping and security RLS checks for Branch Managers, and global tenant-level security checks for Dealer Admins.
    - Fully resolved compiling stability with clean type checks.
+6. **Quotation Builder & Document Refinements**:
+   - Removed trade-in exchange checkbox toggle, rendering details conditionally based on likely purchase type dropdown selection.
+   - Supported PDF uploads for Aadhar, PAN, RC, Insurance, and NOC files alongside existing image types.
+   - Removed EMI Planning checkbox toggle, auto-triggering loan calculations and verification document uploads based on Mode of Purchase.
+   - Added custom interactive Interest Rate (%) override to the finance loan calculator and saved overrides to Supabase JSONB payload.
+   - Refactored FilePreview on Branch and Dealer details pages to render custom vector-based PDF preview cards.
+   - Upgraded printable PDF sheet layouts to display full customized loan parameters and interest rate overrides.
+   - Resolved all type-checking issues and verified full compilation stability.
 ---
 
 ## Active & Broken Items

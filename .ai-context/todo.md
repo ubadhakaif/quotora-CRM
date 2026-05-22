@@ -44,3 +44,11 @@ This is the source of truth for all current, pending, and completed tasks in thi
   - [x] Created high-fidelity details pages showing full specs, cost breakdowns, loan/exchange stats, and maps links
   - [x] Implemented rich documents and attachments previews (for RC, Insurance, NOC, Aadhar, and PAN cards) with image rendering and enlargers
   - [x] Verified full compilation stability and type-safety check via tsc
+- [x] Refine Quotation Builder, PDFs, and details components:
+  - [x] Removed trade-in exchange checkbox toggle, rendering details conditionally based on drop-down select
+  - [x] Supported PDF file uploads in addition to images for Aadhar, PAN, RC, Insurance, and NOC files
+  - [x] Removed EMI Planning checkbox toggle, auto-triggering loan calculations and verification document uploads based on Mode of Purchase
+  - [x] Added custom interactive Interest Rate (%) override to the finance loan calculator
+  - [x] Refactored FilePreview on Branch and Dealer details pages to render beautiful vector PDF cards instead of broken image tags
+  - [x] Updated printable PDF sheets to render customized loan parameters and overridden interest rates
+

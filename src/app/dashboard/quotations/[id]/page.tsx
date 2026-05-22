@@ -191,7 +191,8 @@ export default function AdminQuotationDetailPage() {
   // File Preview Card Component
   const FilePreview = ({ url, label }: { url: string | null; label: string }) => {
     if (!url) return null
-    const isImage = url.match(/\.(jpeg|jpg|gif|png|webp)/i) !== null || url.includes('publicUrl') || url.startsWith('http')
+    const isPdf = url.toLowerCase().includes('.pdf')
+    const isImage = !isPdf && (url.match(/\.(jpeg|jpg|gif|png|webp)/i) !== null || url.includes('publicUrl') || url.startsWith('http'))
     
     return (
       <div className="bg-white border border-slate-200 rounded-[2rem] p-4 flex flex-col items-stretch space-y-3 justify-between hover:border-slate-300 transition-all">
@@ -212,6 +213,13 @@ export default function AdminQuotationDetailPage() {
               alt={label} 
               className="w-full h-full object-cover transition-transform group-hover:scale-105" 
             />
+          </div>
+        )}
+
+        {isPdf && (
+          <div className="w-full h-28 bg-slate-50 rounded-2xl border border-slate-100 flex flex-col items-center justify-center text-slate-500">
+            <FileText size={32} className="text-slate-400 mb-1" />
+            <span className="text-[11px] font-semibold text-slate-600">PDF Document</span>
           </div>
         )}
 
