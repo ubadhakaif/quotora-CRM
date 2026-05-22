@@ -14,7 +14,20 @@ export function Header({ onMenuClick, routeTitles }: HeaderProps) {
   const pathname = usePathname()
   const { profile } = useAuth()
   
-  const title = routeTitles[pathname] || 'Dashboard'
+  let title = routeTitles[pathname]
+  if (!title) {
+    if (pathname.startsWith('/branch/quotations/')) {
+      title = 'Quotation Details'
+    } else if (pathname.startsWith('/dashboard/quotations/')) {
+      title = 'Quotation Details'
+    } else if (pathname.startsWith('/branch/attendance/')) {
+      title = 'Attendance Verification'
+    } else if (pathname.startsWith('/dashboard/attendance/')) {
+      title = 'Attendance Verification'
+    } else {
+      title = 'Dashboard'
+    }
+  }
 
   const getProfileLink = () => {
     if (!profile) return '#'

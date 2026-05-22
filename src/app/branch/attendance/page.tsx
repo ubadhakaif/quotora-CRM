@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { useToast } from '@/components/providers/ToastProvider'
-import { Calendar, Clock, ArrowLeft, User, ShieldAlert, Edit2, Check } from 'lucide-react'
+import { Calendar, Clock, ArrowLeft, User, ShieldAlert, Edit2, Check, Eye } from 'lucide-react'
 import Link from 'next/link'
 
 interface Profile {
@@ -60,6 +60,7 @@ export default function BranchAttendancePage() {
       .from('employee_attendance')
       .select('*, profiles(id, name, email, role)')
       .eq('branch_id', profile.branch_id)
+      .neq('profile_id', profile.id) // Exclude current user (branch manager)
       .order('date', { ascending: false })
 
     if (selectedStaffId !== 'all') {
@@ -297,7 +298,14 @@ export default function BranchAttendancePage() {
 
                       {/* Actions */}
                       {!isEditing && (
-                        <div className="shrink-0 flex items-center justify-end">
+                        <div className="shrink-0 flex items-center justify-end gap-2">
+                          <Link
+                            href={`/branch/attendance/${log.id}`}
+                            className="p-2 border border-slate-200 text-slate-500 hover:text-slate-900 bg-white hover:bg-slate-50 rounded-xl transition-all cursor-pointer"
+                            title="View check-in verification details"
+                          >
+                            <Eye size={13} />
+                          </Link>
                           <button
                             onClick={() => handleEditClick(log)}
                             className="p-2 border border-slate-200 text-slate-500 hover:text-slate-900 bg-white hover:bg-slate-50 rounded-xl transition-all cursor-pointer"
@@ -383,6 +391,16 @@ export default function BranchAttendancePage() {
                           {log.status}
                         </span>
                       </div>
+                    </div>
+
+                    <div className="shrink-0 flex items-center justify-end">
+                      <Link
+                        href={`/branch/attendance/${log.id}`}
+                        className="p-2 border border-slate-200 text-slate-500 hover:text-slate-900 bg-white hover:bg-slate-50 rounded-xl transition-all cursor-pointer"
+                        title="View my check-in verification details"
+                      >
+                        <Eye size={13} />
+                      </Link>
                     </div>
                   </div>
                 ))}

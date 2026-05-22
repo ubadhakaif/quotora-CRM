@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { useToast } from '@/components/providers/ToastProvider'
-import { Calendar, Clock, ArrowLeft, Filter, Users, ShieldCheck, Edit2, Check, Landmark } from 'lucide-react'
+import { Calendar, Clock, ArrowLeft, Filter, Users, ShieldCheck, Edit2, Check, Landmark, Eye } from 'lucide-react'
 import Link from 'next/link'
 
 interface Profile {
@@ -353,7 +353,14 @@ export default function DealerAdminAttendancePage() {
 
                   {/* Actions */}
                   {!isEditing && (
-                    <div className="shrink-0 flex items-center justify-end">
+                    <div className="shrink-0 flex items-center justify-end gap-2">
+                      <Link
+                        href={`/dashboard/attendance/${log.id}`}
+                        className="p-2 border border-slate-200 text-slate-500 hover:text-slate-900 bg-white hover:bg-slate-50 rounded-xl transition-all cursor-pointer"
+                        title="View check-in verification details"
+                      >
+                        <Eye size={13} />
+                      </Link>
                       <button
                         onClick={() => handleEditClick(log)}
                         className="p-2 border border-slate-200 text-slate-500 hover:text-slate-900 bg-white hover:bg-slate-50 rounded-xl transition-all cursor-pointer"

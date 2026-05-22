@@ -30,10 +30,11 @@ quotora/
 │   │   ├── page.tsx     # Homepage entrypoint
 │   │   └── globals.css  # Global stylesheets (Tailwind imports and basic classes)
 │   ├── components/      # Shared and reusable React UI Components
+│   │   ├── attendance/  # Attendance verification & GPS location components
 │   ├── fonts/           # Local typography assets
 │   └── lib/             # Shared libraries, utilities, and DB clients
 ├── supabase/            # Supabase schema definitions and migration scripts
-│   └── migrations/      # 001 to 007 migration SQL files (Schema, RLS, Leave systems)
+│   └── migrations/      # 001 to 009 migration SQL files (Schema, RLS, Leave, Attendance, Quotations)
 ├── AGENTS.md            # Execution rules for AI assistants (Next.js custom docs)
 ├── CLAUDE.md            # AI interaction and instructions bootstrapping
 └── DESIGN.md            # Hard design principles (Visuals, spacing, color variables)

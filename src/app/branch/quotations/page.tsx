@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { useToast } from '@/components/providers/ToastProvider'
 import { Search, FileText, CheckCircle, XCircle, RefreshCw } from 'lucide-react'
+import Link from 'next/link'
 
 interface Variant { id: string; name: string; price: number; models?: {name:string} | {name:string}[] | null }
 interface Customer { id: string; name: string }
@@ -106,11 +107,11 @@ export default function BranchQuotationsPage() {
               
               return (
                 <div key={q.id} className="p-4 md:p-8 px-6 md:px-12 flex flex-col md:flex-row md:items-center gap-4 hover:bg-slate-50 transition-colors">
-                  <div className="flex items-center gap-4 flex-1 min-w-0">
+                  <Link href={`/branch/quotations/${q.id}`} className="flex items-center gap-4 flex-1 min-w-0 hover:opacity-85 transition-opacity">
                     <FileText size={18} className="text-slate-400 shrink-0"/>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <p className="text-slate-900 truncate">{cust}</p>
+                        <p className="text-slate-900 truncate font-medium">{cust}</p>
                         {q.approval_status && q.approval_status !== 'none' && (
                           <span className={`text-[10px] rounded-full px-2 py-0.5 font-medium whitespace-nowrap ${approvalColors[q.approval_status]}`}>
                             {q.approval_status === 'pending' ? 'Approval Pending' : `Discount ${q.approval_status}`}
@@ -122,7 +123,7 @@ export default function BranchQuotationsPage() {
                         <span className="inline-flex items-center gap-1 text-slate-400">• By {creator}</span>
                       </p>
                     </div>
-                  </div>
+                  </Link>
                   
                   <div className="flex items-center gap-4 shrink-0 justify-between md:justify-end">
                     <div className="text-right">

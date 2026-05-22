@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { StatCard } from '@/components/ui/StatCard'
 import { createClient } from '@/lib/supabase/client'
 import { useEffect, useState } from 'react'
+import { AttendanceCheckInPanel } from '@/components/attendance/AttendanceCheckInPanel'
 
 const quickLinks = [
   {
@@ -58,6 +59,7 @@ export default function BranchDashboardPage() {
   
   const [attendance, setAttendance] = useState<any>(null)
   const [attLoading, setAttLoading] = useState(true)
+  const [showCheckInPanel, setShowCheckInPanel] = useState(false)
 
   useEffect(() => {
     async function fetchStats() {
@@ -112,35 +114,6 @@ export default function BranchDashboardPage() {
       fetchAttendance()
     }
   }, [profile, loading])
-
-  const handleCheckIn = async () => {
-    if (!profile) return
-    setAttLoading(true)
-    const supabase = createClient()
-    const todayStr = new Date().toISOString().split('T')[0]
-    
-    const newEntry = {
-      tenant_id: profile.tenant_id,
-      branch_id: profile.branch_id,
-      profile_id: profile.id,
-      date: todayStr,
-      check_in: new Date().toISOString(),
-      status: 'present'
-    }
-
-    const { data, error } = await supabase
-      .from('employee_attendance')
-      .insert(newEntry)
-      .select()
-      .single()
-
-    if (error) {
-      console.error(error.message)
-    } else {
-      setAttendance(data)
-    }
-    setAttLoading(false)
-  }
 
   const handleCheckOut = async () => {
     if (!profile || !attendance?.id) return
@@ -246,15 +219,30 @@ export default function BranchDashboardPage() {
               )
             ) : (
               <button
-                onClick={handleCheckIn}
+                onClick={() => setShowCheckInPanel(prev => !prev)}
                 className="w-full bg-slate-900 text-white font-medium rounded-full py-2.5 text-xs hover:bg-slate-800 transition-all cursor-pointer"
               >
-                Check-In for Today
+                {showCheckInPanel ? 'Close Check-In Panel' : 'Check-In for Today'}
               </button>
             )}
           </div>
         </div>
       </div>
+
+      {showCheckInPanel && profile && (
+        <AttendanceCheckInPanel
+          profile={{
+            id: profile.id,
+            tenant_id: profile.tenant_id,
+            branch_id: profile.branch_id
+          }}
+          onSuccess={(record) => {
+            setAttendance(record)
+            setShowCheckInPanel(false)
+          }}
+          onCancel={() => setShowCheckInPanel(false)}
+        />
+      )}
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

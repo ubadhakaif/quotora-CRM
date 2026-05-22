@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { useToast } from '@/components/providers/ToastProvider'
 import { Search, ShieldAlert, ArrowRight, UserCircle, Phone, Mail, Building2, User, FileText, Bookmark } from 'lucide-react'
+import Link from 'next/link'
 
 interface Branch { id: string; name: string }
 interface Profile { id: string; name: string; branch_id: string | null }
@@ -395,7 +396,7 @@ export default function AdminLeadsPage() {
                     ) : (
                       <div className="space-y-3">
                         {leadQuotes.map(quote => (
-                          <div key={quote.id} className="bg-white border border-slate-200 rounded-xl p-3 flex justify-between items-center gap-4 text-xs">
+                          <Link href={`/dashboard/quotations/${quote.id}`} key={quote.id} className="block w-full bg-white hover:bg-slate-50 transition-colors border border-slate-200 rounded-xl p-3 flex justify-between items-center gap-4 text-xs">
                             <div className="min-w-0">
                               <p className="font-semibold text-slate-800 truncate">
                                 {quote.variants?.models?.name} {quote.variants?.name}
@@ -412,7 +413,7 @@ export default function AdminLeadsPage() {
                                 </p>
                               )}
                             </div>
-                          </div>
+                          </Link>
                         ))}
                       </div>
                     )}
