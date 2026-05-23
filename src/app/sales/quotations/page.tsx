@@ -1077,7 +1077,7 @@ export default function SalesQuotationsPage() {
                   <img
                     src={activeVariant.image_url}
                     alt={activeVariant.name}
-                    className="w-32 h-20 rounded-2xl object-cover shrink-0 border border-slate-250 shadow-sm bg-white"
+                    className="w-32 h-20 rounded-2xl object-contain shrink-0 border border-slate-250 shadow-sm bg-white"
                   />
                 ) : (
                   <div className="w-32 h-20 rounded-2xl bg-slate-100 flex items-center justify-center shrink-0 border border-slate-205">
@@ -1126,7 +1126,7 @@ export default function SalesQuotationsPage() {
                           <img
                             src={acc.image_url}
                             alt={acc.name}
-                            className="w-8 h-8 rounded-lg object-cover border border-slate-200 shrink-0"
+                            className="w-8 h-8 rounded-lg object-contain border border-slate-200 shrink-0"
                           />
                         ) : (
                           <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center border border-slate-200 text-slate-400 shrink-0">
@@ -1456,7 +1456,7 @@ export default function SalesQuotationsPage() {
                                     <img
                                       src={imgUrl}
                                       alt={`Vehicle ${idx + 1}`}
-                                      className="w-16 h-16 rounded-xl object-cover border border-slate-200"
+                                      className="w-16 h-16 rounded-xl object-contain border border-slate-200"
                                     />
                                     <button
                                       type="button"
