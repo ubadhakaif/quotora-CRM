@@ -83,7 +83,7 @@ export default function SalesQuotationsPage() {
 
   // Builder Form State
   const [bCustomerId, setBCustomerId] = useState('')
-  const [customerMode, setCustomerMode] = useState<'select' | 'new'>('select')
+  const [customerMode, setCustomerMode] = useState<'select' | 'new'>('new')
   const [newCustName, setNewCustName] = useState('')
   const [newCustPhone, setNewCustPhone] = useState('')
   const [newCustEmail, setNewCustEmail] = useState('')
@@ -326,7 +326,7 @@ export default function SalesQuotationsPage() {
 
   const handleOpenAdd = () => {
     setBCustomerId('')
-    setCustomerMode('select')
+    setCustomerMode('new')
     setNewCustName('')
     setNewCustPhone('')
     setNewCustEmail('')
@@ -885,63 +885,42 @@ export default function SalesQuotationsPage() {
         </div>
       )}
 
-      {/* Stats Cards */}
-      {!loading && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl">
-          <div className="bg-white border border-slate-200 rounded-[1.5rem] p-4 flex items-center justify-between">
-            <div className="space-y-1 pl-2">
-              <p className="text-xs text-slate-500 font-medium">My Total Quotes</p>
-              <p className="text-xl font-bold tracking-tight text-slate-900">{quotes.length}</p>
-            </div>
-            <div className="bg-slate-50 w-10 h-10 rounded-xl flex items-center justify-center shrink-0">
-              <FileText size={16} className="text-slate-500" />
-            </div>
-          </div>
-
-          <div className="bg-white border border-slate-200 rounded-[1.5rem] p-4 flex items-center justify-between">
-            <div className="space-y-1 pl-2">
-              <p className="text-xs text-slate-500 font-medium">Pending Approvals</p>
-              <p className="text-xl font-bold tracking-tight text-slate-900">{pendingApprovalsCount}</p>
-            </div>
-            <div className="bg-slate-50 w-10 h-10 rounded-xl flex items-center justify-center shrink-0">
-              <CheckCircle size={16} className="text-slate-500" />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Tab Switcher Bar */}
-      <div className="flex bg-slate-50 border border-slate-200 p-1 rounded-full w-full max-w-md">
-        <button
-          type="button"
-          onClick={() => {
-            setActiveTab('new')
-            setPanelOpen(true)
-          }}
-          className={`flex-1 rounded-full py-2.5 text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
-            activeTab === 'new'
-              ? 'bg-slate-900 text-white shadow-xs'
-              : 'text-slate-500 hover:text-slate-900'
-          }`}
-        >
-          <Plus size={14} />
-          New Quotation
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            setActiveTab('list')
-            setPanelOpen(false)
-          }}
-          className={`flex-1 rounded-full py-2.5 text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
-            activeTab === 'list'
-              ? 'bg-slate-900 text-white shadow-xs'
-              : 'text-slate-500 hover:text-slate-900'
-          }`}
-        >
-          <FileText size={14} />
-          Created Quotations
-        </button>
+      {/* Redesigned Tab Switcher to Standard Underline Design */}
+      <div className="border-b border-slate-200 w-full">
+        <nav className="flex space-x-6 sm:space-x-8" aria-label="Tabs">
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('new')
+              setPanelOpen(true)
+            }}
+            className={`
+              border-b-2 py-4 px-1 text-sm font-medium transition-all cursor-pointer whitespace-nowrap
+              ${activeTab === 'new'
+                ? 'border-slate-900 text-slate-900 font-semibold'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+              }
+            `}
+          >
+            New Quotation
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('list')
+              setPanelOpen(false)
+            }}
+            className={`
+              border-b-2 py-4 px-1 text-sm font-medium transition-all cursor-pointer whitespace-nowrap
+              ${activeTab === 'list'
+                ? 'border-slate-900 text-slate-900 font-semibold'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+              }
+            `}
+          >
+            Created Quotations
+          </button>
+        </nav>
       </div>
 
       {/* Tab 1: New Quotation Builder Panel */}
@@ -954,42 +933,13 @@ export default function SalesQuotationsPage() {
 
           <div className="space-y-6">
             
-            {/* Step 1: Customer Selection or Creation */}
+            {/* Step 1: Customer Profile (Existing Customer Selector Removed) */}
             <div className="space-y-4">
               <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                 <label className="text-sm font-semibold text-slate-900 pl-2">Step 1: Customer Profile</label>
-                <div className="flex bg-slate-100 p-1 rounded-full text-xs">
-                  <button
-                    type="button"
-                    onClick={() => setCustomerMode('select')}
-                    className={`rounded-full px-4 py-1.5 transition-all ${customerMode === 'select' ? 'bg-white text-slate-900 shadow-sm font-medium' : 'text-slate-500 hover:text-slate-900'}`}
-                  >
-                    Select Existing
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setCustomerMode('new')}
-                    className={`rounded-full px-4 py-1.5 transition-all ${customerMode === 'new' ? 'bg-white text-slate-900 shadow-sm font-medium' : 'text-slate-500 hover:text-slate-900'}`}
-                  >
-                    Create New
-                  </button>
-                </div>
               </div>
 
-              {customerMode === 'select' ? (
-                <div className="space-y-2">
-                  <select
-                    value={bCustomerId}
-                    onChange={e => setBCustomerId(e.target.value)}
-                    className="w-full rounded-full py-4 px-6 bg-slate-50 border border-slate-200 text-slate-900 focus:border-slate-900 focus:bg-white transition-all outline-none appearance-none text-sm"
-                  >
-                    <option value="">-- Select Assigned Customer --</option>
-                    {customers.map(c => (
-                      <option key={c.id} value={c.id}>{c.name} {c.phone ? `(${c.phone})` : ''}</option>
-                    ))}
-                  </select>
-                </div>
-              ) : (
+              {customerMode === 'new' && (
                 <div className="space-y-4 py-2">
                   <div className="space-y-2">
                     <label className="text-xs text-slate-500 pl-4 font-medium">Customer Name *</label>
@@ -1899,6 +1849,31 @@ export default function SalesQuotationsPage() {
       {/* Tab 2: Created Quotations List */}
       {activeTab === 'list' && (
         <div className="space-y-6">
+          {/* Relocated Stats Cards below Tabs */}
+          {!loading && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl">
+              <div className="bg-white border border-slate-200 rounded-[1.5rem] p-4 flex items-center justify-between">
+                <div className="space-y-1 pl-2">
+                  <p className="text-xs text-slate-500 font-medium">My Total Quotes</p>
+                  <p className="text-xl font-bold tracking-tight text-slate-900">{quotes.length}</p>
+                </div>
+                <div className="bg-slate-50 w-10 h-10 rounded-xl flex items-center justify-center shrink-0">
+                  <FileText size={16} className="text-slate-500" />
+                </div>
+              </div>
+
+              <div className="bg-white border border-slate-200 rounded-[1.5rem] p-4 flex items-center justify-between">
+                <div className="space-y-1 pl-2">
+                  <p className="text-xs text-slate-500 font-medium">Pending Approvals</p>
+                  <p className="text-xl font-bold tracking-tight text-slate-900">{pendingApprovalsCount}</p>
+                </div>
+                <div className="bg-slate-50 w-10 h-10 rounded-xl flex items-center justify-center shrink-0">
+                  <CheckCircle size={16} className="text-slate-500" />
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Action Row */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
             <div className="relative flex-1">

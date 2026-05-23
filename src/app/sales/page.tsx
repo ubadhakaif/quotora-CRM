@@ -1,86 +1,19 @@
 'use client'
 
 import { useAuth } from '@/components/providers/AuthProvider'
-import { UserCircle, FileText, PhoneCall, ArrowRight, Target, Clock, LogIn, LogOut } from 'lucide-react'
+import { FileText, LogIn, LogOut } from 'lucide-react'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { StatCard } from '@/components/ui/StatCard'
 import { AttendanceCheckInPanel } from '@/components/attendance/AttendanceCheckInPanel'
-
-const quickLinks = [
-  {
-    href: '/sales/quotations',
-    label: 'Quotations',
-    description: 'Build, calculate and manage vehicle quotes',
-    icon: FileText,
-  },
-  {
-    href: '/sales/follow-ups',
-    label: 'Follow-ups',
-    description: 'Schedule and record customer follow-ups',
-    icon: PhoneCall,
-  },
-  {
-    href: '/sales/attendance',
-    label: 'My Attendance',
-    description: 'View check-in logs and work hours report',
-    icon: Target,
-  },
-]
 
 export default function SalesDashboardPage() {
   const { profile, loading } = useAuth()
-  const [stats, setStats] = useState({
-    todayFollowUps: 0,
-    draftQuotations: 0,
-    activeLeads: 0,
-  })
-  const [statsLoading, setStatsLoading] = useState(true)
-  
   const [attendance, setAttendance] = useState<any>(null)
   const [attLoading, setAttLoading] = useState(true)
   const [showCheckInPanel, setShowCheckInPanel] = useState(false)
 
   useEffect(() => {
-    async function fetchStats() {
-      if (!profile?.id) return
-      setStatsLoading(true)
-      const supabase = createClient()
-
-      const todayStart = new Date()
-      todayStart.setHours(0, 0, 0, 0)
-      const todayEnd = new Date()
-      todayEnd.setHours(23, 59, 59, 999)
-
-      const [followUpsRes, quotesRes, leadsRes] = await Promise.all([
-        supabase
-          .from('follow_ups')
-          .select('id', { count: 'exact', head: true })
-          .eq('assigned_to', profile.id)
-          .eq('status', 'pending')
-          .gte('due_date', todayStart.toISOString())
-          .lte('due_date', todayEnd.toISOString()),
-        supabase
-          .from('quotations')
-          .select('id', { count: 'exact', head: true })
-          .eq('created_by', profile.id)
-          .eq('status', 'draft'),
-        supabase
-          .from('leads')
-          .select('id', { count: 'exact', head: true })
-          .eq('assigned_to', profile.id)
-          .in('status', ['new', 'hot', 'warm']),
-      ])
-
-      setStats({
-        todayFollowUps: followUpsRes.count || 0,
-        draftQuotations: quotesRes.count || 0,
-        activeLeads: leadsRes.count || 0,
-      })
-      setStatsLoading(false)
-    }
-
     async function fetchAttendance() {
       if (!profile?.id) return
       setAttLoading(true)
@@ -102,7 +35,6 @@ export default function SalesDashboardPage() {
     }
 
     if (!loading && profile) {
-      fetchStats()
       fetchAttendance()
     }
   }, [profile, loading])
@@ -131,16 +63,6 @@ export default function SalesDashboardPage() {
     return (
       <div className="space-y-6">
         <div className="skeleton h-28 w-full rounded-[2rem]" />
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {[1, 2, 3].map(i => (
-            <div key={i} className="skeleton h-32 rounded-[2rem]" />
-          ))}
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[1, 2, 3, 4, 5].map(i => (
-            <div key={i} className="skeleton h-32 rounded-[2rem]" />
-          ))}
-        </div>
       </div>
     )
   }
@@ -152,9 +74,18 @@ export default function SalesDashboardPage() {
         {/* Welcome Card */}
         <div className="lg:col-span-7 flex flex-col justify-center p-2 py-3">
           <p className="text-slate-500 text-xl font-medium">Welcome back,</p>
-          <h2 className="text-5xl md:text-6xl font-black mt-2 tracking-tight">
+          <h2 className="text-5xl md:text-6xl font-black mt-2 tracking-tight mb-6">
             <span style={{ color: '#4285F4' }}>{profile?.name ? profile.name.split(' ')[0].charAt(0).toUpperCase() + profile.name.split(' ')[0].slice(1).toLowerCase() : ''}</span>
           </h2>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Link
+              href="/sales/quotations"
+              className="inline-flex items-center justify-start gap-3 bg-slate-900 text-white rounded-full px-8 py-4 hover:bg-slate-800 transition-colors font-medium w-full sm:w-auto text-sm"
+            >
+              <FileText size={18} />
+              <span>New Quotation</span>
+            </Link>
+          </div>
         </div>
 
         {/* Attendance Card */}
@@ -240,50 +171,6 @@ export default function SalesDashboardPage() {
           onCancel={() => setShowCheckInPanel(false)}
         />
       )}
-
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <StatCard
-          label="Today's Follow-ups"
-          value={statsLoading ? '...' : stats.todayFollowUps}
-          icon={PhoneCall}
-        />
-        <StatCard
-          label="Draft Quotations"
-          value={statsLoading ? '...' : stats.draftQuotations}
-          icon={FileText}
-        />
-        <StatCard
-          label="Active Leads"
-          value={statsLoading ? '...' : stats.activeLeads}
-          icon={Target}
-        />
-      </div>
-
-      {/* Quick Links Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {quickLinks.map(link => {
-          const Icon = link.icon
-          return (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="group bg-white border border-slate-200 rounded-[2rem] p-8 md:p-10 flex flex-col gap-4 hover:border-slate-300 transition-all"
-            >
-              <Icon size={22} className="text-slate-500 group-hover:text-slate-900 transition-colors" />
-              <div className="space-y-1">
-                <p className="text-slate-900">{link.label}</p>
-                <p className="text-sm text-slate-500">{link.description}</p>
-              </div>
-              <div className="mt-auto pt-2">
-                <span className="inline-flex items-center gap-2 text-sm text-slate-400 group-hover:text-slate-900 transition-colors">
-                  Open <ArrowRight size={14} />
-                </span>
-              </div>
-            </Link>
-          )
-        })}
-      </div>
     </div>
   )
 }

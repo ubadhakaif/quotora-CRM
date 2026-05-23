@@ -17,6 +17,13 @@ This is the source of truth for all current, pending, and completed tasks in thi
 - [ ] Implement mobile navigation bottom pill responsive behavior as per DESIGN.md
 
 ## Completed Tasks
+- [x] UI Polishing & Quotations Flow Redesign:
+  - [x] Cleaned up the Sales Executive dashboard homepage by removing the stats metric grid and the quick links block, keeping only the Welcome Card and Attendance Card.
+  - [x] Added a beautiful primary "New Quotation" call-to-action button to the Welcome Card deep-linking directly to `/sales/quotations`.
+  - [x] Relocated the Quotations Stats Cards (quotes count, pending approvals) to be located inside the "Created Quotations" tab block below the tabs bar.
+  - [x] Completely removed the "Existing Customer" selection options from step 1 of the Quotation Builder, making it exclusively default to new customer inputs.
+  - [x] Redesigned the Quotations tab switcher to use standard flat underline tabs with zero active or hover background rounded overlays.
+  - [x] Removed hover border transition styling from Settings and Catalog page tab switchers, strictly maintaining plain underlines on active tabs.
 - [x] Standard Underline Tabs Redesign:
   - [x] Redesigned Settings and Catalog Page tab switchers to standard flat underline tabs featuring clean, flat `rounded-none` container panels.
   - [x] Implemented responsive "Ellipsis Overflow" dropdowns, showing full headings with icons on desktop and grouping overflow tabs into a clickable `...` (More) tab on mobile.

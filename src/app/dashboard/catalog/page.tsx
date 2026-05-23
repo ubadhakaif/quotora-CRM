@@ -138,7 +138,7 @@ export default function CatalogPage() {
                   flex items-center justify-center sm:justify-start gap-2 border-b-2 py-4 px-1 text-sm font-medium transition-all cursor-pointer whitespace-nowrap overflow-hidden text-ellipsis min-w-0 flex-1 sm:flex-initial
                   ${isActive
                     ? 'border-slate-900 text-slate-900 font-semibold'
-                    : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
+                    : 'border-transparent text-slate-500 hover:text-slate-800'
                   }
                 `}
                 title={tab.label}
@@ -159,7 +159,7 @@ export default function CatalogPage() {
                   w-full border-b-2 py-4 px-1 text-sm font-medium transition-all cursor-pointer whitespace-nowrap overflow-hidden text-ellipsis text-center flex items-center justify-center gap-1
                   ${isOverflowActive
                     ? 'border-slate-900 text-slate-900 font-semibold'
-                    : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
+                    : 'border-transparent text-slate-500 hover:text-slate-800'
                   }
                 `}
               >

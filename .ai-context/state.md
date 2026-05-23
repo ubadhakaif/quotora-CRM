@@ -119,6 +119,13 @@ This file tracks the current stability of the application. It highlights what wa
     - Refactored quick tiles on the Catalog dashboard page (`src/app/dashboard/catalog/page.tsx`) to an elegant horizontal underline tab bar, converting all panels and loaders to fully flat `rounded-none`.
     - Integrated responsive "Ellipsis Overflow" dropdowns: shows full headings on desktop, and groups overflow items into a clickable `...` (More) tab on mobile.
     - Integrated the Catalog CSV bulk import flow directly as a dedicated "Import CSV" tab, simplifying the main portal header layout.
+22. **UI Polishing & Quotations Redesign**:
+    - Cleaned up the Sales Executive dashboard homepage by removing the stats metric grid and the quick links block, keeping only the Welcome Card and Attendance Card.
+    - Added a beautiful primary "New Quotation" call-to-action button to the Welcome Card deep-linking directly to `/sales/quotations`.
+    - Relocated the Quotations Stats Cards (quotes count, pending approvals) to be located inside the "Created Quotations" tab block below the tabs bar.
+    - Completely removed the "Existing Customer" selection options from step 1 of the Quotation Builder, making it exclusively default to new customer inputs.
+    - Redesigned the Quotations tab switcher to use standard flat underline tabs with zero active or hover background rounded overlays.
+    - Removed hover border transition styling from Settings and Catalog page tab switchers, strictly maintaining plain underlines on active tabs.
 
 ---
 
