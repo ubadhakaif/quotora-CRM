@@ -181,6 +181,12 @@ input[type="submit"],
   border-radius: 8px !important;
 }
 
+/* Reset border-radius on navigation tabs to keep underlines flat (no button rounding) */
+nav button,
+[role="tab"] {
+  border-radius: 0px !important;
+}
+
 /* 3. Inputs, Searches, and Form Controls */
 input[type="text"],
 input[type="search"],
