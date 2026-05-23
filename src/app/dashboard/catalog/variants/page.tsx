@@ -18,6 +18,8 @@ interface Variant {
   images?: string[] | null; video_url?: string | null
   brochure_url?: string | null
   models?: { name: string } | null
+  fuel_types?: { name: string } | null
+  transmission_types?: { name: string } | null
 }
 
 const formatINR = (n: number) => new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR',maximumFractionDigits:0}).format(n)
@@ -50,7 +52,7 @@ export default function VariantsTab({ refreshTrigger = 0 }: VariantsTabProps) {
   const fetchAll = async () => {
     setLoading(true)
     const [v,m,f,t] = await Promise.all([
-      supabase.from('variants').select('*, models(name)').eq('is_active',true).order('variant_order'),
+      supabase.from('variants').select('*, models(name), fuel_types(name), transmission_types(name)').eq('is_active',true).order('variant_order'),
       supabase.from('models').select('id,name').eq('is_active',true).order('name'),
       supabase.from('fuel_types').select('*').eq('is_active',true).order('name'),
       supabase.from('transmission_types').select('*').eq('is_active',true).order('name'),
@@ -111,11 +113,46 @@ export default function VariantsTab({ refreshTrigger = 0 }: VariantsTabProps) {
               <div className="space-y-2"><label className="text-sm text-slate-600 pl-4">Variant name</label><input type="text" value={fName} onChange={e=>setFName(e.target.value)} placeholder="e.g. ZXi+" className="w-full rounded-full py-4 px-6 bg-slate-50 border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-slate-900 focus:bg-white transition-all outline-none"/></div>
               <div className="space-y-2"><label className="text-sm text-slate-600 pl-4">Model</label><select value={fModelId} onChange={e=>setFModelId(e.target.value)} className="w-full rounded-full py-4 px-6 bg-slate-50 border border-slate-200 text-slate-900 focus:border-slate-900 focus:bg-white transition-all outline-none appearance-none"><option value="">Select model</option>{models.map(m=><option key={m.id} value={m.id}>{m.name}</option>)}</select></div>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2"><label className="text-sm text-slate-600 pl-4">Price (₹)</label><input type="number" value={fPrice} onChange={e=>setFPrice(e.target.value)} placeholder="0" className="w-full rounded-full py-4 px-6 bg-slate-50 border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-slate-900 focus:bg-white transition-all outline-none"/></div>
               <div className="space-y-2"><label className="text-sm text-slate-600 pl-4">Order</label><input type="number" value={fOrder} onChange={e=>setFOrder(e.target.value)} className="w-full rounded-full py-4 px-6 bg-slate-50 border border-slate-200 text-slate-900 focus:border-slate-900 focus:bg-white transition-all outline-none"/></div>
             </div>
-            {/* Fuel type and Transmission are managed as separate standalone catalog tabs */}
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm text-slate-600 pl-4">Fuel type</label>
+                <div className="flex gap-2">
+                  <select value={fFuelId} onChange={e=>setFFuelId(e.target.value)} className="flex-1 rounded-full py-4 px-6 bg-slate-50 border border-slate-200 text-slate-900 focus:border-slate-900 focus:bg-white transition-all outline-none appearance-none">
+                    <option value="">Select fuel type</option>
+                    {fuels.map(f=><option key={f.id} value={f.id}>{f.name}</option>)}
+                  </select>
+                  <button type="button" onClick={()=>setAddFuel(!addFuel)} className="bg-white border border-slate-200 text-slate-600 rounded-full p-4 hover:bg-slate-50 transition-colors shrink-0"><Plus size={18}/></button>
+                </div>
+                {addFuel && (
+                  <div className="flex gap-2 pl-4 pt-1">
+                    <input type="text" value={newFuel} onChange={e=>setNewFuel(e.target.value)} placeholder="e.g. Petrol, Diesel, EV" className="flex-1 rounded-full py-3 px-5 bg-slate-50 border border-slate-200 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-900 focus:bg-white transition-all outline-none" />
+                    <button type="button" onClick={saveFuel} disabled={!newFuel.trim()} className="bg-slate-900 text-white rounded-full px-5 py-3 text-sm hover:bg-slate-800 transition-colors disabled:opacity-50">Add</button>
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm text-slate-600 pl-4">Transmission type</label>
+                <div className="flex gap-2">
+                  <select value={fTransId} onChange={e=>setFTransId(e.target.value)} className="flex-1 rounded-full py-4 px-6 bg-slate-50 border border-slate-200 text-slate-900 focus:border-slate-900 focus:bg-white transition-all outline-none appearance-none">
+                    <option value="">Select transmission</option>
+                    {trans.map(t=><option key={t.id} value={t.id}>{t.name}</option>)}
+                  </select>
+                  <button type="button" onClick={()=>setAddTrans(!addTrans)} className="bg-white border border-slate-200 text-slate-600 rounded-full p-4 hover:bg-slate-50 transition-colors shrink-0"><Plus size={18}/></button>
+                </div>
+                {addTrans && (
+                  <div className="flex gap-2 pl-4 pt-1">
+                    <input type="text" value={newTrans} onChange={e=>setNewTrans(e.target.value)} placeholder="e.g. Manual, Automatic" className="flex-1 rounded-full py-3 px-5 bg-slate-50 border border-slate-200 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-900 focus:bg-white transition-all outline-none" />
+                    <button type="button" onClick={saveTrans} disabled={!newTrans.trim()} className="bg-slate-900 text-white rounded-full px-5 py-3 text-sm hover:bg-slate-800 transition-colors disabled:opacity-50">Add</button>
+                  </div>
+                )}
+              </div>
+            </div>
             <MediaUpload
               images={images}
               onImagesChange={setImages}
@@ -138,55 +175,99 @@ export default function VariantsTab({ refreshTrigger = 0 }: VariantsTabProps) {
         </div>
       )}
       {loading?(
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[1,2,3].map(i=><div key={i} className="skeleton h-60 rounded-[3rem]"/>)}
+        <div className="space-y-4">
+          {[1,2,3].map(i=><div key={i} className="skeleton h-20 rounded-[1.5rem]"/>)}
         </div>
-      ):filtered.length===0?<div/>:(
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filtered.map(v=>(
-            <button
-              key={v.id}
-              onClick={()=>openEdit(v)}
-              className="bg-white border border-slate-200 rounded-[3rem] overflow-hidden hover:border-slate-300 transition-all flex flex-col h-full group cursor-pointer text-left outline-none"
-            >
-              {/* Image & Badges area */}
-              <div className="relative h-44 w-full bg-slate-50 flex items-center justify-center overflow-hidden border-b border-slate-100">
-                {v.image_url ? (
-                  <img
-                    src={v.image_url}
-                    alt={v.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ease-out"
-                  />
-                ) : (
-                  <Layers size={32} className="text-slate-300 group-hover:scale-110 transition-transform duration-300 ease-out" />
-                )}
-                
-                {v.models && typeof v.models === 'object' && 'name' in v.models && (
-                  <span className="absolute top-4 left-4 text-[10px] bg-white/90 backdrop-blur-sm text-slate-600 border border-slate-200 rounded-full px-3 py-1 font-semibold tracking-wide uppercase select-none">
-                    {(v.models as { name: string }).name}
-                  </span>
-                )}
+      ):filtered.length===0?(
+        <div className="bg-white border border-slate-200 rounded-[2rem] p-12 text-center text-slate-500">
+          No variants found matching search criteria.
+        </div>
+      ):(
+        <div className="bg-white border border-slate-200 rounded-[3rem] overflow-hidden">
+          <div className="overflow-x-auto w-full">
+            <table className="w-full text-left border-collapse text-sm">
+              <thead>
+                <tr className="border-b border-slate-200 bg-slate-50/50 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                  <th className="py-5 px-6 md:px-8">Variant</th>
+                  <th className="py-5 px-6">Model Series</th>
+                  <th className="py-5 px-6">Specifications</th>
+                  <th className="py-5 px-6">Base Price</th>
+                  <th className="py-5 px-6 md:pr-8 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filtered.map(v => {
+                  const modelName = v.models && typeof v.models === 'object' && 'name' in v.models ? (v.models as { name: string }).name : 'Unknown'
+                  const fuelName = v.fuel_types && typeof v.fuel_types === 'object' && 'name' in v.fuel_types ? (v.fuel_types as { name: string }).name : null
+                  const transName = v.transmission_types && typeof v.transmission_types === 'object' && 'name' in v.transmission_types ? (v.transmission_types as { name: string }).name : null
 
-                <span className="absolute top-4 right-4 text-[10px] bg-slate-900 text-white rounded-full px-2.5 py-1 font-semibold select-none">
-                  Pos #{v.variant_order}
-                </span>
-              </div>
+                  return (
+                    <tr key={v.id} className="hover:bg-slate-50/50 transition-colors">
+                      {/* Variant with small scale image & order */}
+                      <td className="py-4 px-6 md:px-8">
+                        <div className="flex items-center gap-3">
+                          {v.image_url ? (
+                            <img
+                              src={v.image_url}
+                              alt={v.name}
+                              className="w-12 h-12 rounded object-contain bg-slate-50 border border-slate-200 shrink-0"
+                            />
+                          ) : (
+                            <div className="w-12 h-12 rounded bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400 shrink-0">
+                              <Layers size={16} />
+                            </div>
+                          )}
+                          <div className="flex flex-col">
+                            <span className="font-semibold text-slate-900">{v.name}</span>
+                            <span className="text-[10px] text-slate-400 font-medium">Pos #{v.variant_order}</span>
+                          </div>
+                        </div>
+                      </td>
 
-              {/* Text & Price details */}
-              <div className="p-6 flex-grow flex flex-col justify-between space-y-4">
-                <div className="space-y-1">
-                  <h4 className="text-slate-900 font-bold text-base leading-snug group-hover:text-slate-950 transition-colors">
-                    {v.name}
-                  </h4>
-                </div>
-                
-                <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-                  <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Base Price</span>
-                  <span className="text-base font-bold text-slate-950">{formatINR(v.price)}</span>
-                </div>
-              </div>
-            </button>
-          ))}
+                      {/* Model Series */}
+                      <td className="py-4 px-6 font-medium text-slate-600">
+                        {modelName}
+                      </td>
+
+                      {/* Specifications */}
+                      <td className="py-4 px-6">
+                        <div className="flex flex-wrap gap-1.5">
+                          {fuelName ? (
+                            <span className="text-[10px] bg-blue-50 text-blue-600 rounded-full px-2.5 py-0.5 font-semibold">
+                              {fuelName}
+                            </span>
+                          ) : null}
+                          {transName ? (
+                            <span className="text-[10px] bg-slate-100 text-slate-600 rounded-full px-2.5 py-0.5 font-semibold">
+                              {transName}
+                            </span>
+                          ) : null}
+                          {!fuelName && !transName && (
+                            <span className="text-slate-400 italic text-xs">None</span>
+                          )}
+                        </div>
+                      </td>
+
+                      {/* Price */}
+                      <td className="py-4 px-6 font-semibold text-slate-900">
+                        {formatINR(v.price)}
+                      </td>
+
+                      {/* Actions */}
+                      <td className="py-4 px-6 md:pr-8 text-right">
+                        <button
+                          onClick={() => openEdit(v)}
+                          className="bg-slate-900 text-white rounded-full px-4 py-2 text-xs font-semibold hover:bg-slate-800 transition-colors cursor-pointer"
+                        >
+                          Edit
+                        </button>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>

@@ -153,12 +153,6 @@ export function AttendanceTab() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h2 className="text-xl font-bold text-slate-950">Global Attendance Logbook</h2>
-        <p className="text-xs text-slate-500">View, audit and correct employee rosters and check-in times across all branches.</p>
-      </div>
-
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white border border-slate-200 rounded-[2rem] p-6 md:p-8 flex items-center gap-4">
@@ -215,7 +209,7 @@ export function AttendanceTab() {
               setSelectedBranchId(e.target.value)
               setSelectedStaffId('all') // Reset employee filter on branch switch
             }}
-            className="w-full rounded-full py-3 px-4 bg-slate-50 border border-slate-200 text-xs text-slate-800 focus:bg-white transition-all outline-none"
+            className="w-full rounded-full py-3 px-4 bg-slate-50 border border-slate-200 text-xs text-slate-800 focus:bg-white transition-all outline-none cursor-pointer"
           >
             <option value="all">-- All Dealership Branches --</option>
             {branches.map(b => (
@@ -232,7 +226,7 @@ export function AttendanceTab() {
           <select
             value={selectedStaffId}
             onChange={e => setSelectedStaffId(e.target.value)}
-            className="w-full rounded-full py-3 px-4 bg-slate-50 border border-slate-200 text-xs text-slate-800 focus:bg-white transition-all outline-none"
+            className="w-full rounded-full py-3 px-4 bg-slate-50 border border-slate-200 text-xs text-slate-800 focus:bg-white transition-all outline-none cursor-pointer"
           >
             <option value="all">-- All Staff Members --</option>
             {staffList
@@ -246,7 +240,7 @@ export function AttendanceTab() {
         </div>
       </div>
 
-      {/* Table / List */}
+      {/* Tabular logs Table */}
       {loading ? (
         <div className="space-y-4">
           {[1, 2, 3].map(i => <div key={i} className="skeleton h-20 rounded-[1.5rem]" />)}
@@ -256,134 +250,153 @@ export function AttendanceTab() {
           No attendance records found with the selected filters.
         </div>
       ) : (
-        <div className="bg-white border border-slate-200 rounded-[2rem] overflow-hidden">
-          <div className="divide-y divide-slate-100">
-            {logs.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage).map(log => {
-              const isEditing = editingId === log.id
-              const branchName = branches.find(b => b.id === log.profiles?.branch_id)?.name || 'Headquarters'
-              return (
-                <div
-                  key={log.id}
-                  className="p-6 md:px-8 flex flex-col xl:flex-row xl:items-center justify-between gap-6 hover:bg-slate-50 transition-all text-xs"
-                >
-                  {/* Left: employee details */}
-                  <div className="flex items-center gap-3 shrink-0">
-                    <div className="w-9 h-9 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center font-bold">
-                      {log.profiles?.name?.charAt(0) || 'E'}
-                    </div>
-                    <div>
-                      <p className="font-bold text-slate-900 text-sm">{log.profiles?.name || 'Unspecified staff'}</p>
-                      <p className="text-[10px] text-slate-400 font-medium uppercase">{branchName} • {log.profiles?.role}</p>
-                    </div>
-                  </div>
+        <div className="bg-white border border-slate-200 rounded-[3rem] overflow-hidden">
+          <div className="overflow-x-auto w-full">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="border-b border-slate-200 bg-slate-50/50 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                  <th className="py-5 px-6 md:px-8">Employee</th>
+                  <th className="py-5 px-6">Log Date</th>
+                  <th className="py-5 px-6">Check-In</th>
+                  <th className="py-5 px-6">Check-Out</th>
+                  <th className="py-5 px-6">Duration</th>
+                  <th className="py-5 px-6">Status</th>
+                  <th className="py-5 px-6 md:pr-8 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {logs.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage).map(log => {
+                  const isEditing = editingId === log.id
+                  const branchName = branches.find(b => b.id === log.profiles?.branch_id)?.name || 'Headquarters'
+                  return (
+                    <tr key={log.id} className="hover:bg-slate-50/50 transition-colors">
+                      {/* Employee Column */}
+                      <td className="py-4 px-6 md:px-8">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center font-bold shrink-0">
+                            {log.profiles?.name?.charAt(0) || 'E'}
+                          </div>
+                          <div>
+                            <p className="font-bold text-slate-900 text-sm">{log.profiles?.name || 'Unspecified staff'}</p>
+                            <p className="text-[10px] text-slate-400 font-medium uppercase mt-0.5">{branchName} • {log.profiles?.role}</p>
+                          </div>
+                        </div>
+                      </td>
 
-                  {/* Middle: editable check-ins */}
-                  {isEditing ? (
-                    <div className="flex-1 grid grid-cols-1 sm:grid-cols-4 gap-4 items-end bg-slate-50 border border-slate-200 rounded-2xl p-4">
-                      <div className="space-y-1">
-                        <label className="text-[10px] text-slate-500 pl-1 font-bold uppercase">Status</label>
-                        <select
-                          value={editStatus}
-                          onChange={e => setEditStatus(e.target.value as any)}
-                          className="w-full rounded-lg p-2 bg-white border border-slate-200 outline-none text-xs"
-                        >
-                          <option value="present">Present</option>
-                          <option value="absent">Absent</option>
-                          <option value="half_day">Half Day</option>
-                          <option value="on_leave">On Leave</option>
-                        </select>
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-[10px] text-slate-500 pl-1 font-bold uppercase">Check-In</label>
-                        <input
-                          type="datetime-local"
-                          value={editCheckIn}
-                          onChange={e => setEditCheckIn(e.target.value)}
-                          className="w-full rounded-lg p-2 bg-white border border-slate-200 outline-none text-xs"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-[10px] text-slate-500 pl-1 font-bold uppercase">Check-Out</label>
-                        <input
-                          type="datetime-local"
-                          value={editCheckOut}
-                          onChange={e => setEditCheckOut(e.target.value)}
-                          className="w-full rounded-lg p-2 bg-white border border-slate-200 outline-none text-xs"
-                        />
-                      </div>
-                      <button
-                        onClick={() => handleSaveEdit(log.id)}
-                        disabled={saving}
-                        className="bg-slate-950 text-white rounded-lg p-2.5 flex items-center justify-center gap-1 hover:bg-slate-900 transition-colors cursor-pointer"
-                      >
-                        <Check size={14} /> {saving ? 'Saving...' : 'Save'}
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-x-8 gap-y-2 items-center flex-1 max-w-3xl">
-                      <div>
-                        <p className="text-slate-400 font-medium">Log Date</p>
-                        <p className="font-semibold text-slate-800">{new Date(log.date).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}</p>
-                      </div>
-                      <div>
-                        <p className="text-slate-400 font-medium">Check-In</p>
-                        <p className="font-semibold text-slate-800">
-                          {new Date(log.check_in).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' })}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-slate-400 font-medium">Check-Out</p>
-                        <p className="font-semibold text-slate-800">
-                          {log.check_out
-                            ? new Date(log.check_out).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' })
-                            : 'Active'}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-slate-400 font-medium">Duration</p>
-                        <p className="font-semibold text-slate-800">
-                          {calculateHours(log.check_in, log.check_out)}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-slate-400 font-medium">Status</p>
-                        <span
-                          className={`inline-block text-[9px] uppercase tracking-wider font-extrabold px-2.5 py-0.5 rounded-full border ${
-                            log.status === 'present'
-                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                              : log.status === 'half_day'
-                              ? 'bg-amber-50 text-amber-700 border-amber-200'
-                              : 'bg-rose-50 text-rose-700 border-rose-200'
-                          }`}
-                        >
-                          {log.status}
-                        </span>
-                      </div>
-                    </div>
-                  )}
+                      {/* Log Date Column */}
+                      <td className="py-4 px-6 text-slate-700 font-medium whitespace-nowrap">
+                        {new Date(log.date).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </td>
 
-                  {/* Actions */}
-                  {!isEditing && (
-                    <div className="shrink-0 flex items-center justify-end gap-2">
-                      <Link
-                        href={`/dashboard/attendance/${log.id}`}
-                        className="p-2 border border-slate-200 text-slate-500 hover:text-slate-900 bg-white hover:bg-slate-50 rounded-xl transition-all cursor-pointer"
-                        title="View check-in verification details"
-                      >
-                        <Eye size={13} />
-                      </Link>
-                      <button
-                        onClick={() => handleEditClick(log)}
-                        className="p-2 border border-slate-200 text-slate-500 hover:text-slate-900 bg-white hover:bg-slate-50 rounded-xl transition-all cursor-pointer"
-                        title="Edit global logs"
-                      >
-                        <Edit2 size={13} />
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )
-            })}
+                      {/* Check-In Column */}
+                      <td className="py-4 px-6 whitespace-nowrap">
+                        {isEditing ? (
+                          <input
+                            type="datetime-local"
+                            value={editCheckIn}
+                            onChange={e => setEditCheckIn(e.target.value)}
+                            className="rounded-lg p-2 bg-white border border-slate-200 outline-none text-xs w-full max-w-[170px]"
+                          />
+                        ) : (
+                          <p className="font-semibold text-slate-800">
+                            {new Date(log.check_in).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' })}
+                          </p>
+                        )}
+                      </td>
+
+                      {/* Check-Out Column */}
+                      <td className="py-4 px-6 whitespace-nowrap">
+                        {isEditing ? (
+                          <input
+                            type="datetime-local"
+                            value={editCheckOut}
+                            onChange={e => setEditCheckOut(e.target.value)}
+                            className="rounded-lg p-2 bg-white border border-slate-200 outline-none text-xs w-full max-w-[170px]"
+                          />
+                        ) : (
+                          <p className="font-semibold text-slate-800">
+                            {log.check_out
+                              ? new Date(log.check_out).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' })
+                              : 'Active'}
+                          </p>
+                        )}
+                      </td>
+
+                      {/* Duration Column */}
+                      <td className="py-4 px-6 font-semibold text-slate-800">
+                        {calculateHours(log.check_in, log.check_out)}
+                      </td>
+
+                      {/* Status Column */}
+                      <td className="py-4 px-6 whitespace-nowrap">
+                        {isEditing ? (
+                          <select
+                            value={editStatus}
+                            onChange={e => setEditStatus(e.target.value as any)}
+                            className="rounded-lg p-2 bg-white border border-slate-200 outline-none text-xs w-full max-w-[110px] cursor-pointer"
+                          >
+                            <option value="present">Present</option>
+                            <option value="absent">Absent</option>
+                            <option value="half_day">Half Day</option>
+                            <option value="on_leave">On Leave</option>
+                          </select>
+                        ) : (
+                          <span
+                            className={`inline-block text-[9px] uppercase tracking-wider font-extrabold px-2.5 py-0.5 rounded-full border ${
+                              log.status === 'present'
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                : log.status === 'half_day'
+                                ? 'bg-amber-50 text-amber-700 border-amber-200'
+                                : 'bg-rose-50 text-rose-700 border-rose-200'
+                            }`}
+                          >
+                            {log.status}
+                          </span>
+                        )}
+                      </td>
+
+                      {/* Actions Column */}
+                      <td className="py-4 px-6 md:pr-8 text-right whitespace-nowrap">
+                        {isEditing ? (
+                          <div className="flex justify-end gap-2">
+                            <button
+                              onClick={() => handleSaveEdit(log.id)}
+                              disabled={saving}
+                              className="bg-slate-900 text-white rounded-lg px-3 py-1.5 flex items-center justify-center gap-1 hover:bg-slate-800 transition-colors cursor-pointer font-semibold"
+                            >
+                              <Check size={12} /> Save
+                            </button>
+                            <button
+                              onClick={() => setEditingId(null)}
+                              className="bg-white border border-slate-200 text-slate-650 rounded-lg px-3 py-1.5 flex items-center justify-center gap-1 hover:bg-slate-50 transition-colors cursor-pointer font-semibold"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex justify-end gap-2">
+                            <Link
+                              href={`/dashboard/attendance/${log.id}`}
+                              className="p-2 border border-slate-200 text-slate-500 hover:text-slate-900 bg-white hover:bg-slate-50 rounded-xl transition-all cursor-pointer"
+                              title="View details"
+                            >
+                              <Eye size={13} />
+                            </Link>
+                            <button
+                              onClick={() => handleEditClick(log)}
+                              className="p-2 border border-slate-200 text-slate-500 hover:text-slate-900 bg-white hover:bg-slate-50 rounded-xl transition-all cursor-pointer"
+                              title="Edit global logs"
+                            >
+                              <Edit2 size={13} />
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
           </div>
           <Pagination
             currentPage={currentPage}

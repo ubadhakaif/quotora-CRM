@@ -2,12 +2,12 @@ Whenever an AI agent is working in this repository, it MUST adhere strictly to t
 
 ## 1. Visual Foundation
 1. **Flat Design**: STRICTLY NO shadows. Never use Tailwind `shadow-*` or drop shadows. All elements must sit flat on the surface.
-2. **Color Palette**: Exclusively use the **Slate** color variant for all UI elements. Do not introduce other colors (no default blue/red variables) unless explicitly overridden for semantic status (e.g., emerald for success, rose for error).
+2. **Color Palette**: Use **White** for the global background and **Corporate Blue** as the primary accent color. Do not introduce shadows or low-contrast text colors.
 3. **Icons**: Icons must sit directly on the layer. Do NOT use background containers or circles behind icons.
 4. **Rounding Standards**: All primary elements, secondary panels, buttons, and input controls are standardized globally to **8px** (crisp border-radius):
     - Primary Cards: Declared inline as `rounded-[3.5rem]` or `rounded-[3rem]` (overridden globally in `globals.css` to `8px` / `0.5rem`).
     - Secondary Panels & Buttons: Declared inline as `rounded-[2.5rem]` or `rounded-full` (overridden globally in `globals.css` to `8px` / `0.5rem`).
-12. **Grid Background**: All portals must use a subtle grid background (e.g., `bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px]`) to provide depth without using shadows.
+12. **Grid Background**: Removed in favor of crisp white layouts.
 
 ## 2. Typography & Content
 1. **Typography**: Always use the locally provided font setup. Do NOT use `font-bold`, `italic`, or `strong` tags. Keep weights standard/normal.

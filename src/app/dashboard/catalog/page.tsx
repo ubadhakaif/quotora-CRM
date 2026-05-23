@@ -9,14 +9,10 @@ import { importVariantsFromCSV, importAccessoriesFromCSV, ImportProgress } from 
 import ModelsTab from './models/page'
 import VariantsTab from './variants/page'
 import AccessoriesTab from './accessories/page'
-import FuelsTab from './fuels/page'
-import TransmissionsTab from './transmissions/page'
 
 const tabs = [
   { id: 'models', label: 'Models', icon: Car },
   { id: 'variants', label: 'Variants', icon: Layers },
-  { id: 'fuels', label: 'Fuel Types', icon: Fuel },
-  { id: 'transmissions', label: 'Transmissions', icon: Settings },
   { id: 'accessories', label: 'Accessories', icon: Wrench },
   { id: 'import', label: 'Import CSV', icon: FileUp },
 ]
@@ -348,8 +344,6 @@ export default function CatalogPage() {
       {/* Tab Content passing refreshTrigger */}
       {activeTab === 'models' && <ModelsTab />}
       {activeTab === 'variants' && <VariantsTab refreshTrigger={refreshTrigger} />}
-      {activeTab === 'fuels' && <FuelsTab />}
-      {activeTab === 'transmissions' && <TransmissionsTab />}
       {activeTab === 'accessories' && <AccessoriesTab refreshTrigger={refreshTrigger} />}
     </div>
   )

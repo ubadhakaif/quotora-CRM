@@ -156,48 +156,79 @@ export default function ModelsTab() {
       )}
 
       {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[1,2,3].map(i=><div key={i} className="skeleton h-64 rounded-[3rem]"/>)}
+        <div className="space-y-4">
+          {[1, 2, 3].map(i => <div key={i} className="skeleton h-20 rounded-[1.5rem]" />)}
         </div>
-      ) : filtered.length===0 ? <div/> : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filtered.map(m=>(
-            <button
-              key={m.id}
-              onClick={()=>openEdit(m)}
-              className="bg-white border border-slate-200 rounded-[3rem] overflow-hidden hover:border-slate-300 transition-all flex flex-col h-full group cursor-pointer text-left outline-none"
-            >
-              {/* Product Image Area */}
-              <div className="relative h-48 w-full bg-slate-50 flex items-center justify-center overflow-hidden border-b border-slate-100">
-                {m.image_url ? (
-                  <img
-                    src={m.image_url}
-                    alt={m.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ease-out"
-                  />
-                ) : (
-                  <Car size={36} className="text-slate-300 group-hover:scale-110 transition-transform duration-300 ease-out" />
-                )}
-                {getCat(m) && (
-                  <span className="absolute top-4 right-4 text-[10px] bg-white/90 backdrop-blur-sm text-slate-600 border border-slate-200 rounded-full px-3 py-1 font-semibold tracking-wide uppercase select-none">
-                    {getCat(m)}
-                  </span>
-                )}
-              </div>
+      ) : filtered.length === 0 ? (
+        <div className="bg-white border border-slate-200 rounded-[2rem] p-12 text-center text-slate-500">
+          No models found matching search criteria.
+        </div>
+      ) : (
+        <div className="bg-white border border-slate-200 rounded-[3rem] overflow-hidden">
+          <div className="overflow-x-auto w-full">
+            <table className="w-full text-left border-collapse text-sm">
+              <thead>
+                <tr className="border-b border-slate-200 bg-slate-50/50 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                  <th className="py-5 px-6 md:px-8">Model Series</th>
+                  <th className="py-5 px-6">Category</th>
+                  <th className="py-5 px-6">Description</th>
+                  <th className="py-5 px-6 md:pr-8 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filtered.map(m => {
+                  const cat = getCat(m)
+                  return (
+                    <tr key={m.id} className="hover:bg-slate-50/50 transition-colors">
+                      {/* Model with small scale image */}
+                      <td className="py-4 px-6 md:px-8">
+                        <div className="flex items-center gap-3">
+                          {m.image_url ? (
+                            <img
+                              src={m.image_url}
+                              alt={m.name}
+                              className="w-12 h-12 rounded object-contain bg-slate-50 border border-slate-200 shrink-0"
+                            />
+                          ) : (
+                            <div className="w-12 h-12 rounded bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400 shrink-0">
+                              <Car size={16} />
+                            </div>
+                          )}
+                          <span className="font-semibold text-slate-900">{m.name}</span>
+                        </div>
+                      </td>
 
-              {/* Product Content Details */}
-              <div className="p-6 flex-grow flex flex-col justify-between space-y-4">
-                <div className="space-y-1.5">
-                  <h4 className="text-slate-900 font-bold text-base leading-snug group-hover:text-slate-950 transition-colors">
-                    {m.name}
-                  </h4>
-                  <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">
-                    {m.description || 'No description provided.'}
-                  </p>
-                </div>
-              </div>
-            </button>
-          ))}
+                      {/* Category */}
+                      <td className="py-4 px-6">
+                        {cat ? (
+                          <span className="text-xs bg-slate-100 text-slate-600 rounded-full px-3 py-1 font-semibold">
+                            {cat}
+                          </span>
+                        ) : (
+                          <span className="text-slate-400 italic">No Category</span>
+                        )}
+                      </td>
+
+                      {/* Description */}
+                      <td className="py-4 px-6 max-w-xs truncate text-slate-500 font-medium" title={m.description || ''}>
+                        {m.description || 'No description provided.'}
+                      </td>
+
+                      {/* Actions */}
+                      <td className="py-4 px-6 md:pr-8 text-right">
+                        <button
+                          onClick={() => openEdit(m)}
+                          className="bg-slate-900 text-white rounded-full px-4 py-2 text-xs font-semibold hover:bg-slate-800 transition-colors cursor-pointer"
+                        >
+                          Edit
+                        </button>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>

@@ -30,12 +30,6 @@ export default function HumanResourcesPage() {
 
   return (
     <div className="space-y-6">
-      {/* Title block */}
-      <div>
-        <h1 className="text-3xl font-black text-slate-950 tracking-tight">Human Resources</h1>
-        <p className="text-xs text-slate-500 mt-1">Manage personnel, rosters, branch assignments, and audit team presence records.</p>
-      </div>
-
       {/* Standard Underline Tab bar with Horizontal Hidden Scroll */}
       <div className="border-b border-slate-200 w-full relative">
         <nav className="flex -mb-px space-x-4 sm:space-x-8 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label="Tabs">

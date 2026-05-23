@@ -27,7 +27,7 @@ export function PortalShell({ children, navItems, routeTitles, portalName }: Por
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-slate-50">
+      <div className="flex h-screen items-center justify-center bg-white">
         <div className="flex flex-col items-center gap-4">
           {/* Elegant premium loader matching slate design system */}
           <div className="w-12 h-12 rounded-full border-[3px] border-slate-100 border-t-slate-900 animate-spin" />
@@ -42,7 +42,7 @@ export function PortalShell({ children, navItems, routeTitles, portalName }: Por
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-50">
+    <div className="flex h-screen overflow-hidden bg-white">
       {/* Sidebar with controlled mobile open state */}
       <Sidebar
         isOpen={sidebarOpen}

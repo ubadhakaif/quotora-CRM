@@ -6,7 +6,16 @@ This file tracks the current stability of the application. It highlights what wa
 
 ## Recent Completions
 
-1. **Dealer Admin Dashboard Restructures & Merges**:
+1. **Design Enhancements & Catalog Tabular Redesign**:
+   - Converted the global background theme on the main Dealer Admin dashboard viewport from slate-50 to pure white in `PortalShell.tsx`.
+   - Configured premium corporate blue accent variables `--color-slate-900` to `#1a56db` and active focus outline selectors in `globals.css` to transition components effortlessly to corporate blue.
+   - Cleared page title taglines and description subheaders across the merged HR, Gallery, CRM, and Attendance views to maintain deep focus.
+   - Restructured HR Attendance logs from a flex layout into a premium tabular layout with employee avatar initial headers, pagination navigators, and cell-based input modifiers.
+   - Restructured Catalog Models and Accessories listings into clean, flat table views using compact `w-12 h-12` image thumbnails and clear base pricing rows.
+   - Restructured Catalog Variants into a full tabular view highlighting relational model series, specification badges (fuel & transmission), base price values, and inline edit options.
+   - Nested Fuel Type and Transmission Type selects alongside inline '+' additions directly inside the variant drawer panel, unhiding custom addition methods.
+   - Cleaned the directory workspace by removing deprecated legacy routing directories (`fuels` and `transmissions`).
+2. **Dealer Admin Dashboard Restructures & Merges**:
    - Consolidated individual pages under `/dashboard/employees`, `/dashboard/branches`, `/dashboard/attendance`, and `/dashboard/leave` into a unified tabbed Human Resources portal (`/dashboard/hr`) with correct ordering: Attendance, Leave, Workforce (Employees), and Branches.
    - Consolidated `/dashboard/models` and `/dashboard/accessories` into a unified tabbed Gallery portal (`/dashboard/gallery`).
    - Consolidated `/dashboard/leads` and `/dashboard/quotations` into a unified tabbed CRM portal (`/dashboard/crm`).

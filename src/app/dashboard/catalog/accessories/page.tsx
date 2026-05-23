@@ -114,51 +114,79 @@ export default function AccessoriesTab({ refreshTrigger = 0 }: AccessoriesTabPro
         </div>
       )}
       {loading?(
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {[1,2,3].map(i=><div key={i} className="skeleton h-56 rounded-[2.5rem]"/>)}
+        <div className="space-y-4">
+          {[1,2,3].map(i=><div key={i} className="skeleton h-20 rounded-[1.5rem]"/>)}
         </div>
-      ):filtered.length===0?<div/>:(
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {filtered.map(a=>(
-            <button
-              key={a.id}
-              onClick={()=>openEdit(a)}
-              className="bg-white border border-slate-200 rounded-[2.5rem] overflow-hidden hover:border-slate-300 transition-all flex flex-col h-full group cursor-pointer text-left outline-none"
-            >
-              {/* Aspect Square image wrapper */}
-              <div className="relative aspect-square w-full bg-slate-50 flex items-center justify-center overflow-hidden border-b border-slate-100">
-                {a.image_url ? (
-                  <img
-                    src={a.image_url}
-                    alt={a.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ease-out"
-                  />
-                ) : (
-                  <Wrench size={32} className="text-slate-300 group-hover:scale-110 transition-transform duration-300 ease-out" />
-                )}
-                
-                {getType(a) && (
-                  <span className="absolute top-4 left-4 text-[10px] bg-white/90 backdrop-blur-sm text-slate-600 border border-slate-200 rounded-full px-3 py-1 font-semibold tracking-wide uppercase select-none">
-                    {getType(a)}
-                  </span>
-                )}
-              </div>
+      ):filtered.length===0?(
+        <div className="bg-white border border-slate-200 rounded-[2rem] p-12 text-center text-slate-500">
+          No accessories found matching search criteria.
+        </div>
+      ):(
+        <div className="bg-white border border-slate-200 rounded-[3rem] overflow-hidden">
+          <div className="overflow-x-auto w-full">
+            <table className="w-full text-left border-collapse text-sm">
+              <thead>
+                <tr className="border-b border-slate-200 bg-slate-50/50 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                  <th className="py-5 px-6 md:px-8">Accessory</th>
+                  <th className="py-5 px-6">Accessory Type</th>
+                  <th className="py-5 px-6">Price</th>
+                  <th className="py-5 px-6 md:pr-8 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filtered.map(a => {
+                  const type = getType(a)
+                  return (
+                    <tr key={a.id} className="hover:bg-slate-50/50 transition-colors">
+                      {/* Accessory with small scale image */}
+                      <td className="py-4 px-6 md:px-8">
+                        <div className="flex items-center gap-3">
+                          {a.image_url ? (
+                            <img
+                              src={a.image_url}
+                              alt={a.name}
+                              className="w-12 h-12 rounded object-contain bg-slate-50 border border-slate-200 shrink-0"
+                            />
+                          ) : (
+                            <div className="w-12 h-12 rounded bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400 shrink-0">
+                              <Wrench size={16} />
+                            </div>
+                          )}
+                          <span className="font-semibold text-slate-900">{a.name}</span>
+                        </div>
+                      </td>
 
-              {/* Accessories Details */}
-              <div className="p-5 flex-grow flex flex-col justify-between space-y-3">
-                <div className="space-y-1">
-                  <h4 className="text-slate-900 font-bold text-sm leading-snug group-hover:text-slate-950 transition-colors line-clamp-2">
-                    {a.name}
-                  </h4>
-                </div>
+                      {/* Accessory Type */}
+                      <td className="py-4 px-6">
+                        {type ? (
+                          <span className="text-xs bg-slate-100 text-slate-600 rounded-full px-3 py-1 font-semibold">
+                            {type}
+                          </span>
+                        ) : (
+                          <span className="text-slate-400 italic">No Type</span>
+                        )}
+                      </td>
 
-                <div className="pt-2.5 border-t border-slate-100 flex items-center justify-between">
-                  <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Price</span>
-                  <span className="text-sm font-bold text-slate-950">{formatINR(a.price)}</span>
-                </div>
-              </div>
-            </button>
-          ))}
+                      {/* Price */}
+                      <td className="py-4 px-6 font-semibold text-slate-900">
+                        {formatINR(a.price)}
+                      </td>
+
+                      {/* Actions */}
+                      <td className="py-4 px-6 md:pr-8 text-right">
+                        <button
+                          onClick={() => openEdit(a)}
+                          className="bg-slate-900 text-white rounded-full px-4 py-2 text-xs font-semibold hover:bg-slate-800 transition-colors cursor-pointer"
+                        >
+                          Edit
+                        </button>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>

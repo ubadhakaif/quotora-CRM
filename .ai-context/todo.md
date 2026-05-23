@@ -25,6 +25,16 @@ This is the source of truth for all current, pending, and completed tasks in thi
 - [ ] Implement mobile navigation bottom pill responsive behavior as per DESIGN.md
 
 ## Completed Tasks
+- [x] Design Enhancements & Catalog Tabular Redesign:
+  - [x] Standardized global background from slate-50 to white inside `PortalShell.tsx`.
+  - [x] Configured corporate blue accent variables `--color-slate-900` to `#1a56db` and active focus states globally in `globals.css`.
+  - [x] Stripped standalone page headings and description taglines from HR, Gallery, and CRM routes.
+  - [x] Converted Attendance logs grid to responsive tabular layout with small circular user avatar initials and inline datetime logs.
+  - [x] Converted Catalog vehicle Models grid to structured table with `w-12 h-12` image thumbnails and descriptive details.
+  - [x] Converted Catalog vehicle Variants grid to structured table with Specifications (fuel & transmission badges) and base price columns.
+  - [x] Integrated Fuel Type and Transmission Type selections directly inside the Add/Edit variant panel next to standard input parameters, unhiding custom inline "+" insertions.
+  - [x] Converted Catalog Accessories showroom grid to clean table layout with category badges and base pricing.
+  - [x] Purged legacy catalog fuels and transmissions routing folders to ensure workspace hygiene.
 - [x] UI Polishing & Quotations Flow Redesign:
   - [x] Cleaned up the Sales Executive dashboard homepage by removing the stats metric grid and the quick links block, keeping only the Welcome Card and Attendance Card.
   - [x] Added a beautiful primary "New Quotation" call-to-action button to the Welcome Card deep-linking directly to `/sales/quotations`.

@@ -6,6 +6,12 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-google-sans);
 
+  /* Corporate Blue Theme Accent Mappings */
+  --color-slate-900: #1a56db; /* Primary Corporate Blue */
+  --color-slate-950: #0f2d70; /* Active Deep Navy */
+  --color-slate-800: #1c4ed8; /* Hover Vibrant Blue */
+  --color-slate-700: #2563eb; /* Secondary Blue Accent */
+
   /* Standardize default border radius variables to 8px */
   --radius-lg: 8px;
   --radius-xl: 8px;
@@ -59,7 +65,7 @@ body {
 
 /* ─── Focus Ring ─── */
 :focus-visible {
-  outline: 2px solid #0f172a;
+  outline: 2px solid #1a56db;
   outline-offset: 2px;
 }
 
@@ -82,13 +88,13 @@ select:focus-visible,
 textarea:focus-visible {
   outline: none !important;
   box-shadow: none !important;
-  border-color: #0f172a !important;
+  border-color: #1a56db !important;
 }
 
 /* ─── Selection ─── */
 ::selection {
-  background: #cbd5e1;
-  color: #0f172a;
+  background: #ebf5ff;
+  color: #1a56db;
 }
 
 /* ─── Toast Container ─── */
