@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useToast } from '@/components/providers/ToastProvider'
-import { Search, FileText, FileCheck, Eye, Landmark } from 'lucide-react'
+import { Search, FileText, Eye } from 'lucide-react'
 import Link from 'next/link'
 import { Pagination } from '@/components/ui/Pagination'
 
@@ -68,7 +68,7 @@ const APPROVAL_STYLES: Record<string, string> = {
   rejected: 'bg-red-50 text-red-700 border-red-200',
 }
 
-export default function AdminQuotationsPage() {
+export function QuotationsTab() {
   const [quotes, setQuotes] = useState<Quotation[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -140,19 +140,19 @@ export default function AdminQuotationsPage() {
           <p className="text-2xl font-bold text-slate-900 mt-1">{quotes.length}</p>
         </div>
         <div className="bg-white border border-slate-200 rounded-[2rem] p-5">
-          <p className="text-xs text-amber-600 font-medium">Approval Pending</p>
+          <p className="text-xs text-amber-605 font-medium">Approval Pending</p>
           <p className="text-2xl font-bold text-slate-900 mt-1">
             {quotes.filter(q => q.approval_status === 'pending').length}
           </p>
         </div>
         <div className="bg-white border border-slate-200 rounded-[2rem] p-5">
-          <p className="text-xs text-emerald-600 font-medium">Approved / Active</p>
+          <p className="text-xs text-emerald-606 font-medium">Approved / Active</p>
           <p className="text-2xl font-bold text-slate-900 mt-1">
             {quotes.filter(q => q.status === 'approved').length}
           </p>
         </div>
         <div className="bg-white border border-slate-200 rounded-[2rem] p-5">
-          <p className="text-xs text-red-600 font-medium">Rejected</p>
+          <p className="text-xs text-red-606 font-medium">Rejected</p>
           <p className="text-2xl font-bold text-slate-900 mt-1">
             {quotes.filter(q => q.status === 'rejected' || q.approval_status === 'rejected').length}
           </p>
@@ -275,7 +275,7 @@ export default function AdminQuotationsPage() {
                           href={`/dashboard/quotations/${q.id}`}
                           className="inline-flex items-center gap-1 bg-slate-900 text-white rounded-full px-4 py-2 text-xs font-semibold hover:bg-slate-800 transition-colors cursor-pointer"
                         >
-                          <Eye size={12} /> View
+                          <Eye size={12} className="shrink-0" /> View
                         </Link>
                       </td>
                     </tr>

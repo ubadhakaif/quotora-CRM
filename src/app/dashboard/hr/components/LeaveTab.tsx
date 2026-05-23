@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { useToast } from '@/components/providers/ToastProvider'
-import { CalendarDays, Check, X, Clock, Search, Filter } from 'lucide-react'
+import { CalendarDays, Check, X, Search } from 'lucide-react'
 import { Pagination } from '@/components/ui/Pagination'
 
 interface LeaveRequest {
@@ -39,7 +39,7 @@ const STATUS_STYLES: Record<string, string> = {
   cancelled: 'bg-slate-50 text-slate-500 border-slate-200',
 }
 
-export default function AdminLeavePage() {
+export function LeaveTab() {
   const [requests, setRequests] = useState<LeaveRequest[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { useToast } from '@/components/providers/ToastProvider'
-import { Search, ShieldAlert, ArrowRight, UserCircle, Phone, Mail, Building2, User, FileText, Bookmark } from 'lucide-react'
+import { Search, ShieldAlert } from 'lucide-react'
 import Link from 'next/link'
 import { Pagination } from '@/components/ui/Pagination'
 
@@ -62,7 +62,7 @@ const formatINR = (n: number) =>
     maximumFractionDigits: 0,
   }).format(n)
 
-export default function AdminLeadsPage() {
+export function LeadsTab() {
   const [leads, setLeads] = useState<Lead[]>([])
   const [branches, setBranches] = useState<Branch[]>([])
   const [employees, setEmployees] = useState<Profile[]>([])
@@ -210,7 +210,7 @@ export default function AdminLeadsPage() {
           <select
             value={statusFilter}
             onChange={e => setStatusFilter(e.target.value)}
-            className="rounded-full py-4 px-6 bg-white border border-slate-200 text-slate-900 focus:border-slate-900 transition-all outline-none appearance-none font-medium"
+            className="rounded-full py-4 px-6 bg-white border border-slate-200 text-slate-950 focus:border-slate-900 transition-all outline-none appearance-none font-medium cursor-pointer"
           >
             <option value="all">All Lead Statuses</option>
             <option value="new">New</option>
@@ -224,7 +224,7 @@ export default function AdminLeadsPage() {
           <select
             value={branchFilter}
             onChange={e => setBranchFilter(e.target.value)}
-            className="rounded-full py-4 px-6 bg-white border border-slate-200 text-slate-900 focus:border-slate-900 transition-all outline-none appearance-none font-medium"
+            className="rounded-full py-4 px-6 bg-white border border-slate-200 text-slate-950 focus:border-slate-900 transition-all outline-none appearance-none font-medium cursor-pointer"
           >
             <option value="all">All Branches</option>
             {branches.map(b => (
@@ -237,7 +237,7 @@ export default function AdminLeadsPage() {
           <select
             value={empFilter}
             onChange={e => setEmpFilter(e.target.value)}
-            className="rounded-full py-4 px-6 bg-white border border-slate-200 text-slate-900 focus:border-slate-900 transition-all outline-none appearance-none font-medium"
+            className="rounded-full py-4 px-6 bg-white border border-slate-200 text-slate-950 focus:border-slate-900 transition-all outline-none appearance-none font-medium cursor-pointer"
           >
             <option value="all">All Executives</option>
             <option value="unassigned">Unassigned Leads</option>
@@ -400,7 +400,7 @@ export default function AdminLeadsPage() {
                             }`}
                             title={lead.escalated ? 'Remove escalation' : 'Escalate lead priority'}
                           >
-                            <ShieldAlert size={14} />
+                            <ShieldAlert size={14} className="shrink-0" />
                           </button>
                         </div>
                       </td>

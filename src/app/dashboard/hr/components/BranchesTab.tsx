@@ -21,7 +21,7 @@ interface Profile {
   name: string
 }
 
-export default function BranchesPage() {
+export function BranchesTab() {
   const [branches, setBranches] = useState<Branch[]>([])
   const [loading, setLoading] = useState(true)
   const [panelOpen, setPanelOpen] = useState(false)
@@ -190,7 +190,7 @@ export default function BranchesPage() {
         {/* Add/Close Button */}
         <button
           onClick={panelOpen ? closePanel : openAddPanel}
-          className="bg-slate-900 text-white rounded-full px-8 py-4 flex items-center justify-start gap-3 hover:bg-slate-800 transition-colors w-full md:w-auto"
+          className="bg-slate-900 text-white rounded-full px-8 py-4 flex items-center justify-start gap-3 hover:bg-slate-800 transition-colors w-full md:w-auto cursor-pointer"
         >
           {panelOpen ? <X size={18} /> : <Plus size={18} />}
           {panelOpen ? 'Close panel' : 'Add branch'}
@@ -249,7 +249,7 @@ export default function BranchesPage() {
                   id="branch-form-manager"
                   value={formManagerId}
                   onChange={e => setFormManagerId(e.target.value)}
-                  className="w-full rounded-full py-4 pl-14 pr-10 bg-slate-50 border border-slate-200 text-slate-900 appearance-none focus:border-slate-900 focus:bg-white transition-all outline-none"
+                  className="w-full rounded-full py-4 pl-14 pr-10 bg-slate-50 border border-slate-200 text-slate-900 appearance-none focus:border-slate-900 focus:bg-white transition-all outline-none cursor-pointer"
                 >
                   <option value="">No manager assigned</option>
                   {availableManagers.map(m => (
@@ -268,7 +268,7 @@ export default function BranchesPage() {
               <button
                 onClick={handleDeactivate}
                 disabled={deactivating}
-                className="bg-red-50 text-red-600 border border-red-100 rounded-full p-4 px-8 flex items-center justify-center gap-3 hover:bg-red-100 transition-colors flex-1 sm:flex-initial"
+                className="bg-red-50 text-red-600 border border-red-100 rounded-full p-4 px-8 flex items-center justify-center gap-3 hover:bg-red-100 transition-colors flex-1 sm:flex-initial cursor-pointer"
               >
                 {deactivating ? 'Deactivating...' : 'Deactivate'}
               </button>
@@ -276,14 +276,14 @@ export default function BranchesPage() {
             <div className="flex-1" />
             <button
               onClick={closePanel}
-              className="bg-white border border-slate-200 text-slate-600 rounded-full p-4 px-8 flex items-center justify-center gap-3 hover:bg-slate-50 transition-colors flex-1 sm:flex-initial"
+              className="bg-white border border-slate-200 text-slate-600 rounded-full p-4 px-8 flex items-center justify-center gap-3 hover:bg-slate-50 transition-colors flex-1 sm:flex-initial cursor-pointer"
             >
               Cancel
             </button>
             <button
               onClick={handleSave}
               disabled={!formName.trim() || saving}
-              className="bg-slate-900 text-white rounded-full px-8 py-4 flex items-center justify-start gap-3 hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed w-full md:w-auto"
+              className="bg-slate-900 text-white rounded-full px-8 py-4 flex items-center justify-start gap-3 hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed w-full md:w-auto cursor-pointer"
             >
               {saving ? 'Saving...' : editingBranch ? 'Update branch' : 'Create branch'}
             </button>
@@ -307,12 +307,12 @@ export default function BranchesPage() {
               <button
                 key={branch.id}
                 onClick={() => openEditPanel(branch)}
-                className="w-full text-left p-4 md:p-8 px-6 md:px-12 hover:bg-slate-50 transition-colors flex items-center gap-4"
+                className="w-full text-left p-4 md:p-8 px-6 md:px-12 hover:bg-slate-50 transition-colors flex items-center gap-4 cursor-pointer"
               >
-                <MapPin size={18} className="text-slate-400 shrink-0" />
+                <Building2 size={18} className="text-slate-400 shrink-0" />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <p className="text-slate-900 truncate">{branch.name}</p>
+                    <p className="font-semibold text-slate-900 truncate">{branch.name}</p>
                     {branch.profiles?.find(p => p.role === 'branch_manager') && (
                       <span className="text-[10px] bg-blue-50 text-blue-600 rounded-full px-2 py-0.5 whitespace-nowrap">
                         {branch.profiles.find(p => p.role === 'branch_manager')?.name}
@@ -324,7 +324,7 @@ export default function BranchesPage() {
                   )}
                 </div>
                 {branch.is_hq && (
-                  <span className="text-xs bg-slate-100 text-slate-600 rounded-full px-3 py-1 shrink-0">
+                  <span className="text-xs bg-slate-100 text-slate-600 rounded-full px-3 py-1 shrink-0 font-semibold">
                     HQ
                   </span>
                 )}

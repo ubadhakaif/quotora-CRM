@@ -23,7 +23,7 @@ interface Branch {
   name: string
 }
 
-export default function EmployeesPage() {
+export function WorkforceTab() {
   const [employees, setEmployees] = useState<Employee[]>([])
   const [branches, setBranches] = useState<Branch[]>([])
   const [loading, setLoading] = useState(true)

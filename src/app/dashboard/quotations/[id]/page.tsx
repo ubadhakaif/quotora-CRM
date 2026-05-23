@@ -157,7 +157,7 @@ export default function AdminQuotationDetailPage() {
         }
       } catch (err: any) {
         addToast(err.message || 'Failed to fetch quotation details', 'error')
-        router.push('/dashboard/leads')
+        router.push('/dashboard/crm?tab=quotations')
       } finally {
         setLoading(false)
       }
@@ -240,7 +240,7 @@ export default function AdminQuotationDetailPage() {
       {/* Dynamic Back Link - Hidden on Mobile */}
       <div className="hidden md:block">
         <Link 
-          href="/dashboard/leads" 
+          href="/dashboard/crm?tab=quotations" 
           className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 transition-colors"
         >
           <ArrowLeft size={16} /> Back to Leads Dashboard

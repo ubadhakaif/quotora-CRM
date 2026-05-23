@@ -10,6 +10,14 @@ This is the source of truth for all current, pending, and completed tasks in thi
 - [x] Finalize Employee creation flow (`src/app/api/employees/create/route.ts`)
   - [x] Add robust validation and error responses
   - [x] Implement corresponding Supabase triggers / RLS checks
+- [x] Dealer Admin Dashboard Merges & Restructure:
+  - [x] Merged branches, employees (Workforce), attendance, and leave as tabs under Human Resources (`/dashboard/hr`) in correct tab ordering.
+  - [x] Merged models and accessories under Gallery (`/dashboard/gallery`) tab view.
+  - [x] Merged leads and quotations under CRM (`/dashboard/crm`) tab view.
+  - [x] Replaced standalone nav links in `src/lib/permissions.ts`.
+  - [x] Updated dynamic ID subpage details back-links and error handlers.
+  - [x] Purged legacy page files and empty folders.
+
 
 ## Future Milestones
 - [ ] Implement automated integration testing for multi-portal role-based security

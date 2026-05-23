@@ -72,7 +72,7 @@ export default function DealerAdminAttendanceDetailPage() {
         // Security Check: Ensure the employee belongs to the admin's tenant
         if (record.tenant_id !== adminProfile.tenant_id) {
           addToast('Access denied: Record does not belong to your dealership.', 'error')
-          router.push('/dashboard/attendance')
+          router.push('/dashboard/hr?tab=attendance')
           return
         }
 
@@ -93,7 +93,7 @@ export default function DealerAdminAttendanceDetailPage() {
         }
       } catch (err: any) {
         addToast(err.message || 'Failed to fetch verification details', 'error')
-        router.push('/dashboard/attendance')
+        router.push('/dashboard/hr?tab=attendance')
       } finally {
         setLoading(false)
       }
@@ -133,7 +133,7 @@ export default function DealerAdminAttendanceDetailPage() {
       {/* Back Link - Hidden on Mobile */}
       <div className="hidden md:block">
         <Link 
-          href="/dashboard/attendance" 
+          href="/dashboard/hr?tab=attendance" 
           className="inline-flex items-center gap-2 text-xs text-slate-600 hover:text-slate-900 transition-colors"
         >
           <ArrowLeft size={16} /> Back to Attendance Desk

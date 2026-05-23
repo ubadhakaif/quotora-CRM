@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { useToast } from '@/components/providers/ToastProvider'
-import { Calendar, Clock, ArrowLeft, Filter, Users, ShieldCheck, Edit2, Check, Landmark, Eye } from 'lucide-react'
+import { Calendar, Clock, Filter, Users, ShieldCheck, Edit2, Check, Landmark, Eye } from 'lucide-react'
 import Link from 'next/link'
 import { Pagination } from '@/components/ui/Pagination'
 
@@ -32,7 +32,7 @@ interface AttendanceRecord {
   profiles?: Profile | null
 }
 
-export default function DealerAdminAttendancePage() {
+export function AttendanceTab() {
   const [logs, setLogs] = useState<AttendanceRecord[]>([])
   const [branches, setBranches] = useState<Branch[]>([])
   const [staffList, setStaffList] = useState<Profile[]>([])
@@ -323,7 +323,7 @@ export default function DealerAdminAttendancePage() {
                     <div className="grid grid-cols-2 sm:grid-cols-5 gap-x-8 gap-y-2 items-center flex-1 max-w-3xl">
                       <div>
                         <p className="text-slate-400 font-medium">Log Date</p>
-                        <p className="font-semibold text-slate-855">{new Date(log.date).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+                        <p className="font-semibold text-slate-800">{new Date(log.date).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}</p>
                       </div>
                       <div>
                         <p className="text-slate-400 font-medium">Check-In</p>
@@ -341,7 +341,7 @@ export default function DealerAdminAttendancePage() {
                       </div>
                       <div>
                         <p className="text-slate-400 font-medium">Duration</p>
-                        <p className="font-semibold text-slate-805">
+                        <p className="font-semibold text-slate-800">
                           {calculateHours(log.check_in, log.check_out)}
                         </p>
                       </div>
