@@ -24,7 +24,12 @@ This is the source of truth for all current, pending, and completed tasks in thi
 - [ ] Optimize database queries and setup indexes on high-frequency tables
 - [ ] Implement mobile navigation bottom pill responsive behavior as per DESIGN.md
 
-## Completed Tasks
+- [x] Multiple Specs Selection & Gallery Unification (Completed 2026-05-23):
+  - [x] Wrote database migration schema adding `fuel_type_ids` and `transmission_type_ids` UUID arrays, and quotation selection columns.
+  - [x] Refactored Dealer Admin catalog variants editing form to support checking multiple specs with elegant pill check boxes.
+  - [x] Refactored Quotation Builder in Sales portal to allow selecting fuel and transmission options for a variant, removing on-road builder text.
+  - [x] Unified Branch and Sales portals' models and accessories tabs into unified `/branch/gallery` and `/sales/gallery` pages.
+  - [x] Cleared deprecated standalone routes, updated route permissions, details pages, print templates, and PDF printing API route.
 - [x] Design Enhancements & Catalog Tabular Redesign:
   - [x] Standardized global background from slate-50 to white inside `PortalShell.tsx`.
   - [x] Configured corporate blue accent variables `--color-slate-900` to `#1a56db` and active focus states globally in `globals.css`.

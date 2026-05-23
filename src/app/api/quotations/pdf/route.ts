@@ -17,7 +17,7 @@ export async function GET(
 
     const { data: quote, error } = await supabase
       .from('quotations')
-      .select('*, customers(name, phone, email), branches(name, code), variants(name, price, models(name)), quotation_accessories(price, accessories(name))')
+      .select('*, customers(name, phone, email), branches(name, code), variants(name, price, models(name)), selected_fuel:fuel_types(name), selected_trans:transmission_types(name), quotation_accessories(price, accessories(name))')
       .eq('id', quotationId)
       .single()
 
@@ -220,6 +220,12 @@ export async function GET(
         <div class="vehicle-card">
           <h2 class="vehicle-model">${quote.variants?.models?.name || 'Automobile Model'}</h2>
           <div class="vehicle-variant">${quote.variants?.name || 'Standard Edition'}</div>
+          ${quote.selected_fuel?.name || quote.selected_trans?.name ? `
+            <div style="margin-top: 10px; display: flex; gap: 8px;">
+              ${quote.selected_fuel?.name ? `<span style="background-color: rgba(255,255,255,0.2); font-size: 10px; font-weight: 700; padding: 4px 10px; border-radius: 9999px; text-transform: uppercase; display: inline-flex; align-items: center; gap: 4px; color: #ffffff;">⛽ ${quote.selected_fuel.name}</span>` : ''}
+              ${quote.selected_trans?.name ? `<span style="background-color: rgba(255,255,255,0.2); font-size: 10px; font-weight: 700; padding: 4px 10px; border-radius: 9999px; text-transform: uppercase; display: inline-flex; align-items: center; gap: 4px; color: #ffffff;">⚙️ ${quote.selected_trans.name}</span>` : ''}
+            </div>
+          ` : ''}
         </div>
 
         <div class="section-title">Pricing & Statutory Cost Matrix</div>

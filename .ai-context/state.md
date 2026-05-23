@@ -6,7 +6,13 @@ This file tracks the current stability of the application. It highlights what wa
 
 ## Recent Completions
 
-1. **Design Enhancements & Catalog Tabular Redesign**:
+1. **Multiple Fuels/Transmissions Support & Gallery Portal Unification** (Completed 2026-05-23):
+   - Created a PostgreSQL schema migration (`supabase/migrations/013_multiple_fuels_transmissions.sql`) adding specification array fields (`fuel_type_ids` and `transmission_type_ids`) to `variants` and selection foreign-key columns (`selected_fuel_type_id` and `selected_transmission_type_id`) to `quotations`.
+   - Refactored Dealer Admin catalog variants editing panel with premium, pill-style spec checklist toggles, while preserving backward compatibility.
+   - Refactored Quotation Builder in Sales portal to allow Sales Executives to select specific fuel and transmission configurations for a variant before completing a quote. Removed builder title & description subheaders.
+   - Consolidated standalone Models and Accessories menus under a unified tabbed Gallery route (`/branch/gallery` and `/sales/gallery`) for both Branch Manager and Sales Executive portals.
+   - Updated Route Permissions, details pages, print-sheets, and PDF generation routes to render chosen specifications beautifully.
+2. **Design Enhancements & Catalog Tabular Redesign**:
    - Converted the global background theme on the main Dealer Admin dashboard viewport from slate-50 to pure white in `PortalShell.tsx`.
    - Configured premium corporate blue accent variables `--color-slate-900` to `#1a56db` and active focus outline selectors in `globals.css` to transition components effortlessly to corporate blue.
    - Cleared page title taglines and description subheaders across the merged HR, Gallery, CRM, and Attendance views to maintain deep focus.

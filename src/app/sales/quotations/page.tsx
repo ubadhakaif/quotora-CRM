@@ -10,12 +10,16 @@ import { ImageUpload } from '@/components/ui/ImageUpload'
 import { calculateEMI, isDownPaymentSufficient } from '@/lib/emi'
 
 interface Model { id: string; name: string }
+interface FuelType { id: string; name: string }
+interface TransType { id: string; name: string }
 interface Variant {
   id: string
   name: string
   price: number
   model_id: string
   image_url: string | null
+  fuel_type_ids?: string[] | null
+  transmission_type_ids?: string[] | null
   fuel_types?: { name: string } | null
   transmission_types?: { name: string } | null
 }
@@ -73,6 +77,8 @@ export default function SalesQuotationsPage() {
   const [loading, setLoading] = useState(true)
   const [panelOpen, setPanelOpen] = useState(true)
   const [activeTab, setActiveTab] = useState<'new' | 'list'>('new')
+  const [allFuels, setAllFuels] = useState<FuelType[]>([])
+  const [allTrans, setAllTrans] = useState<TransType[]>([])
   const [search, setSearch] = useState('')
   const [saving, setSaving] = useState(false)
 
@@ -92,6 +98,8 @@ export default function SalesQuotationsPage() {
   const [newCustAddress, setNewCustAddress] = useState('')
   const [bModelId, setBModelId] = useState('')
   const [bVariantId, setBVariantId] = useState('')
+  const [bFuelId, setBFuelId] = useState('')
+  const [bTransId, setBTransId] = useState('')
   const [selectedAccIds, setSelectedAccIds] = useState<string[]>([])
   const [discountMode, setDiscountMode] = useState<'with_acc' | 'without_acc'>('without_acc')
   const [bDiscountAmt, setBDiscountAmt] = useState<number>(0)
@@ -156,7 +164,7 @@ export default function SalesQuotationsPage() {
     if (!profile?.id) return
     setLoading(true)
     
-    const [quotesRes, customersRes, modelsRes, variantsRes, accRes, settingsRes, plansRes] = await Promise.all([
+    const [quotesRes, customersRes, modelsRes, variantsRes, accRes, settingsRes, plansRes, fuelsRes, transRes] = await Promise.all([
       supabase
         .from('quotations')
         .select('*, customers(name, phone), variants(name, price, models(name)), quotation_accessories(id, accessories(name, price))')
@@ -176,7 +184,7 @@ export default function SalesQuotationsPage() {
         .order('name'),
       supabase
         .from('variants')
-        .select('id, name, price, model_id, image_url, fuel_types(name), transmission_types(name)')
+        .select('id, name, price, model_id, image_url, fuel_type_ids, transmission_type_ids, fuel_types(name), transmission_types(name)')
         .eq('is_active', true)
         .order('name'),
       supabase
@@ -191,7 +199,17 @@ export default function SalesQuotationsPage() {
         .from('finance_plans')
         .select('*, finance_providers(id, name)')
         .eq('is_active', true)
-        .order('interest_rate')
+        .order('interest_rate'),
+      supabase
+        .from('fuel_types')
+        .select('id, name')
+        .eq('is_active', true)
+        .order('name'),
+      supabase
+        .from('transmission_types')
+        .select('id, name')
+        .eq('is_active', true)
+        .order('name')
     ])
 
     if (quotesRes.data) setQuotes(quotesRes.data as any[])
@@ -205,6 +223,8 @@ export default function SalesQuotationsPage() {
         setSelectedPlanId(plansRes.data[0].id)
       }
     }
+    if (fuelsRes.data) setAllFuels(fuelsRes.data)
+    if (transRes.data) setAllTrans(transRes.data)
     
     if (settingsRes.data && Array.isArray(settingsRes.data)) {
       const settingsMap: Record<string, any> = {}
@@ -282,6 +302,8 @@ export default function SalesQuotationsPage() {
     setExchangeKms('')
     setExchangeValuation('')
     setExchangeNotes('')
+    setBFuelId('')
+    setBTransId('')
   }, [bVariantId])
 
   // Reset custom interest rate override when plan changes
@@ -335,6 +357,8 @@ export default function SalesQuotationsPage() {
     setNewCustAddress('')
     setBModelId('')
     setBVariantId('')
+    setBFuelId('')
+    setBTransId('')
     setSelectedAccIds([])
     setDiscountMode('without_acc')
     setBDiscountAmt(0)
@@ -397,6 +421,23 @@ export default function SalesQuotationsPage() {
     if (customerMode === 'new' && !newCustName.trim()) return
     if (!bVariantId || !profile) return
     setSaving(true)
+
+    const availableFuels = allFuels.filter(f => activeVariant?.fuel_type_ids?.includes(f.id))
+    const availableTrans = allTrans.filter(t => activeVariant?.transmission_type_ids?.includes(t.id))
+
+    if (availableFuels.length > 0 && !bFuelId) {
+      addToast('Please select a fuel type configuration.', 'error')
+      setSaving(false)
+      return
+    }
+    if (availableTrans.length > 0 && !bTransId) {
+      addToast('Please select a transmission configuration.', 'error')
+      setSaving(false)
+      return
+    }
+
+    const chosenFuelName = availableFuels.find(f => f.id === bFuelId)?.name || null
+    const chosenTransName = availableTrans.find(t => t.id === bTransId)?.name || null
 
     // 1. Mobile Number (10 digits) validation
     if (customerMode === 'new') {
@@ -548,6 +589,8 @@ export default function SalesQuotationsPage() {
       branch_id: profile.branch_id,
       customer_id: finalCustomerId,
       variant_id: bVariantId,
+      selected_fuel_type_id: bFuelId || null,
+      selected_transmission_type_id: bTransId || null,
       total_price: finalOnRoadPrice,
       discount_amount: bDiscountAmt,
       discount_percent: bDiscountPct,
@@ -581,6 +624,12 @@ export default function SalesQuotationsPage() {
         other_charges: otherCharges,
         accessories: accessoriesTotal,
         discount_base_option: discountMode,
+        selected_specifications: {
+          fuel_type_id: bFuelId || null,
+          transmission_type_id: bTransId || null,
+          fuel_name: chosenFuelName,
+          transmission_name: chosenTransName
+        },
         finance: includeLoan ? {
           include_loan: true,
           provider_id: activePlan ? activePlan.provider_id : null,
@@ -769,8 +818,24 @@ export default function SalesQuotationsPage() {
 
           <div className="space-y-4">
             <h3 className="text-sm uppercase tracking-wider font-bold text-slate-900">Vehicle Description</h3>
-            <div className="bg-slate-50 p-6 rounded-xl border border-slate-100">
-              <p className="text-lg font-bold text-slate-800">{previewingQuote.variants?.models?.name} — {previewingQuote.variants?.name}</p>
+            <div className="bg-slate-50 p-6 rounded-xl border border-slate-100 flex justify-between items-center">
+              <div>
+                <p className="text-lg font-bold text-slate-800">{previewingQuote.variants?.models?.name} — {previewingQuote.variants?.name}</p>
+                {previewingQuote.tax_breakdown?.selected_specifications && (
+                  <div className="flex gap-2 mt-1.5">
+                    {previewingQuote.tax_breakdown.selected_specifications.fuel_name && (
+                      <span className="text-[10px] bg-slate-200 text-slate-700 font-extrabold px-2.5 py-0.5 rounded-full uppercase">
+                        ⛽ {previewingQuote.tax_breakdown.selected_specifications.fuel_name}
+                      </span>
+                    )}
+                    {previewingQuote.tax_breakdown.selected_specifications.transmission_name && (
+                      <span className="text-[10px] bg-slate-200 text-slate-700 font-extrabold px-2.5 py-0.5 rounded-full uppercase">
+                        ⚙️ {previewingQuote.tax_breakdown.selected_specifications.transmission_name}
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -926,10 +991,6 @@ export default function SalesQuotationsPage() {
       {/* Tab 1: New Quotation Builder Panel */}
       {activeTab === 'new' && panelOpen && (
         <div className="bg-white border border-slate-200 rounded-[2.5rem] p-5 md:p-6 space-y-4">
-          <div>
-            <h3 className="text-lg text-slate-900 pl-2">Step-by-Step On-Road Price Builder</h3>
-            <p className="text-sm text-slate-500 pl-2 mt-1">Configure customer vehicle quote, add optional accessories, and calculate discount approvals.</p>
-          </div>
 
           <div className="space-y-6">
             
@@ -1064,7 +1125,7 @@ export default function SalesQuotationsPage() {
                   >
                     <option value="">-- Choose Variant --</option>
                     {filteredVariants.map(v => (
-                      <option key={v.id} value={v.id}>{v.name} ({fmtINR(v.price)})</option>
+                  <option key={v.id} value={v.id}>{v.name} ({fmtINR(v.price)})</option>
                     ))}
                   </select>
                 </div>
@@ -1072,35 +1133,91 @@ export default function SalesQuotationsPage() {
             </div>
 
             {activeVariant && (
-              <div className="flex flex-col sm:flex-row gap-5 items-center py-2">
-                {activeVariant.image_url ? (
-                  <img
-                    src={activeVariant.image_url}
-                    alt={activeVariant.name}
-                    className="w-32 h-20 rounded-2xl object-contain shrink-0 border border-slate-250 shadow-sm bg-white"
-                  />
-                ) : (
-                  <div className="w-32 h-20 rounded-2xl bg-slate-100 flex items-center justify-center shrink-0 border border-slate-205">
-                    <Car size={24} className="text-slate-400" />
+              <div className="space-y-4 py-2">
+                <div className="flex flex-col sm:flex-row gap-5 items-center">
+                  {activeVariant.image_url ? (
+                    <img
+                      src={activeVariant.image_url}
+                      alt={activeVariant.name}
+                      className="w-32 h-20 rounded-2xl object-contain shrink-0 border border-slate-200 shadow-sm bg-white"
+                    />
+                  ) : (
+                    <div className="w-32 h-20 rounded-2xl bg-slate-100 flex items-center justify-center shrink-0 border border-slate-200">
+                      <Car size={24} className="text-slate-400" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0 text-center sm:text-left space-y-1">
+                    <h5 className="font-bold text-slate-950 text-base">{activeVariant.name}</h5>
+                    <p className="text-xs text-slate-500 font-semibold">
+                      Ex-Showroom Price: <span className="text-slate-950 font-bold">{fmtINR(activeVariant.price)}</span>
+                    </p>
                   </div>
-                )}
-                <div className="flex-1 min-w-0 text-center sm:text-left space-y-1">
-                  <h5 className="font-bold text-slate-950 text-base">{activeVariant.name}</h5>
-                  <div className="flex flex-wrap justify-center sm:justify-start gap-2">
-                    {activeVariant.fuel_types?.name && (
-                      <span className="text-[10px] bg-slate-200 text-slate-700 font-extrabold px-2.5 py-0.5 rounded-full uppercase">
-                        ⛽ {activeVariant.fuel_types.name}
-                      </span>
-                    )}
-                    {activeVariant.transmission_types?.name && (
-                      <span className="text-[10px] bg-slate-200 text-slate-700 font-extrabold px-2.5 py-0.5 rounded-full uppercase">
-                        ⚙️ {activeVariant.transmission_types.name}
-                      </span>
-                    )}
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-[1.5rem] border border-slate-200/80">
+                  {/* Fuel Choice */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-slate-700 pl-2">Select Fuel Type *</label>
+                    {(() => {
+                      const availableFuels = allFuels.filter(f => activeVariant?.fuel_type_ids?.includes(f.id))
+                      if (availableFuels.length === 0) {
+                        return <p className="text-xs text-slate-400 italic pl-2">No fuel types defined</p>
+                      }
+                      return (
+                        <div className="flex flex-wrap gap-2 pt-1 pl-1">
+                          {availableFuels.map(f => {
+                            const isSelected = bFuelId === f.id
+                            return (
+                              <button
+                                key={f.id}
+                                type="button"
+                                onClick={() => setBFuelId(f.id)}
+                                className={`px-4 py-2 rounded-full text-xs font-bold border transition-all cursor-pointer ${
+                                  isSelected
+                                    ? 'bg-slate-900 border-slate-900 text-white shadow-sm'
+                                    : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
+                                }`}
+                              >
+                                ⛽ {f.name}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      )
+                    })()}
                   </div>
-                  <p className="text-xs text-slate-500 font-semibold">
-                    Ex-Showroom Price: <span className="text-slate-950 font-bold">{fmtINR(activeVariant.price)}</span>
-                  </p>
+
+                  {/* Transmission Choice */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-slate-700 pl-2">Select Transmission Type *</label>
+                    {(() => {
+                      const availableTrans = allTrans.filter(t => activeVariant?.transmission_type_ids?.includes(t.id))
+                      if (availableTrans.length === 0) {
+                        return <p className="text-xs text-slate-400 italic pl-2">No transmission types defined</p>
+                      }
+                      return (
+                        <div className="flex flex-wrap gap-2 pt-1 pl-1">
+                          {availableTrans.map(t => {
+                            const isSelected = bTransId === t.id
+                            return (
+                              <button
+                                key={t.id}
+                                type="button"
+                                onClick={() => setBTransId(t.id)}
+                                className={`px-4 py-2 rounded-full text-xs font-bold border transition-all cursor-pointer ${
+                                  isSelected
+                                    ? 'bg-slate-900 border-slate-900 text-white shadow-sm'
+                                    : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
+                                }`}
+                              >
+                                ⚙️ {t.name}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      )
+                    })()}
+                  </div>
                 </div>
               </div>
             )}

@@ -1,7 +1,0 @@
-'use client'
-
-import { AccessoriesGallery } from '@/components/catalog/AccessoriesGallery'
-
-export default function BranchAccessoriesPage() {
-  return <AccessoriesGallery />
-}

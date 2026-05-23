@@ -125,8 +125,7 @@ export const DEALER_ADMIN_NAV: NavItem[] = [
 export const BRANCH_MANAGER_NAV: NavItem[] = [
   { href: '/branch', label: 'Dashboard', icon: 'LayoutDashboard' },
   { href: '/branch/employees', label: 'Employees', icon: 'Users' },
-  { href: '/branch/models', label: 'Models', icon: 'Car' },
-  { href: '/branch/accessories', label: 'Accessories', icon: 'Wrench' },
+  { href: '/branch/gallery', label: 'Gallery', icon: 'Car' },
   { href: '/branch/leads', label: 'Leads', icon: 'Target' },
   { href: '/branch/attendance', label: 'Attendance', icon: 'Clock' },
   { href: '/branch/leave', label: 'Leave', icon: 'CalendarDays' },
@@ -138,8 +137,7 @@ export const BRANCH_MANAGER_NAV: NavItem[] = [
 export const SALES_EXECUTIVE_NAV: NavItem[] = [
   { href: '/sales', label: 'Dashboard', icon: 'LayoutDashboard' },
   { href: '/sales/quotations', label: 'Quotations', icon: 'FileText' },
-  { href: '/sales/models', label: 'Models', icon: 'Car' },
-  { href: '/sales/accessories', label: 'Accessories', icon: 'Wrench' },
+  { href: '/sales/gallery', label: 'Gallery', icon: 'Car' },
   { href: '/sales/attendance', label: 'Attendance', icon: 'Clock' },
   { href: '/sales/leave', label: 'Leave', icon: 'CalendarDays' },
   { href: '/sales/follow-ups', label: 'Follow-ups', icon: 'PhoneCall' },
@@ -164,8 +162,7 @@ export const DEALER_ADMIN_ROUTE_TITLES: Record<string, string> = {
 export const BRANCH_MANAGER_ROUTE_TITLES: Record<string, string> = {
   '/branch': 'Dashboard',
   '/branch/employees': 'Employees',
-  '/branch/models': 'Vehicle Models',
-  '/branch/accessories': 'Accessories',
+  '/branch/gallery': 'Gallery',
   '/branch/leads': 'Leads',
   '/branch/attendance': 'Attendance',
   '/branch/leave': 'Leave Management',
@@ -178,8 +175,7 @@ export const BRANCH_MANAGER_ROUTE_TITLES: Record<string, string> = {
 export const SALES_EXECUTIVE_ROUTE_TITLES: Record<string, string> = {
   '/sales': 'Dashboard',
   '/sales/quotations': 'Quotations',
-  '/sales/models': 'Vehicle Models',
-  '/sales/accessories': 'Accessories',
+  '/sales/gallery': 'Gallery',
   '/sales/attendance': 'Attendance',
   '/sales/leave': 'Leave',
   '/sales/follow-ups': 'Follow-ups',

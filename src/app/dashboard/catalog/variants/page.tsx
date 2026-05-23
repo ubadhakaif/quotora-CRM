@@ -14,6 +14,7 @@ interface TransType { id: string; name: string }
 interface Variant {
   id: string; name: string; model_id: string; price: number
   fuel_type_id: string|null; transmission_type_id: string|null
+  fuel_type_ids?: string[] | null; transmission_type_ids?: string[] | null
   variant_order: number; image_url: string|null
   images?: string[] | null; video_url?: string | null
   brochure_url?: string | null
@@ -38,8 +39,10 @@ export default function VariantsTab({ refreshTrigger = 0 }: VariantsTabProps) {
   const [editing, setEditing] = useState<Variant|null>(null)
   const [search, setSearch] = useState('')
   const [fName, setFName] = useState(''); const [fModelId, setFModelId] = useState('')
-  const [fPrice, setFPrice] = useState(''); const [fFuelId, setFFuelId] = useState('')
-  const [fTransId, setFTransId] = useState(''); const [fOrder, setFOrder] = useState('0')
+  const [fPrice, setFPrice] = useState('')
+  const [fFuelIds, setFFuelIds] = useState<string[]>([])
+  const [fTransIds, setFTransIds] = useState<string[]>([])
+  const [fOrder, setFOrder] = useState('0')
   const [images, setImages] = useState<string[]>([])
   const [videoUrl, setVideoUrl] = useState<string|null>(null)
   const [brochureUrl, setBrochureUrl] = useState<string|null>(null)
@@ -69,8 +72,8 @@ export default function VariantsTab({ refreshTrigger = 0 }: VariantsTabProps) {
     }
   }, [refreshTrigger]) // eslint-disable-line
 
-  const openAdd = () => { setEditing(null);setFName('');setFModelId('');setFPrice('');setFFuelId('');setFTransId('');setFOrder('0');setImages([]);setVideoUrl(null);setBrochureUrl(null);setPanelOpen(true) }
-  const openEdit = (v: Variant) => { setEditing(v);setFName(v.name);setFModelId(v.model_id);setFPrice(String(v.price));setFFuelId(v.fuel_type_id||'');setFTransId(v.transmission_type_id||'');setFOrder(String(v.variant_order));setImages(v.images || (v.image_url ? [v.image_url] : []));setVideoUrl(v.video_url || null);setBrochureUrl(v.brochure_url || null);setPanelOpen(true) }
+  const openAdd = () => { setEditing(null);setFName('');setFModelId('');setFPrice('');setFFuelIds([]);setFTransIds([]);setFOrder('0');setImages([]);setVideoUrl(null);setBrochureUrl(null);setPanelOpen(true) }
+  const openEdit = (v: Variant) => { setEditing(v);setFName(v.name);setFModelId(v.model_id);setFPrice(String(v.price));setFFuelIds(v.fuel_type_ids || (v.fuel_type_id ? [v.fuel_type_id] : []));setFTransIds(v.transmission_type_ids || (v.transmission_type_id ? [v.transmission_type_id] : []));setFOrder(String(v.variant_order));setImages(v.images || (v.image_url ? [v.image_url] : []));setVideoUrl(v.video_url || null);setBrochureUrl(v.brochure_url || null);setPanelOpen(true) }
   const close = () => { setPanelOpen(false);setEditing(null) }
 
   const save = async () => {
@@ -79,8 +82,10 @@ export default function VariantsTab({ refreshTrigger = 0 }: VariantsTabProps) {
       name:fName,
       model_id:fModelId,
       price:parseFloat(fPrice)||0,
-      fuel_type_id:fFuelId||null,
-      transmission_type_id:fTransId||null,
+      fuel_type_ids:fFuelIds,
+      transmission_type_ids:fTransIds,
+      fuel_type_id:fFuelIds.length > 0 ? fFuelIds[0] : null,
+      transmission_type_id:fTransIds.length > 0 ? fTransIds[0] : null,
       variant_order:parseInt(fOrder)||0,
       images,
       video_url:videoUrl,
@@ -120,35 +125,85 @@ export default function VariantsTab({ refreshTrigger = 0 }: VariantsTabProps) {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-sm text-slate-600 pl-4">Fuel type</label>
-                <div className="flex gap-2">
-                  <select value={fFuelId} onChange={e=>setFFuelId(e.target.value)} className="flex-1 rounded-full py-4 px-6 bg-slate-50 border border-slate-200 text-slate-900 focus:border-slate-900 focus:bg-white transition-all outline-none appearance-none">
-                    <option value="">Select fuel type</option>
-                    {fuels.map(f=><option key={f.id} value={f.id}>{f.name}</option>)}
-                  </select>
-                  <button type="button" onClick={()=>setAddFuel(!addFuel)} className="bg-white border border-slate-200 text-slate-600 rounded-full p-4 hover:bg-slate-50 transition-colors shrink-0"><Plus size={18}/></button>
+                <label className="text-sm text-slate-600 pl-4">Fuel types</label>
+                <div className="flex flex-wrap gap-2 p-3 bg-slate-50 border border-slate-200 rounded-[1rem]">
+                  {fuels.map(f => {
+                    const isSelected = fFuelIds.includes(f.id)
+                    return (
+                      <button
+                        key={f.id}
+                        type="button"
+                        onClick={() => {
+                          setFFuelIds(prev =>
+                            prev.includes(f.id)
+                              ? prev.filter(id => id !== f.id)
+                              : [...prev, f.id]
+                          )
+                        }}
+                        className={`px-4 py-2 rounded-full text-xs font-semibold border transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-slate-900 border-slate-900 text-white'
+                            : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
+                        }`}
+                      >
+                        {f.name}
+                      </button>
+                    )
+                  })}
+                  <button
+                    type="button"
+                    onClick={() => setAddFuel(!addFuel)}
+                    className="px-3 py-2 rounded-full text-xs font-semibold bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 flex items-center gap-1 cursor-pointer"
+                  >
+                    <Plus size={14} /> Add new
+                  </button>
                 </div>
                 {addFuel && (
                   <div className="flex gap-2 pl-4 pt-1">
                     <input type="text" value={newFuel} onChange={e=>setNewFuel(e.target.value)} placeholder="e.g. Petrol, Diesel, EV" className="flex-1 rounded-full py-3 px-5 bg-slate-50 border border-slate-200 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-900 focus:bg-white transition-all outline-none" />
-                    <button type="button" onClick={saveFuel} disabled={!newFuel.trim()} className="bg-slate-900 text-white rounded-full px-5 py-3 text-sm hover:bg-slate-800 transition-colors disabled:opacity-50">Add</button>
+                    <button type="button" onClick={saveFuel} disabled={!newFuel.trim()} className="bg-slate-900 text-white rounded-full px-5 py-3 text-sm hover:bg-slate-800 transition-colors disabled:opacity-50 cursor-pointer">Add</button>
                   </div>
                 )}
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm text-slate-600 pl-4">Transmission type</label>
-                <div className="flex gap-2">
-                  <select value={fTransId} onChange={e=>setFTransId(e.target.value)} className="flex-1 rounded-full py-4 px-6 bg-slate-50 border border-slate-200 text-slate-900 focus:border-slate-900 focus:bg-white transition-all outline-none appearance-none">
-                    <option value="">Select transmission</option>
-                    {trans.map(t=><option key={t.id} value={t.id}>{t.name}</option>)}
-                  </select>
-                  <button type="button" onClick={()=>setAddTrans(!addTrans)} className="bg-white border border-slate-200 text-slate-600 rounded-full p-4 hover:bg-slate-50 transition-colors shrink-0"><Plus size={18}/></button>
+                <label className="text-sm text-slate-600 pl-4">Transmission types</label>
+                <div className="flex flex-wrap gap-2 p-3 bg-slate-50 border border-slate-200 rounded-[1rem]">
+                  {trans.map(t => {
+                    const isSelected = fTransIds.includes(t.id)
+                    return (
+                      <button
+                        key={t.id}
+                        type="button"
+                        onClick={() => {
+                          setFTransIds(prev =>
+                            prev.includes(t.id)
+                              ? prev.filter(id => id !== t.id)
+                              : [...prev, t.id]
+                          )
+                        }}
+                        className={`px-4 py-2 rounded-full text-xs font-semibold border transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-slate-900 border-slate-900 text-white'
+                            : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
+                        }`}
+                      >
+                        {t.name}
+                      </button>
+                    )
+                  })}
+                  <button
+                    type="button"
+                    onClick={() => setAddTrans(!addTrans)}
+                    className="px-3 py-2 rounded-full text-xs font-semibold bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 flex items-center gap-1 cursor-pointer"
+                  >
+                    <Plus size={14} /> Add new
+                  </button>
                 </div>
                 {addTrans && (
                   <div className="flex gap-2 pl-4 pt-1">
                     <input type="text" value={newTrans} onChange={e=>setNewTrans(e.target.value)} placeholder="e.g. Manual, Automatic" className="flex-1 rounded-full py-3 px-5 bg-slate-50 border border-slate-200 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-900 focus:bg-white transition-all outline-none" />
-                    <button type="button" onClick={saveTrans} disabled={!newTrans.trim()} className="bg-slate-900 text-white rounded-full px-5 py-3 text-sm hover:bg-slate-800 transition-colors disabled:opacity-50">Add</button>
+                    <button type="button" onClick={saveTrans} disabled={!newTrans.trim()} className="bg-slate-900 text-white rounded-full px-5 py-3 text-sm hover:bg-slate-800 transition-colors disabled:opacity-50 cursor-pointer">Add</button>
                   </div>
                 )}
               </div>
@@ -198,8 +253,26 @@ export default function VariantsTab({ refreshTrigger = 0 }: VariantsTabProps) {
               <tbody className="divide-y divide-slate-100">
                 {filtered.map(v => {
                   const modelName = v.models && typeof v.models === 'object' && 'name' in v.models ? (v.models as { name: string }).name : 'Unknown'
-                  const fuelName = v.fuel_types && typeof v.fuel_types === 'object' && 'name' in v.fuel_types ? (v.fuel_types as { name: string }).name : null
-                  const transName = v.transmission_types && typeof v.transmission_types === 'object' && 'name' in v.transmission_types ? (v.transmission_types as { name: string }).name : null
+                  
+                  const fuelNames: string[] = []
+                  if (v.fuel_type_ids && Array.isArray(v.fuel_type_ids)) {
+                    v.fuel_type_ids.forEach(id => {
+                      const found = fuels.find(f => f.id === id)
+                      if (found) fuelNames.push(found.name)
+                    })
+                  } else if (v.fuel_types && typeof v.fuel_types === 'object' && 'name' in v.fuel_types) {
+                    fuelNames.push((v.fuel_types as { name: string }).name)
+                  }
+
+                  const transNames: string[] = []
+                  if (v.transmission_type_ids && Array.isArray(v.transmission_type_ids)) {
+                    v.transmission_type_ids.forEach(id => {
+                      const found = trans.find(t => t.id === id)
+                      if (found) transNames.push(found.name)
+                    })
+                  } else if (v.transmission_types && typeof v.transmission_types === 'object' && 'name' in v.transmission_types) {
+                    transNames.push((v.transmission_types as { name: string }).name)
+                  }
 
                   return (
                     <tr key={v.id} className="hover:bg-slate-50/50 transition-colors">
@@ -232,17 +305,17 @@ export default function VariantsTab({ refreshTrigger = 0 }: VariantsTabProps) {
                       {/* Specifications */}
                       <td className="py-4 px-6">
                         <div className="flex flex-wrap gap-1.5">
-                          {fuelName ? (
-                            <span className="text-[10px] bg-blue-50 text-blue-600 rounded-full px-2.5 py-0.5 font-semibold">
-                              {fuelName}
+                          {fuelNames.map(name => (
+                            <span key={name} className="text-[10px] bg-blue-50 text-blue-600 rounded-full px-2.5 py-0.5 font-semibold">
+                              {name}
                             </span>
-                          ) : null}
-                          {transName ? (
-                            <span className="text-[10px] bg-slate-100 text-slate-600 rounded-full px-2.5 py-0.5 font-semibold">
-                              {transName}
+                          ))}
+                          {transNames.map(name => (
+                            <span key={name} className="text-[10px] bg-slate-100 text-slate-600 rounded-full px-2.5 py-0.5 font-semibold">
+                              {name}
                             </span>
-                          ) : null}
-                          {!fuelName && !transName && (
+                          ))}
+                          {fuelNames.length === 0 && transNames.length === 0 && (
                             <span className="text-slate-400 italic text-xs">None</span>
                           )}
                         </div>

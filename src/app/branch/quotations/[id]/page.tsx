@@ -72,6 +72,8 @@ interface Quotation {
   variants: Variant | null
   profiles: Profile | null
   approved_profiles?: { name: string } | null
+  selected_fuel?: { name: string } | null
+  selected_trans?: { name: string } | null
 }
 
 interface QuotationAccessory {
@@ -128,7 +130,9 @@ export default function BranchQuotationDetailPage() {
             *,
             customers (*),
             variants (id, name, price, models(name)),
-            profiles!quotations_created_by_fkey (id, name)
+            profiles!quotations_created_by_fkey (id, name),
+            selected_fuel:fuel_types(name),
+            selected_trans:transmission_types(name)
           `)
           .eq('id', id)
           .eq('is_active', true)
@@ -365,6 +369,22 @@ export default function BranchQuotationDetailPage() {
                   {quote.likely_purchase ? purchaseLabels[quote.likely_purchase] || quote.likely_purchase : '—'}
                 </span>
               </div>
+              {quote.selected_fuel?.name && (
+                <div className="space-y-1">
+                  <span className="text-xs text-slate-400 uppercase tracking-wider block font-medium">Fuel Type Option</span>
+                  <span className="text-slate-900 font-medium flex items-center gap-1">
+                    ⛽ {quote.selected_fuel.name}
+                  </span>
+                </div>
+              )}
+              {quote.selected_trans?.name && (
+                <div className="space-y-1">
+                  <span className="text-xs text-slate-400 uppercase tracking-wider block font-medium">Transmission Option</span>
+                  <span className="text-slate-900 font-medium flex items-center gap-1">
+                    ⚙️ {quote.selected_trans.name}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 
