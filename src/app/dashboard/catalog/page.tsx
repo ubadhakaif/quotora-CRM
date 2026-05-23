@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Car, Layers, Wrench, Fuel, Settings, FileUp, HelpCircle, CheckCircle2, AlertTriangle, RefreshCw, Copy, Check } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/components/providers/AuthProvider'
@@ -18,21 +18,37 @@ const tabs = [
   { id: 'fuels', label: 'Fuel Types', icon: Fuel },
   { id: 'transmissions', label: 'Transmissions', icon: Settings },
   { id: 'accessories', label: 'Accessories', icon: Wrench },
+  { id: 'import', label: 'Import CSV', icon: FileUp },
 ]
 
 export default function CatalogPage() {
   const [activeTab, setActiveTab] = useState('models')
   const [refreshTrigger, setRefreshTrigger] = useState(0)
-  const [showImport, setShowImport] = useState(false)
   const [importType, setImportType] = useState<'variants' | 'accessories'>('variants')
   const [file, setFile] = useState<File | null>(null)
   const [isParsing, setIsParsing] = useState(false)
   const [progress, setProgress] = useState<ImportProgress | null>(null)
   const [copied, setCopied] = useState(false)
-  
+  const [isMobile, setIsMobile] = useState(false)
+  const [dropdownOpen, setDropdownOpen] = useState(false)
+
   const { profile } = useAuth()
   const { addToast } = useToast()
   const supabase = createClient()
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    handleResize()
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
+  // Split tabs based on mobile/desktop
+  const visibleTabs = isMobile ? tabs.slice(0, 3) : tabs
+  const overflowTabs = isMobile ? tabs.slice(3) : []
+  const isOverflowActive = overflowTabs.some(t => t.id === activeTab)
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -102,11 +118,10 @@ export default function CatalogPage() {
 
   return (
     <div className="space-y-6">
-      {/* Standard Underline Tab bar with CSV Import button */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-200 gap-4">
-        {/* Navigation Tabs */}
-        <nav className="flex -mb-px space-x-4 sm:space-x-8 overflow-x-auto scrollbar-none flex-1 w-full" aria-label="Tabs">
-          {tabs.map(tab => {
+      {/* Standard Underline Tab bar */}
+      <div className="border-b border-slate-200 w-full relative">
+        <nav className="flex -mb-px space-x-4 sm:space-x-8 overflow-visible" aria-label="Tabs">
+          {visibleTabs.map(tab => {
             const Icon = tab.icon
             const isActive = activeTab === tab.id
             return (
@@ -114,6 +129,7 @@ export default function CatalogPage() {
                 key={tab.id}
                 onClick={() => {
                   setActiveTab(tab.id)
+                  setDropdownOpen(false)
                   // Auto-switch import type to match tab for better UX
                   if (tab.id === 'variants') setImportType('variants')
                   if (tab.id === 'accessories') setImportType('accessories')
@@ -132,27 +148,62 @@ export default function CatalogPage() {
               </button>
             )
           })}
-        </nav>
 
-        {/* CSV Import Button */}
-        <button
-          onClick={() => setShowImport(!showImport)}
-          className={`
-            flex items-center justify-center gap-2 px-5 py-3 mb-2 sm:mb-0 rounded-[8px] text-sm font-semibold transition-all cursor-pointer border shrink-0
-            ${showImport
-              ? 'bg-slate-100 text-slate-900 border-slate-300'
-              : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300'
-            }
-          `}
-        >
-          <FileUp size={16} />
-          {showImport ? 'Hide Import' : 'Import CSV'}
-        </button>
+          {/* Ellipsis Overflow Tab for Mobile */}
+          {isMobile && overflowTabs.length > 0 && (
+            <div className="relative flex-1 min-w-0">
+              <button
+                type="button"
+                onClick={() => setDropdownOpen(!dropdownOpen)}
+                className={`
+                  w-full border-b-2 py-4 px-1 text-sm font-medium transition-all cursor-pointer whitespace-nowrap overflow-hidden text-ellipsis text-center flex items-center justify-center gap-1
+                  ${isOverflowActive
+                    ? 'border-slate-900 text-slate-900 font-semibold'
+                    : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
+                  }
+                `}
+              >
+                <span>...</span>
+              </button>
+
+              {/* Dropdown Menu */}
+              {dropdownOpen && (
+                <div className="absolute right-0 top-full mt-1 bg-white border border-slate-200 z-50 py-1 min-w-[160px] shadow-none rounded-none">
+                  {overflowTabs.map(tab => {
+                    const Icon = tab.icon
+                    const isActive = activeTab === tab.id
+                    return (
+                      <button
+                        key={tab.id}
+                        onClick={() => {
+                          setActiveTab(tab.id)
+                          setDropdownOpen(false)
+                          if (tab.id === 'variants') setImportType('variants')
+                          if (tab.id === 'accessories') setImportType('accessories')
+                        }}
+                        className={`
+                          w-full flex items-center gap-2 px-4 py-3 text-xs transition-all cursor-pointer hover:bg-slate-50
+                          ${isActive
+                            ? 'text-slate-900 font-bold bg-slate-50/50'
+                            : 'text-slate-600 hover:text-slate-900'
+                          }
+                        `}
+                      >
+                        <Icon size={14} className="shrink-0" />
+                        <span>{tab.label}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+        </nav>
       </div>
 
-      {/* Collapsible CSV Import Panel */}
-      {showImport && (
-        <div className="bg-white border border-slate-200 rounded-[8px] p-6 space-y-6">
+      {/* CSV Import Panel inside tab view */}
+      {activeTab === 'import' && (
+        <div className="bg-white border border-slate-200 rounded-none p-6 space-y-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-slate-100 pb-4 gap-4">
             <div>
               <h3 className="text-base font-bold text-slate-950">Bulk CSV Pricing & Catalog Automation</h3>
@@ -160,10 +211,10 @@ export default function CatalogPage() {
             </div>
             
             {/* Import Type Switcher */}
-            <div className="flex items-center bg-slate-50 border border-slate-200 p-1 rounded-[8px] self-start md:self-auto">
+            <div className="flex items-center bg-slate-50 border border-slate-200 p-1 rounded-none self-start md:self-auto">
               <button
                 onClick={() => { setImportType('variants'); resetImport(); }}
-                className={`px-4 py-2 text-xs font-bold rounded-[8px] transition-all cursor-pointer ${
+                className={`px-4 py-2 text-xs font-semibold rounded-none transition-all cursor-pointer ${
                   importType === 'variants' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
@@ -171,7 +222,7 @@ export default function CatalogPage() {
               </button>
               <button
                 onClick={() => { setImportType('accessories'); resetImport(); }}
-                className={`px-4 py-2 text-xs font-bold rounded-[8px] transition-all cursor-pointer ${
+                className={`px-4 py-2 text-xs font-semibold rounded-none transition-all cursor-pointer ${
                   importType === 'accessories' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
@@ -182,7 +233,7 @@ export default function CatalogPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* CSV Layout Requirements Card */}
-            <div className="lg:col-span-1 bg-slate-50 border border-slate-150 p-5 rounded-[8px] space-y-4">
+            <div className="lg:col-span-1 bg-slate-50 border border-slate-150 p-5 rounded-none space-y-4">
               <div className="flex items-center gap-2 text-slate-900 font-bold text-xs uppercase tracking-wider">
                 <HelpCircle size={15} />
                 CSV Format Instructions
@@ -223,7 +274,7 @@ export default function CatalogPage() {
               <div className="pt-2">
                 <button
                   onClick={handleCopyTemplate}
-                  className="w-full flex items-center justify-center gap-2 bg-white border border-slate-200 text-slate-700 hover:border-slate-300 py-2.5 rounded-[8px] text-xs font-bold transition-all cursor-pointer"
+                  className="w-full flex items-center justify-center gap-2 bg-white border border-slate-200 text-slate-700 hover:border-slate-300 py-2.5 rounded-none text-xs font-bold transition-all cursor-pointer"
                 >
                   {copied ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
                   {copied ? 'Template Copied!' : 'Copy Sample CSV Template'}
@@ -234,7 +285,7 @@ export default function CatalogPage() {
             {/* Upload Zone & Action Block */}
             <div className="lg:col-span-2 space-y-4">
               {!progress ? (
-                <div className="border-2 border-dashed border-slate-200 hover:border-slate-300 rounded-[8px] p-8 flex flex-col items-center justify-center text-center transition-all bg-slate-50/20 relative group">
+                <div className="border-2 border-dashed border-slate-200 hover:border-slate-300 rounded-none p-8 flex flex-col items-center justify-center text-center transition-all bg-slate-50/20 relative group">
                   <input
                     type="file"
                     accept=".csv"
@@ -257,7 +308,7 @@ export default function CatalogPage() {
                 </div>
               ) : (
                 /* Import progress & result view */
-                <div className="border border-slate-200 rounded-[8px] p-5 space-y-4 bg-slate-50/30">
+                <div className="border border-slate-200 rounded-none p-5 space-y-4 bg-slate-50/30">
                   <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                     <span className="text-xs font-bold text-slate-900">Import Progress</span>
                     <span className="text-xs font-semibold text-slate-500">
@@ -277,15 +328,15 @@ export default function CatalogPage() {
 
                   {/* Pricing Stat Cards Grid */}
                   <div className="grid grid-cols-3 gap-3 pt-2">
-                    <div className="bg-emerald-50 border border-emerald-100 p-3 rounded-[8px] text-center">
+                    <div className="bg-emerald-50 border border-emerald-100 p-3 rounded-none text-center">
                       <p className="text-[10px] uppercase font-bold tracking-wider text-emerald-600">Created</p>
                       <p className="text-lg font-bold text-emerald-700">{progress.created}</p>
                     </div>
-                    <div className="bg-sky-50 border border-sky-100 p-3 rounded-[8px] text-center">
+                    <div className="bg-sky-50 border border-sky-100 p-3 rounded-none text-center">
                       <p className="text-[10px] uppercase font-bold tracking-wider text-sky-600">Updated</p>
                       <p className="text-lg font-bold text-sky-700">{progress.updated}</p>
                     </div>
-                    <div className="bg-rose-50 border border-rose-100 p-3 rounded-[8px] text-center">
+                    <div className="bg-rose-50 border border-rose-100 p-3 rounded-none text-center">
                       <p className="text-[10px] uppercase font-bold tracking-wider text-rose-600">Failed</p>
                       <p className="text-lg font-bold text-rose-700">{progress.errors.length}</p>
                     </div>
@@ -298,7 +349,7 @@ export default function CatalogPage() {
                         <AlertTriangle size={14} />
                         Error Summary ({progress.errors.length} failed rows)
                       </div>
-                      <div className="bg-rose-50/50 border border-rose-100/70 p-3 rounded-[8px] max-h-32 overflow-y-auto font-mono text-[10px] text-rose-700 space-y-1">
+                      <div className="bg-rose-50/50 border border-rose-100/70 p-3 rounded-none max-h-32 overflow-y-auto font-mono text-[10px] text-rose-700 space-y-1">
                         {progress.errors.map((err, idx) => (
                           <div key={idx} className="border-b border-rose-100/30 pb-0.5 last:border-b-0">
                             {err}
@@ -310,7 +361,7 @@ export default function CatalogPage() {
 
                   {/* Completion Notice */}
                   {progress.current === progress.total && (
-                    <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-150 p-3.5 rounded-[8px] text-emerald-800 text-xs font-semibold leading-relaxed">
+                    <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-150 p-3.5 rounded-none text-emerald-800 text-xs font-semibold leading-relaxed">
                       <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
                       <div>
                         Import process completed. Seeding updates have been written to database.
@@ -326,14 +377,14 @@ export default function CatalogPage() {
                   <>
                     <button
                       onClick={resetImport}
-                      className="bg-white border border-slate-200 text-slate-600 rounded-[8px] py-3.5 px-6 hover:bg-slate-50 transition-all text-xs font-bold cursor-pointer flex-1 sm:flex-initial"
+                      className="bg-white border border-slate-200 text-slate-600 rounded-none py-3.5 px-6 hover:bg-slate-50 transition-all text-xs font-bold cursor-pointer flex-1 sm:flex-initial"
                     >
                       Clear File
                     </button>
                     <button
                       onClick={handleImport}
                       disabled={isParsing}
-                      className="bg-slate-900 hover:bg-slate-800 text-white rounded-[8px] py-3.5 px-8 transition-all text-xs font-bold cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2 flex-grow"
+                      className="bg-slate-900 hover:bg-slate-800 text-white rounded-none py-3.5 px-8 transition-all text-xs font-bold cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2 flex-grow"
                     >
                       {isParsing ? (
                         <>
@@ -350,7 +401,7 @@ export default function CatalogPage() {
                 {progress && progress.current === progress.total && (
                   <button
                     onClick={resetImport}
-                    className="w-full bg-slate-900 hover:bg-slate-800 text-white rounded-[8px] py-3.5 text-xs font-bold transition-all cursor-pointer"
+                    className="w-full bg-slate-900 hover:bg-slate-800 text-white rounded-none py-3.5 text-xs font-bold transition-all cursor-pointer"
                   >
                     Import Another File
                   </button>

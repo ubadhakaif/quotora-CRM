@@ -115,8 +115,10 @@ This file tracks the current stability of the application. It highlights what wa
     - Upgraded Quotation Builder and dynamic print PDF templates to calculate and render flat RTO registration fees instead of ex-showroom percentage multipliers, linking RTO and GST dynamically from `tax_breakdown` JSONB transactions.
     - Verified complete compilation stability with type safety checks.
 21. **Standard Underline Tabs Redesign**:
-    - Redesigned quick tiles on the Settings dashboard page (`src/app/dashboard/settings/page.tsx`) to modern, horizontal standard underline tabs featuring custom ellipsis overflow truncation, consistent layout gutters, and flat styling (no shadows).
-    - Refactored quick tiles on the Catalog dashboard page (`src/app/dashboard/catalog/page.tsx`) to an elegant, horizontal underline tab bar aligned with `border-b border-slate-200`, preserving icons alongside text labels with robust ellipsis overflow and clean responsive layout adjustments.
+    - Redesigned quick tiles on the Settings dashboard page (`src/app/dashboard/settings/page.tsx`) to modern, horizontal standard underline tabs with clean, flat styling (`rounded-none` in favor of `rounded-[2rem]`).
+    - Refactored quick tiles on the Catalog dashboard page (`src/app/dashboard/catalog/page.tsx`) to an elegant horizontal underline tab bar, converting all panels and loaders to fully flat `rounded-none`.
+    - Integrated responsive "Ellipsis Overflow" dropdowns: shows full headings on desktop, and groups overflow items into a clickable `...` (More) tab on mobile.
+    - Integrated the Catalog CSV bulk import flow directly as a dedicated "Import CSV" tab, simplifying the main portal header layout.
 
 ---
 

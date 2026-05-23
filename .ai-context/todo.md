@@ -18,8 +18,9 @@ This is the source of truth for all current, pending, and completed tasks in thi
 
 ## Completed Tasks
 - [x] Standard Underline Tabs Redesign:
-  - [x] Redesigned Settings Page tab switcher (`src/app/dashboard/settings/page.tsx`) to standard flat underline tabs with ellipsis overflow and custom spacing.
-  - [x] Redesigned Catalog Page tab switcher (`src/app/dashboard/catalog/page.tsx`) to standard horizontal flat underline tabs with ellipsis overflow, inline icons, and layout integration for the CSV import button.
+  - [x] Redesigned Settings and Catalog Page tab switchers to standard flat underline tabs featuring clean, flat `rounded-none` container panels.
+  - [x] Implemented responsive "Ellipsis Overflow" dropdowns, showing full headings with icons on desktop and grouping overflow tabs into a clickable `...` (More) tab on mobile.
+  - [x] Relocated Catalog CSV bulk import flow directly as a dedicated "Import CSV" tab, simplifying the portal shell header.
 - [x] Visual Polish, Brochure Uploads & RTO Flat Fee Override:
   - [x] Wrote database schema migration to add `brochure_url` columns to models and variants tables (`supabase/migrations/012_catalog_brochure.sql`).
   - [x] Integrated brochure PDF uploading support in Model and Variant Catalog creation forms (`src/app/dashboard/catalog/models/page.tsx`, `src/app/dashboard/catalog/variants/page.tsx`).
