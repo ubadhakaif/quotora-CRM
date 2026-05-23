@@ -29,26 +29,10 @@ export default function CatalogPage() {
   const [isParsing, setIsParsing] = useState(false)
   const [progress, setProgress] = useState<ImportProgress | null>(null)
   const [copied, setCopied] = useState(false)
-  const [isMobile, setIsMobile] = useState(false)
-  const [dropdownOpen, setDropdownOpen] = useState(false)
 
   const { profile } = useAuth()
   const { addToast } = useToast()
   const supabase = createClient()
-
-  useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 768)
-    }
-    handleResize()
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
-  }, [])
-
-  // Split tabs based on mobile/desktop
-  const visibleTabs = isMobile ? tabs.slice(0, 3) : tabs
-  const overflowTabs = isMobile ? tabs.slice(3) : []
-  const isOverflowActive = overflowTabs.some(t => t.id === activeTab)
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -118,10 +102,10 @@ export default function CatalogPage() {
 
   return (
     <div className="space-y-6">
-      {/* Standard Underline Tab bar */}
+      {/* Standard Underline Tab bar with Horizontal Hidden Scroll */}
       <div className="border-b border-slate-200 w-full relative">
-        <nav className="flex -mb-px space-x-4 sm:space-x-8 overflow-visible" aria-label="Tabs">
-          {visibleTabs.map(tab => {
+        <nav className="flex -mb-px space-x-4 sm:space-x-8 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label="Tabs">
+          {tabs.map(tab => {
             const Icon = tab.icon
             const isActive = activeTab === tab.id
             return (
@@ -129,7 +113,6 @@ export default function CatalogPage() {
                 key={tab.id}
                 onClick={() => {
                   setActiveTab(tab.id)
-                  setDropdownOpen(false)
                   // Auto-switch import type to match tab for better UX
                   if (tab.id === 'variants') setImportType('variants')
                   if (tab.id === 'accessories') setImportType('accessories')
@@ -148,56 +131,6 @@ export default function CatalogPage() {
               </button>
             )
           })}
-
-          {/* Ellipsis Overflow Tab for Mobile */}
-          {isMobile && overflowTabs.length > 0 && (
-            <div className="relative flex-1 min-w-0">
-              <button
-                type="button"
-                onClick={() => setDropdownOpen(!dropdownOpen)}
-                className={`
-                  w-full border-b-2 py-4 px-1 text-sm font-medium transition-all cursor-pointer whitespace-nowrap overflow-hidden text-ellipsis text-center flex items-center justify-center gap-1
-                  ${isOverflowActive
-                    ? 'border-slate-900 text-slate-900 font-semibold'
-                    : 'border-transparent text-slate-500 hover:text-slate-800'
-                  }
-                `}
-              >
-                <span>...</span>
-              </button>
-
-              {/* Dropdown Menu */}
-              {dropdownOpen && (
-                <div className="absolute right-0 top-full mt-1 bg-white border border-slate-200 z-50 py-1 min-w-[160px] shadow-none rounded-none">
-                  {overflowTabs.map(tab => {
-                    const Icon = tab.icon
-                    const isActive = activeTab === tab.id
-                    return (
-                      <button
-                        key={tab.id}
-                        onClick={() => {
-                          setActiveTab(tab.id)
-                          setDropdownOpen(false)
-                          if (tab.id === 'variants') setImportType('variants')
-                          if (tab.id === 'accessories') setImportType('accessories')
-                        }}
-                        className={`
-                          w-full flex items-center gap-2 px-4 py-3 text-xs transition-all cursor-pointer hover:bg-slate-50
-                          ${isActive
-                            ? 'text-slate-900 font-bold bg-slate-50/50'
-                            : 'text-slate-600 hover:text-slate-900'
-                          }
-                        `}
-                      >
-                        <Icon size={14} className="shrink-0" />
-                        <span>{tab.label}</span>
-                      </button>
-                    )
-                  })}
-                </div>
-              )}
-            </div>
-          )}
         </nav>
       </div>
 

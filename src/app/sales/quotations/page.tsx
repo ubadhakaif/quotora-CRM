@@ -885,9 +885,9 @@ export default function SalesQuotationsPage() {
         </div>
       )}
 
-      {/* Redesigned Tab Switcher to Standard Underline Design */}
-      <div className="border-b border-slate-200 w-full">
-        <nav className="flex space-x-6 sm:space-x-8" aria-label="Tabs">
+      {/* Redesigned Tab Switcher to Standard Underline Design with Horizontal Hidden Scroll */}
+      <div className="border-b border-slate-200 w-full relative">
+        <nav className="flex -mb-px space-x-6 sm:space-x-8 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label="Tabs">
           <button
             type="button"
             onClick={() => {

@@ -104,17 +104,6 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [settings, setSettings] = useState<Record<string, any>>({})
-  const [isMobile, setIsMobile] = useState(false)
-  const [dropdownOpen, setDropdownOpen] = useState(false)
-
-  useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 768)
-    }
-    handleResize()
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
-  }, [])
   
   const { profile } = useAuth()
   const { addToast } = useToast()
@@ -162,21 +151,16 @@ export default function SettingsPage() {
     setSaving(false)
   }
 
-  // Split tabs based on mobile/desktop
-  const visibleTabs = isMobile ? TABS.slice(0, 2) : TABS
-  const overflowTabs = isMobile ? TABS.slice(2) : []
-  const isOverflowActive = overflowTabs.some(t => t.id === activeTab)
-
   if (loading) {
     return <div className="skeleton h-64 w-full rounded-none" />
   }
 
   return (
     <div className="space-y-8">
-      {/* Standard Underline Tabs with Ellipsis Overflow */}
+      {/* Standard Underline Tabs with Horizontal Hidden Scroll */}
       <div className="border-b border-slate-200 w-full relative">
-        <nav className="flex -mb-px space-x-6 sm:space-x-8 overflow-visible" aria-label="Tabs">
-          {visibleTabs.map(tab => {
+        <nav className="flex -mb-px space-x-6 sm:space-x-8 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label="Tabs">
+          {TABS.map(tab => {
             const isActive = activeTab === tab.id
             return (
               <button
@@ -184,7 +168,6 @@ export default function SettingsPage() {
                 type="button"
                 onClick={() => {
                   setActiveTab(tab.id)
-                  setDropdownOpen(false)
                 }}
                 className={`
                   border-b-2 py-4 px-1 text-sm font-medium transition-all cursor-pointer whitespace-nowrap overflow-hidden text-ellipsis min-w-0 flex-1 sm:flex-initial text-center sm:text-left
@@ -199,53 +182,6 @@ export default function SettingsPage() {
               </button>
             )
           })}
-
-          {/* Ellipsis Overflow Tab for Mobile */}
-          {isMobile && overflowTabs.length > 0 && (
-            <div className="relative flex-1 min-w-0">
-              <button
-                type="button"
-                onClick={() => setDropdownOpen(!dropdownOpen)}
-                className={`
-                  w-full border-b-2 py-4 px-1 text-sm font-medium transition-all cursor-pointer whitespace-nowrap overflow-hidden text-ellipsis text-center flex items-center justify-center gap-1
-                  ${isOverflowActive
-                    ? 'border-slate-900 text-slate-900 font-semibold'
-                    : 'border-transparent text-slate-500 hover:text-slate-800'
-                  }
-                `}
-              >
-                <span>...</span>
-              </button>
-
-              {/* Dropdown Menu */}
-              {dropdownOpen && (
-                <div className="absolute right-0 top-full mt-1 bg-white border border-slate-200 z-50 py-1 min-w-[160px] shadow-none rounded-none">
-                  {overflowTabs.map(tab => {
-                    const isActive = activeTab === tab.id
-                    return (
-                      <button
-                        key={tab.id}
-                        type="button"
-                        onClick={() => {
-                          setActiveTab(tab.id)
-                          setDropdownOpen(false)
-                        }}
-                        className={`
-                          w-full text-left px-4 py-3 text-xs transition-all cursor-pointer hover:bg-slate-50
-                          ${isActive
-                            ? 'text-slate-900 font-bold bg-slate-50/50'
-                            : 'text-slate-600 hover:text-slate-900'
-                          }
-                        `}
-                      >
-                        {tab.label}
-                      </button>
-                    )
-                  })}
-                </div>
-              )}
-            </div>
-          )}
         </nav>
       </div>
 

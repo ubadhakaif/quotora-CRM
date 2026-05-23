@@ -126,6 +126,7 @@ This file tracks the current stability of the application. It highlights what wa
     - Completely removed the "Existing Customer" selection options from step 1 of the Quotation Builder, making it exclusively default to new customer inputs.
     - Redesigned the Quotations tab switcher to use standard flat underline tabs with zero active or hover background rounded overlays.
     - Removed hover border transition styling from Settings and Catalog page tab switchers, strictly maintaining plain underlines on active tabs.
+    - Completely removed the split mobile/desktop ellipsis overflow dropdown tabs in Settings and Catalog pages, replacing them with standard horizontal flex-scroll configurations with cross-browser scrollbars fully hidden.
 
 ---
 

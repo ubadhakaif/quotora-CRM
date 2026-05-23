@@ -24,6 +24,7 @@ This is the source of truth for all current, pending, and completed tasks in thi
   - [x] Completely removed the "Existing Customer" selection options from step 1 of the Quotation Builder, making it exclusively default to new customer inputs.
   - [x] Redesigned the Quotations tab switcher to use standard flat underline tabs with zero active or hover background rounded overlays.
   - [x] Removed hover border transition styling from Settings and Catalog page tab switchers, strictly maintaining plain underlines on active tabs.
+  - [x] Completely removed the split mobile/desktop ellipsis overflow dropdown tabs in Settings and Catalog pages, replacing them with standard horizontal flex-scroll configurations with cross-browser scrollbars fully hidden.
 - [x] Standard Underline Tabs Redesign:
   - [x] Redesigned Settings and Catalog Page tab switchers to standard flat underline tabs featuring clean, flat `rounded-none` container panels.
   - [x] Implemented responsive "Ellipsis Overflow" dropdowns, showing full headings with icons on desktop and grouping overflow tabs into a clickable `...` (More) tab on mobile.
