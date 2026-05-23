@@ -128,6 +128,7 @@ This file tracks the current stability of the application. It highlights what wa
     - Removed hover border transition styling from Settings and Catalog page tab switchers, strictly maintaining plain underlines on active tabs.
     - Completely removed the split mobile/desktop ellipsis overflow dropdown tabs in Settings and Catalog pages, replacing them with standard horizontal flex-scroll configurations with cross-browser scrollbars fully hidden.
     - Refactored all active variant, accessory checkbox, and exchange upload preview thumbnail images to use standard object-contain styles instead of object-cover to fit media perfectly within layouts.
+    - Removed tab button truncation (`overflow-hidden text-ellipsis min-w-0`) and label `truncate` styling globally from Settings and Catalog page switchers, ensuring all tab titles remain fully expanded and easily readable.
 
 ---
 

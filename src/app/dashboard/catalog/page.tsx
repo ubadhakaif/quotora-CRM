@@ -118,7 +118,7 @@ export default function CatalogPage() {
                   if (tab.id === 'accessories') setImportType('accessories')
                 }}
                 className={`
-                  flex items-center justify-center sm:justify-start gap-2 border-b-2 py-4 px-1 text-sm font-medium transition-all cursor-pointer whitespace-nowrap overflow-hidden text-ellipsis min-w-0 flex-1 sm:flex-initial
+                  flex items-center justify-center sm:justify-start gap-2 border-b-2 py-4 px-1 text-sm font-medium transition-all cursor-pointer whitespace-nowrap flex-1 sm:flex-initial
                   ${isActive
                     ? 'border-slate-900 text-slate-900 font-semibold'
                     : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -127,7 +127,7 @@ export default function CatalogPage() {
                 title={tab.label}
               >
                 <Icon size={16} className="shrink-0" />
-                <span className="truncate">{tab.label}</span>
+                <span>{tab.label}</span>
               </button>
             )
           })}
