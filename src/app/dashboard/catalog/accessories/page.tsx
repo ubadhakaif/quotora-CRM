@@ -16,7 +16,11 @@ interface Accessory {
 
 const formatINR = (n: number) => new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR',maximumFractionDigits:0}).format(n)
 
-export default function AccessoriesTab() {
+interface AccessoriesTabProps {
+  refreshTrigger?: number
+}
+
+export default function AccessoriesTab({ refreshTrigger = 0 }: AccessoriesTabProps) {
   const [items, setItems] = useState<Accessory[]>([])
   const [types, setTypes] = useState<AccType[]>([])
   const [loading, setLoading] = useState(true)
@@ -42,6 +46,12 @@ export default function AccessoriesTab() {
     setLoading(false)
   }
   useEffect(()=>{fetchAll()}, []) // eslint-disable-line
+
+  useEffect(() => {
+    if (refreshTrigger > 0) {
+      fetchAll()
+    }
+  }, [refreshTrigger]) // eslint-disable-line
 
   const openAdd = () => { setEditing(null);setFName('');setFPrice('');setFTypeId('');setImages([]);setVideoUrl(null);setPanelOpen(true) }
   const openEdit = (a: Accessory) => { setEditing(a);setFName(a.name);setFPrice(String(a.price));setFTypeId(a.type_id||'');setImages(a.images || (a.image_url ? [a.image_url] : []));setVideoUrl(a.video_url || null);setPanelOpen(true) }

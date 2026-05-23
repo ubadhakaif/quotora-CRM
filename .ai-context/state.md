@@ -96,6 +96,13 @@ This file tracks the current stability of the application. It highlights what wa
     - Standardized internal padding across all cards and panels by overriding standard Tailwind padding utility classes (`p-16`, `p-12`, `p-10`, `p-8`, `p-6`) to be ~30% smaller, keeping inputs and small badges proportional.
     - Tightened table cell and header horizontal paddings globally to `px-4` (16px) on mobile and `px-6` (24px) on desktop to optimize horizontal space on lists.
     - Updated `DESIGN.md` rules to maintain visual alignment across the entire codebase.
+19. **Bulk CSV Catalog Pricing Automation**:
+    - Created lightweight, RFC 4180-compliant native `csvParser.ts` supporting double quotes, escaped commas, and embedded newlines without third-party packages.
+    - Designed bulk `catalogImport.ts` transaction controllers supporting variants and accessories direct client-side Supabase UPSERT workflows.
+    - Automated variant mappings to parent models, fuel types, and transmission types, automatically creating non-existent referential records on the fly while respecting multi-tenant RLS rules.
+    - Retrofitted Variants and Accessories tab panels to accept dynamic `refreshTrigger` parameters, enabling instantaneous card listings refresh without page reloads on CSV processing completions.
+    - Built a high-fidelity dashboard CSV import drawer component featuring drag-and-drop file captures, validation message reports, inline template visual copies, live progress loaders, and statistics summary tags.
+    - Verified complete compilation stability with clean TypeScript tsc checks.
 
 ---
 

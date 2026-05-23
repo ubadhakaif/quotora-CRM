@@ -17,6 +17,11 @@ This is the source of truth for all current, pending, and completed tasks in thi
 - [ ] Implement mobile navigation bottom pill responsive behavior as per DESIGN.md
 
 ## Completed Tasks
+- [x] Bulk CSV Catalog Pricing Automation:
+  - [x] Created custom native, dependency-free RFC 4180-compliant CSV parser (`src/lib/csvParser.ts`).
+  - [x] Designed bulk transaction controllers for catalog models, variants, and accessories (`src/lib/catalogImport.ts`) supporting direct client-side Supabase UPSERT workflows.
+  - [x] Added `refreshTrigger` auto-fetch parameter hooks inside Variants and Accessories subtabs to force catalog list updates immediately upon import.
+  - [x] Implemented a flat, premium Bulk CSV Import Drawer UI (`src/app/dashboard/catalog/page.tsx`) with file loaders, copyable template sheets, error reporting logger, and status charts.
 - [x] Global Spacing & Padding Reductions:
   - [x] Reduced layout side gutters globally in `PortalShell.tsx` and `Header.tsx` from `px-6 md:px-12` to `px-4 md:px-8`.
   - [x] Override Tailwind's standard large padding classes (`p-16`, `p-12`, `p-10`, `p-8`, `p-6`) by ~30% inside `globals.css` to compact all cards and panels uniformly.

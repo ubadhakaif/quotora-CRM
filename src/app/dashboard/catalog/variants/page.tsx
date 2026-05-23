@@ -20,7 +20,11 @@ interface Variant {
 
 const formatINR = (n: number) => new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR',maximumFractionDigits:0}).format(n)
 
-export default function VariantsTab() {
+interface VariantsTabProps {
+  refreshTrigger?: number
+}
+
+export default function VariantsTab({ refreshTrigger = 0 }: VariantsTabProps) {
   const [variants, setVariants] = useState<Variant[]>([])
   const [models, setModels] = useState<Model[]>([])
   const [fuels, setFuels] = useState<FuelType[]>([])
@@ -53,6 +57,12 @@ export default function VariantsTab() {
     setLoading(false)
   }
   useEffect(()=>{fetchAll()}, []) // eslint-disable-line
+
+  useEffect(() => {
+    if (refreshTrigger > 0) {
+      fetchAll()
+    }
+  }, [refreshTrigger]) // eslint-disable-line
 
   const openAdd = () => { setEditing(null);setFName('');setFModelId('');setFPrice('');setFFuelId('');setFTransId('');setFOrder('0');setImages([]);setVideoUrl(null);setPanelOpen(true) }
   const openEdit = (v: Variant) => { setEditing(v);setFName(v.name);setFModelId(v.model_id);setFPrice(String(v.price));setFFuelId(v.fuel_type_id||'');setFTransId(v.transmission_type_id||'');setFOrder(String(v.variant_order));setImages(v.images || (v.image_url ? [v.image_url] : []));setVideoUrl(v.video_url || null);setPanelOpen(true) }
