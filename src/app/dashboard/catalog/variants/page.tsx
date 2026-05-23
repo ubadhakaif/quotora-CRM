@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { useToast } from '@/components/providers/ToastProvider'
 import { MediaUpload } from '@/components/ui/MediaUpload'
+import { ImageUpload } from '@/components/ui/ImageUpload'
 import { Plus, X, Layers, Search, Fuel, Settings } from 'lucide-react'
 
 interface Model { id: string; name: string }
@@ -15,6 +16,7 @@ interface Variant {
   fuel_type_id: string|null; transmission_type_id: string|null
   variant_order: number; image_url: string|null
   images?: string[] | null; video_url?: string | null
+  brochure_url?: string | null
   models?: { name: string } | null
 }
 
@@ -38,6 +40,7 @@ export default function VariantsTab({ refreshTrigger = 0 }: VariantsTabProps) {
   const [fTransId, setFTransId] = useState(''); const [fOrder, setFOrder] = useState('0')
   const [images, setImages] = useState<string[]>([])
   const [videoUrl, setVideoUrl] = useState<string|null>(null)
+  const [brochureUrl, setBrochureUrl] = useState<string|null>(null)
   const [saving, setSaving] = useState(false)
   const [addFuel, setAddFuel] = useState(false); const [newFuel, setNewFuel] = useState('')
   const [addTrans, setAddTrans] = useState(false); const [newTrans, setNewTrans] = useState('')
@@ -64,8 +67,8 @@ export default function VariantsTab({ refreshTrigger = 0 }: VariantsTabProps) {
     }
   }, [refreshTrigger]) // eslint-disable-line
 
-  const openAdd = () => { setEditing(null);setFName('');setFModelId('');setFPrice('');setFFuelId('');setFTransId('');setFOrder('0');setImages([]);setVideoUrl(null);setPanelOpen(true) }
-  const openEdit = (v: Variant) => { setEditing(v);setFName(v.name);setFModelId(v.model_id);setFPrice(String(v.price));setFFuelId(v.fuel_type_id||'');setFTransId(v.transmission_type_id||'');setFOrder(String(v.variant_order));setImages(v.images || (v.image_url ? [v.image_url] : []));setVideoUrl(v.video_url || null);setPanelOpen(true) }
+  const openAdd = () => { setEditing(null);setFName('');setFModelId('');setFPrice('');setFFuelId('');setFTransId('');setFOrder('0');setImages([]);setVideoUrl(null);setBrochureUrl(null);setPanelOpen(true) }
+  const openEdit = (v: Variant) => { setEditing(v);setFName(v.name);setFModelId(v.model_id);setFPrice(String(v.price));setFFuelId(v.fuel_type_id||'');setFTransId(v.transmission_type_id||'');setFOrder(String(v.variant_order));setImages(v.images || (v.image_url ? [v.image_url] : []));setVideoUrl(v.video_url || null);setBrochureUrl(v.brochure_url || null);setPanelOpen(true) }
   const close = () => { setPanelOpen(false);setEditing(null) }
 
   const save = async () => {
@@ -79,6 +82,7 @@ export default function VariantsTab({ refreshTrigger = 0 }: VariantsTabProps) {
       variant_order:parseInt(fOrder)||0,
       images,
       video_url:videoUrl,
+      brochure_url:brochureUrl || null,
       image_url:images.length > 0 ? images[0] : null,
       tenant_id:profile?.tenant_id
     }
@@ -118,6 +122,13 @@ export default function VariantsTab({ refreshTrigger = 0 }: VariantsTabProps) {
               videoUrl={videoUrl}
               onVideoChange={setVideoUrl}
               folder="variants"
+            />
+            <ImageUpload
+              value={brochureUrl}
+              onChange={setBrochureUrl}
+              folder="documents"
+              accept="application/pdf"
+              label="Variant Brochure (PDF)"
             />
           </div>
           <div className="flex flex-col sm:flex-row gap-3">

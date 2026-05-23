@@ -112,7 +112,7 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-8">
-      <div className="p-2 py-6">
+      <div className="p-2 py-3">
         <p className="text-slate-500 text-xl font-medium">Welcome back,</p>
         <h2 className="text-5xl md:text-6xl font-black mt-2 tracking-tight">
           <span style={{ color: '#4285F4' }}>{profile?.name ? profile.name.split(' ')[0].charAt(0).toUpperCase() + profile.name.split(' ')[0].slice(1).toLowerCase() : ''}</span>
@@ -120,7 +120,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           label="Total Branches"
           value={statsLoading ? '...' : stats.branches}
@@ -141,31 +141,6 @@ export default function DashboardPage() {
           value={statsLoading ? '...' : new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(stats.revenueEstimate)}
           icon={IndianRupee}
         />
-      </div>
-
-      {/* Quick Links Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {quickLinks.map(link => {
-          const Icon = link.icon
-          return (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="group bg-white border border-slate-200 rounded-[2rem] p-8 md:p-10 flex flex-col gap-4 hover:border-slate-300 transition-all"
-            >
-              <Icon size={22} className="text-slate-500 group-hover:text-slate-900 transition-colors" />
-              <div className="space-y-1">
-                <p className="text-slate-900">{link.label}</p>
-                <p className="text-sm text-slate-500">{link.description}</p>
-              </div>
-              <div className="mt-auto pt-2">
-                <span className="inline-flex items-center gap-2 text-sm text-slate-400 group-hover:text-slate-900 transition-colors">
-                  Open <ArrowRight size={14} />
-                </span>
-              </div>
-            </Link>
-          )
-        })}
       </div>
     </div>
   )

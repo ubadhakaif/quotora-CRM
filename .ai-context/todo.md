@@ -17,6 +17,17 @@ This is the source of truth for all current, pending, and completed tasks in thi
 - [ ] Implement mobile navigation bottom pill responsive behavior as per DESIGN.md
 
 ## Completed Tasks
+- [x] Standard Underline Tabs Redesign:
+  - [x] Redesigned Settings Page tab switcher (`src/app/dashboard/settings/page.tsx`) to standard flat underline tabs with ellipsis overflow and custom spacing.
+  - [x] Redesigned Catalog Page tab switcher (`src/app/dashboard/catalog/page.tsx`) to standard horizontal flat underline tabs with ellipsis overflow, inline icons, and layout integration for the CSV import button.
+- [x] Visual Polish, Brochure Uploads & RTO Flat Fee Override:
+  - [x] Wrote database schema migration to add `brochure_url` columns to models and variants tables (`supabase/migrations/012_catalog_brochure.sql`).
+  - [x] Integrated brochure PDF uploading support in Model and Variant Catalog creation forms (`src/app/dashboard/catalog/models/page.tsx`, `src/app/dashboard/catalog/variants/page.tsx`).
+  - [x] Removed grid background dots styling and aligned page margins/paddings for Models and Accessories Galleries.
+  - [x] Renamed CSV catalog bulk import trigger labels from `"Bulk Import CSV"` to `"Import CSV"`.
+  - [x] Standardized Dealer, Branch, and Sales dashboard welcome block padding (`py-3`) and reduced main shell top gutters from `pt-[30px]` to `pt-4`.
+  - [x] Configured stats metric grid to render in 2x2 grids on mobile viewports and removed quick links blocks.
+  - [x] Reconfigured dealership settings to process RTO fees as flat numeric amounts (₹) instead of ex-showroom percentage multipliers, updating Quotation builders and printable PDF templates.
 - [x] Bulk CSV Catalog Pricing Automation:
   - [x] Created custom native, dependency-free RFC 4180-compliant CSV parser (`src/lib/csvParser.ts`).
   - [x] Designed bulk transaction controllers for catalog models, variants, and accessories (`src/lib/catalogImport.ts`) supporting direct client-side Supabase UPSERT workflows.

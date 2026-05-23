@@ -102,10 +102,10 @@ export default function CatalogPage() {
 
   return (
     <div className="space-y-6">
-      {/* Top Header & Import Toggle */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        {/* Quick Tiles */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 flex-1">
+      {/* Standard Underline Tab bar with CSV Import button */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-200 gap-4">
+        {/* Navigation Tabs */}
+        <nav className="flex -mb-px space-x-4 sm:space-x-8 overflow-x-auto scrollbar-none flex-1 w-full" aria-label="Tabs">
           {tabs.map(tab => {
             const Icon = tab.icon
             const isActive = activeTab === tab.id
@@ -119,25 +119,26 @@ export default function CatalogPage() {
                   if (tab.id === 'accessories') setImportType('accessories')
                 }}
                 className={`
-                  flex items-center gap-2.5 px-5 py-4 rounded-[8px] text-sm font-bold transition-all cursor-pointer border
+                  flex items-center justify-center sm:justify-start gap-2 border-b-2 py-4 px-1 text-sm font-medium transition-all cursor-pointer whitespace-nowrap overflow-hidden text-ellipsis min-w-0 flex-1 sm:flex-initial
                   ${isActive
-                    ? 'bg-slate-900 text-white border-slate-900 shadow-sm'
-                    : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50/50'
+                    ? 'border-slate-900 text-slate-900 font-semibold'
+                    : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
                   }
                 `}
+                title={tab.label}
               >
-                <Icon size={16} />
-                {tab.label}
+                <Icon size={16} className="shrink-0" />
+                <span className="truncate">{tab.label}</span>
               </button>
             )
           })}
-        </div>
+        </nav>
 
         {/* CSV Import Button */}
         <button
           onClick={() => setShowImport(!showImport)}
           className={`
-            flex items-center gap-2 px-5 py-4 rounded-[8px] text-sm font-bold transition-all cursor-pointer border
+            flex items-center justify-center gap-2 px-5 py-3 mb-2 sm:mb-0 rounded-[8px] text-sm font-semibold transition-all cursor-pointer border shrink-0
             ${showImport
               ? 'bg-slate-100 text-slate-900 border-slate-300'
               : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300'
@@ -145,7 +146,7 @@ export default function CatalogPage() {
           `}
         >
           <FileUp size={16} />
-          {showImport ? 'Hide Bulk Import' : 'Bulk Import CSV'}
+          {showImport ? 'Hide Import' : 'Import CSV'}
         </button>
       </div>
 

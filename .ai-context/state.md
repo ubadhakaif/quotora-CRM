@@ -103,6 +103,20 @@ This file tracks the current stability of the application. It highlights what wa
     - Retrofitted Variants and Accessories tab panels to accept dynamic `refreshTrigger` parameters, enabling instantaneous card listings refresh without page reloads on CSV processing completions.
     - Built a high-fidelity dashboard CSV import drawer component featuring drag-and-drop file captures, validation message reports, inline template visual copies, live progress loaders, and statistics summary tags.
     - Verified complete compilation stability with clean TypeScript tsc checks.
+20. **Visual Polish, Brochure Uploads & RTO Flat Fee Override**:
+    - Wrote database schema migration adding `brochure_url` columns to `models` and `variants` tables.
+    - Integrated `<ImageUpload />` uploader in Model and Variant catalog tabs to support PDF brochure attachments securely hosted under private `documents` bucket.
+    - Removed dark dotted gradient grid background patterns from vehicle Models and Accessories pages, standardizing layout gutters to match other page views.
+    - Renamed `"Bulk Import CSV"` trigger button and titles to `"Import CSV"`.
+    - Tightened welcome card vertical padding to `py-3` on Sales, Branch Manager, and Dealer Admin dashboard homepages.
+    - Reduced main viewport top gutter gap from `pt-[30px]` to `pt-4` in `PortalShell.tsx` for optimal screen spacing.
+    - Configured Stats metrics grid on dashboard home to render in 2x2 grids on mobile/tablets, and removed the redundant Quick Links catalog block.
+    - Standardized RTO & Registration Fees configuration settings to accept flat integer currency overrides (`tax.rto_fee_percent` -> flat ₹5,000 baseline).
+    - Upgraded Quotation Builder and dynamic print PDF templates to calculate and render flat RTO registration fees instead of ex-showroom percentage multipliers, linking RTO and GST dynamically from `tax_breakdown` JSONB transactions.
+    - Verified complete compilation stability with type safety checks.
+21. **Standard Underline Tabs Redesign**:
+    - Redesigned quick tiles on the Settings dashboard page (`src/app/dashboard/settings/page.tsx`) to modern, horizontal standard underline tabs featuring custom ellipsis overflow truncation, consistent layout gutters, and flat styling (no shadows).
+    - Refactored quick tiles on the Catalog dashboard page (`src/app/dashboard/catalog/page.tsx`) to an elegant, horizontal underline tab bar aligned with `border-b border-slate-200`, preserving icons alongside text labels with robust ellipsis overflow and clean responsive layout adjustments.
 
 ---
 

@@ -6,6 +6,7 @@ import { useAuth } from '@/components/providers/AuthProvider'
 import { useToast } from '@/components/providers/ToastProvider'
 import { Plus, X, Car, Tag, Search } from 'lucide-react'
 import { MediaUpload } from '@/components/ui/MediaUpload'
+import { ImageUpload } from '@/components/ui/ImageUpload'
 
 interface Category { id: string; name: string }
 interface Model {
@@ -14,6 +15,7 @@ interface Model {
   image_url?: string | null
   images?: string[] | null
   video_url?: string | null
+  brochure_url?: string | null
 }
 
 export default function ModelsTab() {
@@ -29,6 +31,7 @@ export default function ModelsTab() {
   const [catId, setCatId] = useState('')
   const [images, setImages] = useState<string[]>([])
   const [videoUrl, setVideoUrl] = useState<string | null>(null)
+  const [brochureUrl, setBrochureUrl] = useState<string | null>(null)
   const [newCat, setNewCat] = useState('')
   const [saving, setSaving] = useState(false)
   const { profile } = useAuth()
@@ -48,8 +51,8 @@ export default function ModelsTab() {
 
   useEffect(() => { fetch() }, []) // eslint-disable-line
 
-  const openAdd = () => { setEditing(null); setName(''); setDesc(''); setCatId(''); setImages([]); setVideoUrl(null); setPanelOpen(true) }
-  const openEdit = (m: Model) => { setEditing(m); setName(m.name); setDesc(m.description||''); setCatId(m.category_id||''); setImages(m.images || (m.image_url ? [m.image_url] : [])); setVideoUrl(m.video_url || null); setPanelOpen(true) }
+  const openAdd = () => { setEditing(null); setName(''); setDesc(''); setCatId(''); setImages([]); setVideoUrl(null); setBrochureUrl(null); setPanelOpen(true) }
+  const openEdit = (m: Model) => { setEditing(m); setName(m.name); setDesc(m.description||''); setCatId(m.category_id||''); setImages(m.images || (m.image_url ? [m.image_url] : [])); setVideoUrl(m.video_url || null); setBrochureUrl(m.brochure_url || null); setPanelOpen(true) }
   const close = () => { setPanelOpen(false); setEditing(null) }
 
   const save = async () => {
@@ -60,6 +63,7 @@ export default function ModelsTab() {
       category_id: catId||null,
       images,
       video_url: videoUrl,
+      brochure_url: brochureUrl || null,
       image_url: images.length > 0 ? images[0] : null,
       tenant_id: profile?.tenant_id
     }
@@ -135,6 +139,13 @@ export default function ModelsTab() {
               videoUrl={videoUrl}
               onVideoChange={setVideoUrl}
               folder="models"
+            />
+            <ImageUpload
+              value={brochureUrl}
+              onChange={setBrochureUrl}
+              folder="documents"
+              accept="application/pdf"
+              label="Model Brochure (PDF)"
             />
           </div>
           <div className="flex flex-col sm:flex-row gap-3">

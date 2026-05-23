@@ -158,21 +158,30 @@ export default function SettingsPage() {
   return (
     <div className="space-y-8">
       {/* Quick Tiles Grid — heading only */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {TABS.map(tab => (
-          <button
-            key={tab.id}
-            type="button"
-            onClick={() => setActiveTab(tab.id)}
-            className={`text-left px-6 py-5 rounded-[2rem] border transition-all cursor-pointer ${
-              activeTab === tab.id
-                ? 'bg-slate-900 border-slate-900 text-white shadow-sm'
-                : 'bg-white border-slate-200 text-slate-800 hover:border-slate-300 hover:bg-slate-50/50'
-            }`}
-          >
-            <h4 className="font-bold text-sm leading-snug">{tab.label}</h4>
-          </button>
-        ))}
+      {/* Standard Underline Tabs */}
+      <div className="border-b border-slate-200 w-full">
+        <nav className="flex -mb-px space-x-6 sm:space-x-8 overflow-x-auto scrollbar-none" aria-label="Tabs">
+          {TABS.map(tab => {
+            const isActive = activeTab === tab.id
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id)}
+                className={`
+                  border-b-2 py-4 px-1 text-sm font-medium transition-all cursor-pointer whitespace-nowrap overflow-hidden text-ellipsis min-w-0 flex-1 sm:flex-initial text-center sm:text-left
+                  ${isActive
+                    ? 'border-slate-900 text-slate-900 font-semibold'
+                    : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
+                  }
+                `}
+                title={tab.label}
+              >
+                {tab.label}
+              </button>
+            )
+          })}
+        </nav>
       </div>
 
       <div className="bg-white border border-slate-200 rounded-[2rem] p-8 md:p-12 space-y-8">
@@ -265,13 +274,12 @@ export default function SettingsPage() {
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-semibold text-slate-700 pl-4">RTO & Registration Fees (%)</label>
+                <label className="text-sm font-semibold text-slate-700 pl-4">RTO & Registration Fees (₹)</label>
                 <input
                   type="number"
-                  step="0.1"
                   value={settings['tax.rto_fee_percent'] !== undefined ? settings['tax.rto_fee_percent'] : ''}
                   onChange={e => handleSettingChange('tax.rto_fee_percent', Number(e.target.value))}
-                  placeholder="2"
+                  placeholder="5000"
                   className="w-full rounded-full py-4 px-6 bg-slate-50 border border-slate-200 text-slate-900 focus:border-slate-900 focus:bg-white transition-all outline-none"
                 />
               </div>

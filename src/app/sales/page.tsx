@@ -150,7 +150,7 @@ export default function SalesDashboardPage() {
       {/* Top Section: Welcome & Attendance check-in/out */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         {/* Welcome Card */}
-        <div className="lg:col-span-7 flex flex-col justify-center p-2 py-6">
+        <div className="lg:col-span-7 flex flex-col justify-center p-2 py-3">
           <p className="text-slate-500 text-xl font-medium">Welcome back,</p>
           <h2 className="text-5xl md:text-6xl font-black mt-2 tracking-tight">
             <span style={{ color: '#4285F4' }}>{profile?.name ? profile.name.split(' ')[0].charAt(0).toUpperCase() + profile.name.split(' ')[0].slice(1).toLowerCase() : ''}</span>

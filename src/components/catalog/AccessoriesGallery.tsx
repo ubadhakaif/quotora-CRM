@@ -61,7 +61,7 @@ export function AccessoriesGallery() {
   })
 
   return (
-    <div className="space-y-8 pb-12 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] min-h-screen p-6 md:p-12">
+    <div className="space-y-6 pb-12">
       {/* Search & Category Filter Section */}
       <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-center max-w-7xl mx-auto">
         <div className="relative flex-1">

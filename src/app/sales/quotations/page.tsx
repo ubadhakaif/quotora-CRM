@@ -119,7 +119,7 @@ export default function SalesQuotationsPage() {
   const [tcsThresholdSetting, setTcsThresholdSetting] = useState(1000000) // default 10L
   const [tcsRateSetting, setTcsRateSetting] = useState(1) // default 1%
   const [roadTaxRate, setRoadTaxRate] = useState(10) // default 10%
-  const [rtoFeeRate, setRtoFeeRate] = useState(2) // default 2%
+  const [rtoFeeRate, setRtoFeeRate] = useState(5000) // default flat fee 5000 INR
   const [insuranceRate, setInsuranceRate] = useState(4) // default 4%
   
   // Loan / EMI parameters state
@@ -245,13 +245,12 @@ export default function SalesQuotationsPage() {
   const gstPct = customGstPct !== null ? customGstPct : (cgstRate + sgstRate)
   const tcsPct = customTcsPct !== null ? customTcsPct : tcsRateSetting
   const roadTaxPct = customRoadTaxPct !== null ? customRoadTaxPct : roadTaxRate
-  const rtoPct = customRtoFeePct !== null ? customRtoFeePct : rtoFeeRate
   const insurancePct = customInsurancePct !== null ? customInsurancePct : insuranceRate
 
   const gstTax = Math.round(exShowroom * (gstPct / 100))
   const tcsTax = exShowroom >= tcsThresholdSetting ? Math.round(exShowroom * (tcsPct / 100)) : 0
   const roadTax = Math.round(exShowroom * (roadTaxPct / 100))
-  const rtoFee = Math.round(exShowroom * (rtoPct / 100))
+  const rtoFee = Math.round(customRtoFeePct !== null ? customRtoFeePct : rtoFeeRate)
   const insuranceTax = Math.round(exShowroom * (insurancePct / 100))
   const otherCharges = customOtherCharges
   
@@ -785,20 +784,36 @@ export default function SalesQuotationsPage() {
             <tbody className="divide-y divide-slate-100 text-sm">
               <tr>
                 <td className="py-3">Base Ex-Showroom price</td>
-                <td className="py-3 text-right">{fmtINR(previewingQuote.variants?.price || 0)}</td>
+                <td className="py-3 text-right">{fmtINR(previewingQuote.tax_breakdown?.ex_showroom || previewingQuote.variants?.price || 0)}</td>
               </tr>
               <tr>
-                <td className="py-3">Automotive Goods & Service Tax (GST 28%)</td>
-                <td className="py-3 text-right">{fmtINR((previewingQuote.variants?.price || 0) * 0.28)}</td>
+                <td className="py-3">Automotive Goods & Service Tax (GST)</td>
+                <td className="py-3 text-right">{fmtINR(previewingQuote.tax_breakdown?.gst || 0)}</td>
+              </tr>
+              {previewingQuote.tax_breakdown?.tcs > 0 && (
+                <tr>
+                  <td className="py-3">TCS (Tax Collected at Source)</td>
+                  <td className="py-3 text-right">{fmtINR(previewingQuote.tax_breakdown.tcs)}</td>
+                </tr>
+              )}
+              <tr>
+                <td className="py-3">Road Tax & State Surcharges</td>
+                <td className="py-3 text-right">{fmtINR(previewingQuote.tax_breakdown?.road_tax || 0)}</td>
               </tr>
               <tr>
-                <td className="py-3">RTO Road Tax Registration (10%)</td>
-                <td className="py-3 text-right">{fmtINR((previewingQuote.variants?.price || 0) * 0.10)}</td>
+                <td className="py-3">RTO & Registration Fees</td>
+                <td className="py-3 text-right">{fmtINR(previewingQuote.tax_breakdown?.rto_fee || 0)}</td>
               </tr>
               <tr>
-                <td className="py-3">Comprehensive Vehicle Insurance (3%)</td>
-                <td className="py-3 text-right">{fmtINR((previewingQuote.variants?.price || 0) * 0.03)}</td>
+                <td className="py-3">Comprehensive Vehicle Insurance</td>
+                <td className="py-3 text-right">{fmtINR(previewingQuote.tax_breakdown?.insurance || 0)}</td>
               </tr>
+              {previewingQuote.tax_breakdown?.other_charges > 0 && (
+                <tr>
+                  <td className="py-3">Handling & Miscellaneous Charges</td>
+                  <td className="py-3 text-right">{fmtINR(previewingQuote.tax_breakdown.other_charges)}</td>
+                </tr>
+              )}
               {previewingQuote.quotation_accessories && previewingQuote.quotation_accessories.length > 0 && (
                 <tr>
                   <td className="py-3 font-medium">Optional Accessories Attached</td>
@@ -1245,16 +1260,14 @@ export default function SalesQuotationsPage() {
                     <div className="flex justify-between items-center pl-2 text-xs text-slate-505">
                       <span>RTO & Registration Fees</span>
                       <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-[10px] text-slate-400 font-medium">₹</span>
                         <input
                           type="number"
-                          step={0.1}
                           value={customRtoFeePct !== null ? customRtoFeePct : ''}
                           onChange={e => setCustomRtoFeePct(e.target.value === '' ? null : Number(e.target.value))}
                           placeholder={String(rtoFeeRate)}
-                          className="w-16 text-right rounded-lg py-1 px-2 bg-white border border-slate-200 text-xs font-semibold text-slate-800 focus:border-slate-900 outline-none transition-all"
+                          className="w-24 text-right rounded-lg py-1 px-2 bg-white border border-slate-200 text-xs font-semibold text-slate-800 focus:border-slate-900 outline-none transition-all"
                         />
-                        <span className="text-[10px] text-slate-400 font-bold">%</span>
-                        <span className="text-[10px] text-slate-400 font-semibold w-24 text-right">({fmtINR(rtoFee)})</span>
                       </div>
                     </div>
 

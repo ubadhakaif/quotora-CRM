@@ -57,7 +57,7 @@ export function PortalShell({ children, navItems, routeTitles, portalName }: Por
         <Header onMenuClick={() => setSidebarOpen(true)} routeTitles={routeTitles} />
         
         <main className="flex-1 overflow-y-auto">
-          <div className="pt-[30px] px-4 md:px-8 pb-32">
+          <div className="pt-4 px-4 md:px-8 pb-32">
             <div className="max-w-7xl mx-auto space-y-8">
               {children}
             </div>
